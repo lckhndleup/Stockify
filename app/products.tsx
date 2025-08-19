@@ -20,57 +20,42 @@ export default function ProductsPage() {
     console.log("Yeni ürün ekle");
   };
 
-  const handleBack = () => {
-    router.back();
+  const handleEditProduct = (productName: string) => {
+    console.log("Ürün düzenle:", productName);
+  };
+
+  const handleDeleteProduct = (productName: string) => {
+    console.log("Ürün sil:", productName);
   };
 
   return (
     <Container className="bg-white" padding="sm">
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center">
-            <Icon
-              family="MaterialIcons"
-              name="arrow-back"
-              size={24}
-              color="#67686A"
-              pressable
-              onPress={handleBack}
-              containerClassName="mr-3"
-            />
-            <Typography
-              variant="h3"
-              weight="semibold"
-              className="text-stock-dark"
-            >
-              Ürünler
-            </Typography>
-          </View>
+        {/* Search ve Add Butonu */}
+        <View className="flex-row items-center mb-3">
+          <SearchBar
+            placeholder="Ürün ara..."
+            onSearch={handleSearch}
+            className="flex-1 mr-3"
+          />
           <Icon
             family="MaterialIcons"
             name="add"
-            size={24}
+            size={28}
             color="#E3001B"
             pressable
             onPress={handleAddProduct}
+            containerClassName="bg-gray-100 p-2 rounded-lg"
           />
         </View>
 
-        {/* Search */}
-        <SearchBar
-          placeholder="Ürün ara..."
-          onSearch={handleSearch}
-          className="mb-3"
-        />
-
         {/* Ürün Listesi */}
-        <View className="space-y-2">
+        <View>
           {/* Örnek Ürün 1 */}
           <Card
             variant="default"
             padding="sm"
-            className="border border-stock-border"
+            className="border border-stock-border mb-2"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
@@ -90,13 +75,25 @@ export default function ProductsPage() {
                   Stok: 45 kg • Fiyat: ₺850/kg
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="edit"
-                size={18}
-                color="#67686A"
-                pressable
-              />
+              <View className="flex-row items-center">
+                <Icon
+                  family="MaterialIcons"
+                  name="edit"
+                  size={18}
+                  color="#67686A"
+                  pressable
+                  onPress={() => handleEditProduct("Antep Fıstığı")}
+                  containerClassName="mr-2"
+                />
+                <Icon
+                  family="MaterialIcons"
+                  name="delete"
+                  size={18}
+                  color="#E3001B"
+                  pressable
+                  onPress={() => handleDeleteProduct("Antep Fıstığı")}
+                />
+              </View>
             </View>
           </Card>
 
@@ -104,7 +101,7 @@ export default function ProductsPage() {
           <Card
             variant="default"
             padding="sm"
-            className="border border-stock-border"
+            className="border border-stock-border mb-2"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
@@ -124,13 +121,25 @@ export default function ProductsPage() {
                   Stok: 23 kg • Fiyat: ₺320/kg
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="edit"
-                size={18}
-                color="#67686A"
-                pressable
-              />
+              <View className="flex-row items-center">
+                <Icon
+                  family="MaterialIcons"
+                  name="edit"
+                  size={18}
+                  color="#67686A"
+                  pressable
+                  onPress={() => handleEditProduct("Ceviz İçi")}
+                  containerClassName="mr-2"
+                />
+                <Icon
+                  family="MaterialIcons"
+                  name="delete"
+                  size={18}
+                  color="#E3001B"
+                  pressable
+                  onPress={() => handleDeleteProduct("Ceviz İçi")}
+                />
+              </View>
             </View>
           </Card>
 
@@ -138,7 +147,7 @@ export default function ProductsPage() {
           <Card
             variant="default"
             padding="sm"
-            className="border border-stock-border"
+            className="border border-stock-border mb-2"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
@@ -158,13 +167,25 @@ export default function ProductsPage() {
                   Stok: 78 kg • Fiyat: ₺290/kg
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="edit"
-                size={18}
-                color="#67686A"
-                pressable
-              />
+              <View className="flex-row items-center">
+                <Icon
+                  family="MaterialIcons"
+                  name="edit"
+                  size={18}
+                  color="#67686A"
+                  pressable
+                  onPress={() => handleEditProduct("Badem")}
+                  containerClassName="mr-2"
+                />
+                <Icon
+                  family="MaterialIcons"
+                  name="delete"
+                  size={18}
+                  color="#E3001B"
+                  pressable
+                  onPress={() => handleDeleteProduct("Badem")}
+                />
+              </View>
             </View>
           </Card>
 
@@ -192,13 +213,25 @@ export default function ProductsPage() {
                   Stok: 12 kg • Fiyat: ₺450/kg
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="edit"
-                size={18}
-                color="#67686A"
-                pressable
-              />
+              <View className="flex-row items-center">
+                <Icon
+                  family="MaterialIcons"
+                  name="edit"
+                  size={18}
+                  color="#67686A"
+                  pressable
+                  onPress={() => handleEditProduct("Kaju")}
+                  containerClassName="mr-2"
+                />
+                <Icon
+                  family="MaterialIcons"
+                  name="delete"
+                  size={18}
+                  color="#E3001B"
+                  pressable
+                  onPress={() => handleDeleteProduct("Kaju")}
+                />
+              </View>
             </View>
           </Card>
         </View>

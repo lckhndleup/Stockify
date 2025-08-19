@@ -20,49 +20,26 @@ export default function StockPage() {
     console.log("Rapor dışa aktar");
   };
 
-  const handleBack = () => {
-    router.back();
-  };
-
   return (
     <Container className="bg-white" padding="sm">
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center">
-            <Icon
-              family="MaterialIcons"
-              name="arrow-back"
-              size={24}
-              color="#67686A"
-              pressable
-              onPress={handleBack}
-              containerClassName="mr-3"
-            />
-            <Typography
-              variant="h3"
-              weight="semibold"
-              className="text-stock-dark"
-            >
-              Stok Takip
-            </Typography>
-          </View>
+        {/* Search ve Export Butonu */}
+        <View className="flex-row items-center mb-3">
+          <SearchBar
+            placeholder="Stok ara..."
+            onSearch={handleSearch}
+            className="flex-1 mr-3"
+          />
           <Icon
             family="MaterialCommunityIcons"
             name="file-export"
-            size={24}
+            size={26}
             color="#E3001B"
             pressable
             onPress={handleExportReport}
+            containerClassName="bg-gray-100 p-2 rounded-lg"
           />
         </View>
-
-        {/* Search */}
-        <SearchBar
-          placeholder="Stok ara..."
-          onSearch={handleSearch}
-          className="mb-3"
-        />
 
         {/* Özet Kartları */}
         <View className="flex-row mb-3 space-x-2">
@@ -122,12 +99,12 @@ export default function StockPage() {
         </View>
 
         {/* Stok Listesi */}
-        <View className="space-y-2">
+        <View>
           {/* Düşük Stok - Kritik */}
           <Card
             variant="default"
             padding="sm"
-            className="border-l-4 border-l-red-500 bg-red-50"
+            className="border-l-4 border-l-red-500 bg-red-50 mb-2"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
@@ -169,7 +146,7 @@ export default function StockPage() {
           <Card
             variant="default"
             padding="sm"
-            className="border border-stock-border"
+            className="border border-stock-border mb-2"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
@@ -211,7 +188,7 @@ export default function StockPage() {
           <Card
             variant="default"
             padding="sm"
-            className="border border-stock-border"
+            className="border border-stock-border mb-2"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
