@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ViewProps } from "react-native";
+import { View, ViewProps, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ContainerProps extends ViewProps {
@@ -40,13 +40,15 @@ export default function Container({
   // className'i ayrı handle et
   const finalClassName = `${baseClasses} ${className}`;
 
-  // Style'ları birleştir
-  const containerStyle = {
-    paddingTop: safeTop ? insets.top : 0,
-    paddingBottom: safeBottom ? insets.bottom : 0,
-    ...paddingValues[padding], // Horizontal ve vertical padding'i manual ekle
-    ...style, // User style'ı en son
-  };
+  // Style'ları birleştir - StyleSheet.flatten kullan
+  const containerStyle = [
+    {
+      paddingTop: safeTop ? insets.top : 0,
+      paddingBottom: safeBottom ? insets.bottom : 0,
+      ...paddingValues[padding], // Horizontal ve vertical padding'i manual ekle
+    },
+    style, // User style'ı en son
+  ];
 
   return (
     <View className={finalClassName} style={containerStyle} {...props}>
