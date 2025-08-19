@@ -40,23 +40,23 @@ export default function Button({
   const isDisabled = disabled || loading;
 
   const variantClasses = {
-    primary: "bg-primary-500 active:bg-primary-600",
-    secondary: "bg-secondary-50 active:bg-secondary-100",
-    success: "bg-success-500 active:bg-success-600",
-    danger: "bg-danger-500 active:bg-danger-600",
-    warning: "bg-warning-500 active:bg-warning-600",
-    outline: "border-2 border-primary-500 bg-transparent active:bg-primary-50",
-    ghost: "bg-transparent active:bg-secondary-50",
+    primary: "bg-stock-red active:bg-[#CC0018]",
+    secondary: "bg-stock-gray active:bg-[#E5E8F0]",
+    success: "bg-green-500 active:bg-green-600",
+    danger: "bg-stock-red active:bg-[#CC0018]",
+    warning: "bg-yellow-500 active:bg-yellow-600",
+    outline: "border-2 border-stock-red bg-transparent active:bg-[#FFF1F2]",
+    ghost: "bg-transparent active:bg-stock-gray",
   };
 
   const textColors = {
-    primary: "text-white",
-    secondary: "text-text-secondary",
+    primary: "text-stock-white",
+    secondary: "text-stock-dark",
     success: "text-white",
-    danger: "text-white",
+    danger: "text-stock-white",
     warning: "text-white",
-    outline: "text-primary-500",
-    ghost: "text-text-primary",
+    outline: "text-stock-red",
+    ghost: "text-stock-dark",
   };
 
   const sizeClasses = {

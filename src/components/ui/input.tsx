@@ -31,9 +31,9 @@ export default function Input({
   const [isFocused, setIsFocused] = useState(false);
 
   const variantClasses = {
-    default: "border-b border-border-light bg-transparent",
-    outlined: "border border-border-light rounded-lg bg-white",
-    filled: "bg-surface-secondary border border-border-default rounded-lg",
+    default: "border-b border-stock-border bg-transparent",
+    outlined: "border border-stock-border rounded-lg bg-stock-white",
+    filled: "bg-stock-gray border border-stock-border rounded-lg",
   };
 
   const sizeClasses = {
@@ -48,8 +48,8 @@ export default function Input({
     lg: "text-lg",
   };
 
-  const focusClasses = isFocused ? "border-primary-500" : "";
-  const errorClasses = error ? "border-danger-500" : "";
+  const focusClasses = isFocused ? "border-stock-red" : "";
+  const errorClasses = error ? "border-stock-red" : "";
 
   const containerClasses = [
     "flex-row items-center",
@@ -69,8 +69,7 @@ export default function Input({
         <Typography
           variant="caption"
           weight="medium"
-          color="text-primary"
-          className="mb-2"
+          className="mb-2 text-stock-dark"
         >
           {label}
         </Typography>
@@ -80,7 +79,7 @@ export default function Input({
         {leftIcon && <View className="mr-3">{leftIcon}</View>}
 
         <TextInput
-          className={`flex-1 ${textSizes[size]} text-text-primary font-normal`}
+          className={`flex-1 ${textSizes[size]} text-stock-dark font-normal`}
           placeholderTextColor="#73767A"
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -93,9 +92,7 @@ export default function Input({
       {(error || helperText) && (
         <Typography
           variant="caption"
-          className={`mt-1 ${
-            error ? "text-danger-500" : "text-text-secondary"
-          }`}
+          className={`mt-1 ${error ? "text-stock-red" : "text-stock-text"}`}
         >
           {error || helperText}
         </Typography>
