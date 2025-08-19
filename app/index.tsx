@@ -42,27 +42,27 @@ export default function HomePage() {
         <SearchBar
           placeholder="Ara..."
           onSearch={handleSearch}
-          className="mb-3"
+          className="mb-4"
         />
 
-        {/* Ana Menü Kartları - Ultra Minimal */}
-        <View className="space-y-2">
+        {/* Ana Menü Kartları - Her karta margin-bottom ekledim */}
+        <View>
           {/* ÜRÜN Kartı */}
           <Card
             variant="default"
             padding="none"
             pressable
             onPress={handleProducts}
-            className="bg-stock-red border-0 px-3 py-2"
+            className="bg-stock-red border-0 px-4 py-4 mb-3"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-3">
+                <View className="mr-4">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="package-variant"
-                    size={18}
+                    size={22}
                     color="#FFFEFF"
                   />
                 </View>
@@ -70,15 +70,15 @@ export default function HomePage() {
                   <Typography
                     variant="body"
                     weight="semibold"
-                    size="base"
-                    className="text-stock-white"
+                    size="lg"
+                    className="text-stock-white mb-1"
                   >
                     ÜRÜN
                   </Typography>
                   <Typography
                     variant="caption"
-                    size="xs"
-                    className="text-stock-white/70"
+                    size="sm"
+                    className="text-stock-white/80"
                   >
                     Kuruyemiş ürünlerinizi yönetin
                   </Typography>
@@ -87,7 +87,7 @@ export default function HomePage() {
               <Icon
                 family="MaterialIcons"
                 name="arrow-forward-ios"
-                size={12}
+                size={16}
                 color="#FFFEFF"
               />
             </View>
@@ -99,16 +99,16 @@ export default function HomePage() {
             padding="none"
             pressable
             onPress={handleBrokers}
-            className="bg-stock-red border-0 px-3 py-2"
+            className="bg-stock-red border-0 px-4 py-4 mb-3"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-3">
+                <View className="mr-4">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="account-group"
-                    size={18}
+                    size={22}
                     color="#FFFEFF"
                   />
                 </View>
@@ -116,15 +116,15 @@ export default function HomePage() {
                   <Typography
                     variant="body"
                     weight="semibold"
-                    size="base"
-                    className="text-stock-white"
+                    size="lg"
+                    className="text-stock-white mb-1"
                   >
                     ARACILAR
                   </Typography>
                   <Typography
                     variant="caption"
-                    size="xs"
-                    className="text-stock-white/70"
+                    size="sm"
+                    className="text-stock-white/80"
                   >
                     Aracı ve tedarikçi bilgileri
                   </Typography>
@@ -133,7 +133,7 @@ export default function HomePage() {
               <Icon
                 family="MaterialIcons"
                 name="arrow-forward-ios"
-                size={12}
+                size={16}
                 color="#FFFEFF"
               />
             </View>
@@ -145,16 +145,16 @@ export default function HomePage() {
             padding="none"
             pressable
             onPress={handleStock}
-            className="bg-stock-red border-0 px-3 py-2"
+            className="bg-stock-red border-0 px-4 py-4"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-3">
+                <View className="mr-4">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="chart-line"
-                    size={18}
+                    size={22}
                     color="#FFFEFF"
                   />
                 </View>
@@ -162,15 +162,15 @@ export default function HomePage() {
                   <Typography
                     variant="body"
                     weight="semibold"
-                    size="base"
-                    className="text-stock-white"
+                    size="lg"
+                    className="text-stock-white mb-1"
                   >
                     STOK TAKİP
                   </Typography>
                   <Typography
                     variant="caption"
-                    size="xs"
-                    className="text-stock-white/70"
+                    size="sm"
+                    className="text-stock-white/80"
                   >
                     Stok durumu ve raporlar
                   </Typography>
@@ -179,7 +179,7 @@ export default function HomePage() {
               <Icon
                 family="MaterialIcons"
                 name="arrow-forward-ios"
-                size={12}
+                size={16}
                 color="#FFFEFF"
               />
             </View>
