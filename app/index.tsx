@@ -15,6 +15,9 @@ export default function HomeScreen() {
       <TouchableOpacity className="bg-primary-600 px-8 py-4 rounded-lg">
         <Text className="text-white font-semibold text-lg">Başlayalım 🚀</Text>
       </TouchableOpacity>
+      <TouchableOpacity className="bg-primary-600 px-8 py-4 rounded-lg">
+        <Text className="text-white font-semibold text-lg">Başlayalım 🚀</Text>
+      </TouchableOpacity>
     </View>
   );
 }
