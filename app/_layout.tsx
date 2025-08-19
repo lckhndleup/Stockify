@@ -25,6 +25,27 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="products"
+          options={{
+            title: "Ürünler",
+            headerShown: true,
+          }}
+        />
+        <Stack.Screen
+          name="brokers"
+          options={{
+            title: "Aracılar",
+            headerShown: true,
+          }}
+        />
+        <Stack.Screen
+          name="stock"
+          options={{
+            title: "Stok Takip",
+            headerShown: true,
+          }}
+        />
       </Stack>
     </Providers>
   );

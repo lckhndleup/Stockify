@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 
@@ -22,184 +22,169 @@ export default function HomePage() {
 
   const handleProducts = () => {
     console.log("Ürünler sayfasına gidiliyor...");
-    // router.push('/products');
+    router.push("/products");
   };
 
   const handleBrokers = () => {
     console.log("Aracılar sayfasına gidiliyor...");
-    // router.push('/brokers');
+    router.push("/brokers");
   };
 
   const handleStock = () => {
     console.log("Stok Takip sayfasına gidiliyor...");
-    // router.push('/stock');
+    router.push("/stock");
   };
 
   return (
-    <Container className="bg-white" padding="md">
+    <Container className="bg-white" padding="sm">
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* SearchBar */}
         <SearchBar
           placeholder="Ara..."
           onSearch={handleSearch}
-          className="mb-8"
+          className="mb-3"
         />
 
-        {/* Ana Menü Kartları - Kırmızı Butonlar */}
-        <Container padding="none" className="space-y-4">
+        {/* Ana Menü Kartları - Ultra Minimal */}
+        <View className="space-y-2">
           {/* ÜRÜN Kartı */}
           <Card
             variant="default"
-            padding="lg"
+            padding="none"
             pressable
             onPress={handleProducts}
-            className="bg-stock-red border-0 shadow-md"
-            radius="lg"
+            className="bg-stock-red border-0 px-3 py-2"
+            radius="md"
           >
-            <Container
-              padding="none"
-              className="flex-row items-center justify-between"
-            >
-              <Container
-                padding="none"
-                className="flex-row items-center flex-1"
-              >
-                <Container padding="none" className="mr-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="mr-3">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="package-variant"
-                    size={32}
+                    size={18}
                     color="#FFFEFF"
                   />
-                </Container>
-                <Container padding="none" className="flex-1">
+                </View>
+                <View className="flex-1">
                   <Typography
-                    variant="h4"
+                    variant="body"
                     weight="semibold"
+                    size="base"
                     className="text-stock-white"
                   >
                     ÜRÜN
                   </Typography>
                   <Typography
                     variant="caption"
-                    className="text-stock-white/80 mt-1"
+                    size="xs"
+                    className="text-stock-white/70"
                   >
                     Kuruyemiş ürünlerinizi yönetin
                   </Typography>
-                </Container>
-              </Container>
+                </View>
+              </View>
               <Icon
                 family="MaterialIcons"
                 name="arrow-forward-ios"
-                size={20}
+                size={12}
                 color="#FFFEFF"
               />
-            </Container>
+            </View>
           </Card>
 
           {/* ARACILAR Kartı */}
           <Card
             variant="default"
-            padding="lg"
+            padding="none"
             pressable
             onPress={handleBrokers}
-            className="bg-stock-red border-0 shadow-md"
-            radius="lg"
+            className="bg-stock-red border-0 px-3 py-2"
+            radius="md"
           >
-            <Container
-              padding="none"
-              className="flex-row items-center justify-between"
-            >
-              <Container
-                padding="none"
-                className="flex-row items-center flex-1"
-              >
-                <Container padding="none" className="mr-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="mr-3">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="account-group"
-                    size={32}
+                    size={18}
                     color="#FFFEFF"
                   />
-                </Container>
-                <Container padding="none" className="flex-1">
+                </View>
+                <View className="flex-1">
                   <Typography
-                    variant="h4"
+                    variant="body"
                     weight="semibold"
+                    size="base"
                     className="text-stock-white"
                   >
                     ARACILAR
                   </Typography>
                   <Typography
                     variant="caption"
-                    className="text-stock-white/80 mt-1"
+                    size="xs"
+                    className="text-stock-white/70"
                   >
                     Aracı ve tedarikçi bilgileri
                   </Typography>
-                </Container>
-              </Container>
+                </View>
+              </View>
               <Icon
                 family="MaterialIcons"
                 name="arrow-forward-ios"
-                size={20}
+                size={12}
                 color="#FFFEFF"
               />
-            </Container>
+            </View>
           </Card>
 
           {/* STOK TAKİP Kartı */}
           <Card
             variant="default"
-            padding="lg"
+            padding="none"
             pressable
             onPress={handleStock}
-            className="bg-stock-red border-0 shadow-md"
-            radius="lg"
+            className="bg-stock-red border-0 px-3 py-2"
+            radius="md"
           >
-            <Container
-              padding="none"
-              className="flex-row items-center justify-between"
-            >
-              <Container
-                padding="none"
-                className="flex-row items-center flex-1"
-              >
-                <Container padding="none" className="mr-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="mr-3">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="chart-line"
-                    size={32}
+                    size={18}
                     color="#FFFEFF"
                   />
-                </Container>
-                <Container padding="none" className="flex-1">
+                </View>
+                <View className="flex-1">
                   <Typography
-                    variant="h4"
+                    variant="body"
                     weight="semibold"
+                    size="base"
                     className="text-stock-white"
                   >
                     STOK TAKİP
                   </Typography>
                   <Typography
                     variant="caption"
-                    className="text-stock-white/80 mt-1"
+                    size="xs"
+                    className="text-stock-white/70"
                   >
                     Stok durumu ve raporlar
                   </Typography>
-                </Container>
-              </Container>
+                </View>
+              </View>
               <Icon
                 family="MaterialIcons"
                 name="arrow-forward-ios"
-                size={20}
+                size={12}
                 color="#FFFEFF"
               />
-            </Container>
+            </View>
           </Card>
-        </Container>
-
-        {/* Alt Boşluk */}
-        <Container padding="none" className="h-8" children={undefined} />
+        </View>
       </ScrollView>
     </Container>
   );
