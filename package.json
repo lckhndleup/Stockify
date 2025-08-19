@@ -12,6 +12,7 @@
     "build:ios": "eas build --platform ios"
   },
   "dependencies": {
+    "@expo-google-fonts/montserrat": "^0.4.1",
     "@hookform/resolvers": "^5.2.1",
     "@react-native-async-storage/async-storage": "2.1.2",
     "dayjs": "^1.11.13",
@@ -19,11 +20,14 @@
     "expo-font": "^13.3.2",
     "expo-image": "^2.4.0",
     "expo-router": "^5.1.4",
+    "expo-splash-screen": "^0.30.10",
     "expo-status-bar": "~2.2.3",
+    "i18next": "^25.3.6",
     "lucide-react-native": "^0.540.0",
     "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-hook-form": "^7.62.0",
+    "react-i18next": "^15.6.1",
     "react-native": "0.79.5",
     "react-native-reanimated": "~3.17.4",
     "react-native-worklets": "^0.4.1",

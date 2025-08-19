@@ -1,0 +1,102 @@
+import React, { useState } from "react";
+import { View, TextInput, TextInputProps } from "react-native";
+import Typography from "./typography";
+
+interface InputProps extends TextInputProps {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  variant?: "default" | "outlined" | "filled";
+  size?: "sm" | "md" | "lg";
+  fullWidth?: boolean;
+  className?: string;
+  inputClassName?: string;
+}
+
+export default function Input({
+  label,
+  error,
+  helperText,
+  leftIcon,
+  rightIcon,
+  variant = "outlined",
+  size = "md",
+  fullWidth = true,
+  className = "",
+  inputClassName = "",
+  ...props
+}: InputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const variantClasses = {
+    default: "border-b border-gray-300 bg-transparent",
+    outlined: "border border-gray-300 rounded-lg bg-white",
+    filled: "bg-gray-100 border border-gray-200 rounded-lg",
+  };
+
+  const sizeClasses = {
+    sm: "px-3 py-2",
+    md: "px-4 py-3",
+    lg: "px-5 py-4",
+  };
+
+  const textSizes = {
+    sm: "text-sm",
+    md: "text-base",
+    lg: "text-lg",
+  };
+
+  const focusClasses = isFocused ? "border-primary-500" : "";
+  const errorClasses = error ? "border-red-500" : "";
+
+  const containerClasses = [
+    "flex-row items-center",
+    variantClasses[variant],
+    sizeClasses[size],
+    focusClasses,
+    errorClasses,
+    fullWidth && "w-full",
+    inputClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <View className={`${fullWidth ? "w-full" : ""} ${className}`}>
+      {label && (
+        <Typography
+          variant="caption"
+          weight="medium"
+          className="mb-2 text-gray-700"
+        >
+          {label}
+        </Typography>
+      )}
+
+      <View className={containerClasses}>
+        {leftIcon && <View className="mr-3">{leftIcon}</View>}
+
+        <TextInput
+          className={`flex-1 ${textSizes[size]} text-gray-900 font-normal`}
+          placeholderTextColor="#9CA3AF"
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          {...props}
+        />
+
+        {rightIcon && <View className="ml-3">{rightIcon}</View>}
+      </View>
+
+      {(error || helperText) && (
+        <Typography
+          variant="caption"
+          className={`mt-1 ${error ? "text-red-600" : "text-gray-500"}`}
+        >
+          {error || helperText}
+        </Typography>
+      )}
+    </View>
+  );
+}
