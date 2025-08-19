@@ -1,0 +1,21 @@
+{
+    "appName": "Stockify",
+    "tagline": "Simplify your stock management",
+    "version": "v1.0.0 - Development Mode",
+    "buttons": {
+        "viewProducts": "View Products 📋",
+        "stockEntry": "Stock Entry ➕",
+        "reports": "Reports 📊",
+        "start": "Let's Start 🚀"
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Error occurred",
+        "success": "Success",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add"
+    }
+}
