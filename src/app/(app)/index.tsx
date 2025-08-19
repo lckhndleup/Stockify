@@ -1,8 +1,11 @@
 import React from "react";
-import { Text, View, TouchableOpacity } from "react-native";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { useLangStore } from "@/src/stores/useLangStore";
+
+// UI Components
+import { Container, Button, Typography, Icon } from "@/src/components/ui";
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
@@ -16,27 +19,92 @@ export default function HomeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 justify-center items-center px-6">
-      {/* Dil Değiştirme Butonu */}
-      <TouchableOpacity
-        className="absolute top-12 right-4 bg-gray-200 px-3 py-2 rounded-lg"
-        onPress={toggleLanguage}
-      >
-        <Text className="text-gray-700 font-medium">
-          {lang === "tr" ? "🇬🇧 EN" : "🇹🇷 TR"}
-        </Text>
-      </TouchableOpacity>
-
-      <View className="items-center mb-8">
-        <Text className="text-6xl mb-4">📦</Text>
-        <Text className="text-3xl font-bold text-gray-800 mt-4">
-          {t("appName")}
-        </Text>
-        <Text className="text-gray-600 text-center mt-2 mb-6 font-medium">
-          {t("tagline")}
-        </Text>
-        <Text className="text-sm text-gray-500">{t("version")}</Text>
+    <Container center padding="md" className="bg-gray-50">
+      {/* Language Toggle Button */}
+      <View className="absolute top-4 right-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={toggleLanguage}
+          className="bg-white/80 border border-gray-200"
+        >
+          <Typography variant="caption" weight="medium">
+            {lang === "tr" ? "🇬🇧 EN" : "🇹🇷 TR"}
+          </Typography>
+        </Button>
       </View>
-    </View>
+      {/* Logo and Title Section */}
+      <View className="items-center mb-12">
+        <Typography className="text-6xl mb-6">📦</Typography>
+
+        <Typography variant="h1" align="center" className="text-gray-800 mb-4">
+          {t("appName")}
+        </Typography>
+
+        <Typography
+          variant="body"
+          align="center"
+          color="secondary"
+          className="mb-4 max-w-xs px-4"
+        >
+          {t("tagline")}
+        </Typography>
+
+        <Typography variant="caption" color="gray">
+          {t("version")}
+        </Typography>
+      </View>
+      {/* Action Buttons */}
+      <View className="w-full max-w-sm space-y-4">
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          onPress={() => router.push("/products")}
+          leftIcon={
+            <Icon
+              family="MaterialIcons"
+              name="inventory"
+              color="white"
+              size={20}
+            />
+          }
+        >
+          {t("buttons.viewProducts")}
+        </Button>
+        <Button
+          variant="success"
+          size="lg"
+          fullWidth
+          onPress={() => router.push("/stock")}
+          leftIcon={
+            <Icon
+              family="MaterialIcons"
+              name="assessment"
+              color="white"
+              size={20}
+            />
+          }
+        >
+          {t("buttons.brokers")}
+        </Button>
+        <Button
+          variant="warning"
+          size="lg"
+          fullWidth
+          onPress={() => router.push("/stock")}
+          leftIcon={
+            <Icon
+              family="MaterialIcons"
+              name="assessment"
+              color="white"
+              size={20}
+            />
+          }
+        >
+          {t("buttons.reports")}
+        </Button>
+      </View>
+    </Container>
   );
 }

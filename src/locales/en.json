@@ -3,8 +3,8 @@
     "tagline": "Simplify your stock management",
     "version": "v1.0.0 - Development Mode",
     "buttons": {
-        "viewProducts": "View Products 📋",
-        "stockEntry": "Stock Entry ➕",
+        "viewProducts": "Products 📋",
+        "brokers": "Brokers ➕",
         "reports": "Reports 📊",
         "start": "Let's Start 🚀"
     },

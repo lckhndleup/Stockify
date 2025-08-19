@@ -3,8 +3,8 @@
     "tagline": "Stok takibinizi kolaylaştıran uygulama",
     "version": "v1.0.0 - Geliştirme Modu",
     "buttons": {
-        "viewProducts": "Ürünleri Görüntüle 📋",
-        "stockEntry": "Stok Girişi ➕",
+        "viewProducts": "Ürünler 📋",
+        "brokers": "Aracılar ➕",
         "reports": "Raporlar 📊",
         "start": "Başlayalım 🚀"
     },
