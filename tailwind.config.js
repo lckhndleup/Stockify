@@ -3,41 +3,34 @@ module.exports = {
   content: [
     "./App.{js,jsx,ts,tsx}",
     "./app/**/*.{js,jsx,ts,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
+        // Stockify custom renkleri (dash ile)
+        "stock-red": "#E3001B", // Ana kırmızı
+        "stock-gray": "#F4F7FB", // Pasif buton/tab
+        "stock-white": "#FFFEFF", // Başlıklar
+        "stock-border": "#ECECEC", // Input border
+        "stock-text": "#73767A", // Pasif text
+        "stock-icon": "#6D706F", // İconlar
+        "stock-dark": "#67686A", // Diğer gri ton
+
+        // Alternatif isimlendirme (CSS custom properties gibi)
         primary: {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
+          DEFAULT: "#E3001B",
+          50: "#FFF1F2",
+          100: "#FFE4E6",
+          500: "#E3001B",
+          600: "#CC0018",
+          700: "#B30015",
         },
-        success: "#10b981",
-        danger: "#ef4444",
-        warning: "#f59e0b",
-        "ui-black": "#0A122D",
-        "ui-primary": "#FDAF3C",
-        "ui-secondary": "#1E3DAE",
-        "ui-emerald": "#2FB49C",
-        "ui-red": "#FF543B",
-        "ui-sky": "#F1F7F5",
-        "ui-gray-50": "#F9FAFB",
-        "ui-gray-100": "#F4F4F6",
-        "ui-gray-200": "#E5E6EB",
-        "ui-gray-300": "#D3D5DA",
-        "ui-gray-400": "#9EA3AE",
-        "ui-gray-500": "#6C727F",
-        "ui-gray-600": "#4D5461",
-        "ui-gray-700": "#394150",
-        "ui-gray-800": "#212936",
-        "ui-gray-900": "#0B0A0F",
       },
       fontFamily: {
-        sans: ["Montserrat_400Regular"], // varsayılan
+        sans: ["Montserrat_400Regular"],
         medium: ["Montserrat_500Medium"],
         semibold: ["Montserrat_600SemiBold"],
         bold: ["Montserrat_700Bold"],
