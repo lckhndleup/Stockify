@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { useLangStore } from "@/src/stores/useLangStore";
 
 // UI Components
-import { Container, Button, Typography, Icon } from "@/src/components/ui";
+import { Container, Button, Typography, Icon } from "../../components/ui";
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
@@ -19,41 +19,48 @@ export default function HomeScreen() {
   };
 
   return (
-    <Container center padding="md" className="bg-gray-50">
+    <Container center padding="lg" className="bg-surface-primary">
       {/* Language Toggle Button */}
       <View className="absolute top-4 right-6">
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           onPress={toggleLanguage}
-          className="bg-white/80 border border-gray-200"
+          className="border border-border-light"
         >
-          <Typography variant="caption" weight="medium">
+          <Typography variant="caption" weight="medium" color="text-secondary">
             {lang === "tr" ? "🇬🇧 EN" : "🇹🇷 TR"}
           </Typography>
         </Button>
       </View>
+
       {/* Logo and Title Section */}
       <View className="items-center mb-12">
         <Typography className="text-6xl mb-6">📦</Typography>
 
-        <Typography variant="h1" align="center" className="text-gray-800 mb-4">
+        <Typography
+          variant="h1"
+          align="center"
+          color="text-inverse"
+          className="mb-4"
+        >
           {t("appName")}
         </Typography>
 
         <Typography
           variant="body"
           align="center"
-          color="secondary"
+          color="text-secondary"
           className="mb-4 max-w-xs px-4"
         >
           {t("tagline")}
         </Typography>
 
-        <Typography variant="caption" color="gray">
+        <Typography variant="caption" color="text-tertiary">
           {t("version")}
         </Typography>
       </View>
+
       {/* Action Buttons */}
       <View className="w-full max-w-sm space-y-4">
         <Button
@@ -72,15 +79,16 @@ export default function HomeScreen() {
         >
           {t("buttons.viewProducts")}
         </Button>
+
         <Button
           variant="success"
           size="lg"
           fullWidth
-          onPress={() => router.push("/stock")}
+          onPress={() => router.push("/brokers")}
           leftIcon={
             <Icon
               family="MaterialIcons"
-              name="assessment"
+              name="add-box"
               color="white"
               size={20}
             />
@@ -88,6 +96,7 @@ export default function HomeScreen() {
         >
           {t("buttons.brokers")}
         </Button>
+
         <Button
           variant="warning"
           size="lg"
@@ -102,7 +111,7 @@ export default function HomeScreen() {
             />
           }
         >
-          {t("buttons.reports")}
+          {t("buttons.stock")}
         </Button>
       </View>
     </Container>

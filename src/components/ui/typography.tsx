@@ -22,7 +22,11 @@ interface TypographyProps extends TextProps {
     | "success"
     | "danger"
     | "warning"
-    | "gray"
+    | "info"
+    | "text-primary"
+    | "text-secondary"
+    | "text-tertiary"
+    | "text-inverse"
     | "white"
     | "black";
   align?: "left" | "center" | "right" | "justify";
@@ -71,14 +75,18 @@ export default function Typography({
   };
 
   const colorClasses = {
-    primary: "text-primary-600",
-    secondary: "text-gray-600",
-    success: "text-green-600",
-    danger: "text-red-600",
-    warning: "text-orange-600",
-    gray: "text-gray-500",
+    primary: "text-primary-500",
+    secondary: "text-secondary-400",
+    success: "text-success-500",
+    danger: "text-danger-500",
+    warning: "text-warning-500",
+    info: "text-info-500",
+    "text-primary": "text-text-primary",
+    "text-secondary": "text-text-secondary",
+    "text-tertiary": "text-text-tertiary",
+    "text-inverse": "text-text-inverse",
     white: "text-white",
-    black: "text-gray-900",
+    black: "text-black",
   };
 
   const alignClasses = {

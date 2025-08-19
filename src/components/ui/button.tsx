@@ -40,23 +40,23 @@ export default function Button({
   const isDisabled = disabled || loading;
 
   const variantClasses = {
-    primary: "bg-primary-600 active:bg-primary-700",
-    secondary: "bg-gray-600 active:bg-gray-700",
-    success: "bg-green-600 active:bg-green-700",
-    danger: "bg-red-600 active:bg-red-700",
-    warning: "bg-orange-600 active:bg-orange-700",
-    outline: "border-2 border-primary-600 bg-transparent active:bg-primary-50",
-    ghost: "bg-transparent active:bg-gray-100",
+    primary: "bg-primary-500 active:bg-primary-600",
+    secondary: "bg-secondary-50 active:bg-secondary-100",
+    success: "bg-success-500 active:bg-success-600",
+    danger: "bg-danger-500 active:bg-danger-600",
+    warning: "bg-warning-500 active:bg-warning-600",
+    outline: "border-2 border-primary-500 bg-transparent active:bg-primary-50",
+    ghost: "bg-transparent active:bg-secondary-50",
   };
 
   const textColors = {
     primary: "text-white",
-    secondary: "text-white",
+    secondary: "text-text-secondary",
     success: "text-white",
     danger: "text-white",
     warning: "text-white",
-    outline: "text-primary-600",
-    ghost: "text-gray-700",
+    outline: "text-primary-500",
+    ghost: "text-text-primary",
   };
 
   const sizeClasses = {
@@ -99,7 +99,7 @@ export default function Button({
       {loading && (
         <ActivityIndicator
           size="small"
-          color={textColors[variant].includes("white") ? "white" : "#0284c7"}
+          color={textColors[variant].includes("white") ? "white" : "#E3001B"}
         />
       )}
 

@@ -3,9 +3,9 @@
     "tagline": "Simplify your stock management",
     "version": "v1.0.0 - Development Mode",
     "buttons": {
-        "viewProducts": "Products 📋",
+        "viewProducts": "Products 📁",
         "brokers": "Brokers ➕",
-        "reports": "Reports 📊",
+        "stock": "Stock 📊",
         "start": "Let's Start 🚀"
     },
     "common": {
