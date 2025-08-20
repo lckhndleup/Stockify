@@ -1,22 +1,28 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { View } from "react-native";
 import Providers from "@/src/components/common/Providers";
+import { BottomNavigation } from "@/src/components/ui";
 import "../global.css";
 
 export default function RootLayout() {
   return (
     <Providers>
       <StatusBar style="auto" hidden={true} />
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: "#fff",
-          },
-          headerTintColor: "#000",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-        }}
+      <View style={{ flex: 1 }}>
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: "#fff",
+            },
+            headerTintColor: "#000",
+            headerTitleStyle: {
+              fontWeight: "bold",
+            },
+            contentStyle: {
+              paddingBottom: 90, // BottomNavigation için alan bırakın
+            }
+          }}
       >
         <Stack.Screen
           name="index"
@@ -47,6 +53,8 @@ export default function RootLayout() {
           }}
         />
       </Stack>
+        <BottomNavigation className="absolute bottom-10 left-5 right-5" />
+      </View>
     </Providers>
   );
 }
