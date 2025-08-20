@@ -19,9 +19,6 @@ export default function RootLayout() {
             headerTitleStyle: {
               fontWeight: "bold",
             },
-            contentStyle: {
-              paddingBottom: 90, // BottomNavigation için alan bırakın
-            },
           }}
         >
           <Stack.Screen
