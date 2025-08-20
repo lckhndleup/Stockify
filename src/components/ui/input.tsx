@@ -93,7 +93,10 @@ export default function Input({
         <TextInput
           className={`flex-1 ${textSizes[size]} text-stock-dark font-normal`}
           placeholderTextColor="#73767A"
-          textAlign={style?.textAlign || "center"}
+          textAlign={
+            style?.textAlign ||
+            (props.keyboardType === "numeric" ? "left" : "left")
+          }
           textAlignVertical="center"
           style={{
             minHeight: inputHeights[size] - 8,

@@ -286,15 +286,15 @@ export default function ProductsPage() {
 
   const handleDeleteProduct = (product: Product) => {
     Alert.alert(
-      "Ürün Pasifleştir",
-      `"${product.name}" ürününü pasifleştirmek istediğinizden emin misiniz?\n\nÜrün aktif listeden kaldırılacak ancak pasif ürünler listesinde görüntülenebilecek.`,
+      "Ürün Sil",
+      `"${product.name}" ürününü silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`,
       [
         {
           text: "İptal",
           style: "cancel",
         },
         {
-          text: "Pasifleştir",
+          text: "Sil",
           style: "destructive",
           onPress: () => {
             // Ürünü pasif yap
@@ -303,7 +303,7 @@ export default function ProductsPage() {
                 p.id === product.id ? { ...p, isActive: false } : p
               )
             );
-            Alert.alert("Başarılı", "Ürün pasifleştirildi!");
+            Alert.alert("Başarılı", "Ürün silindi!");
           },
         },
       ]
@@ -331,7 +331,7 @@ export default function ProductsPage() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search ve Add Butonu - Homepage gibi spacing */}
         <View className="flex-row items-center mb-3">
           <SearchBar
@@ -377,8 +377,8 @@ export default function ProductsPage() {
                   <Typography
                     variant="body"
                     weight="semibold"
+                    align="left"
                     className="text-stock-dark"
-                    style={{ textAlign: "left" }}
                   >
                     {product.name}
                   </Typography>
@@ -481,7 +481,6 @@ export default function ProductsPage() {
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
-            style={{ textAlign: "left" }}
           />
 
           {/* Fiyat */}
@@ -493,7 +492,6 @@ export default function ProductsPage() {
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
-            style={{ textAlign: "left" }}
           />
 
           {/* Butonlar - Alt Alta */}
@@ -556,7 +554,6 @@ export default function ProductsPage() {
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
-            style={{ textAlign: "left" }}
           />
 
           {/* Fiyat */}
@@ -568,7 +565,6 @@ export default function ProductsPage() {
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
-            style={{ textAlign: "left" }}
           />
 
           {/* Butonlar - Alt Alta */}

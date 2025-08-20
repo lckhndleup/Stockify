@@ -33,16 +33,16 @@ export default function Tab({
 
   const variantStyles = {
     default: {
-      container: "bg-stock-gray rounded-lg p-1",
+      container: "bg-stock-gray rounded-lg p-1 border border-stock-border",
       active: "bg-stock-red shadow-sm",
       inactive: "bg-transparent",
       activeText: "text-stock-white",
       inactiveText: "text-stock-dark",
     },
     pills: {
-      container: "bg-transparent",
+      container: "bg-transparent border border-stock-border rounded-lg p-1",
       active: "bg-stock-red",
-      inactive: "bg-stock-gray",
+      inactive: "bg-transparent",
       activeText: "text-stock-white",
       inactiveText: "text-stock-dark",
     },
@@ -60,18 +60,13 @@ export default function Tab({
 
   return (
     <View className={`w-full ${className}`}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: variant === "default" ? 4 : 0,
-        }}
-        className={currentVariant.container}
-      >
-        <View className="flex-row space-x-2">
-          {tabs.map((tab) => {
+      <View className={currentVariant.container}>
+        <View className="flex-row">
+          {tabs.map((tab, index) => {
             const isActive = tab.id === activeTab;
             const isDisabled = tab.disabled;
+            const isFirst = index === 0;
+            const isLast = index === tabs.length - 1;
 
             return (
               <TouchableOpacity
@@ -79,15 +74,15 @@ export default function Tab({
                 onPress={() => !isDisabled && onTabChange(tab.id)}
                 disabled={isDisabled}
                 className={`
+                  flex-1 items-center justify-center
                   ${currentSize.padding}
                   ${isActive ? currentVariant.active : currentVariant.inactive}
                   ${
                     variant === "pills" || variant === "default"
-                      ? "rounded-lg"
+                      ? "rounded-md"
                       : ""
                   }
                   ${isDisabled ? "opacity-50" : ""}
-                  min-w-[80px] items-center justify-center
                 `}
                 activeOpacity={0.8}
               >
@@ -110,7 +105,7 @@ export default function Tab({
             );
           })}
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }

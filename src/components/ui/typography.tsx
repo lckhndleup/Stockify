@@ -31,6 +31,7 @@ interface TypographyProps extends TextProps {
     | "black";
   align?: "left" | "center" | "right" | "justify";
   className?: string;
+  style?: any;
 }
 
 export default function Typography({
@@ -41,6 +42,7 @@ export default function Typography({
   color,
   align,
   className = "",
+  style,
   ...props
 }: TypographyProps) {
   const variantStyles = {
@@ -111,7 +113,7 @@ export default function Typography({
     .join(" ");
 
   return (
-    <Text className={classes} {...props}>
+    <Text className={classes} style={style} {...props}>
       {children}
     </Text>
   );
