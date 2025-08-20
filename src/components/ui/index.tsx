@@ -8,6 +8,7 @@ export { default as Icon } from "./icon";
 export { default as Loading } from "./loading";
 export { default as Modal } from "./modal";
 export { default as SearchBar } from "./searchbar";
+export { default as Tab } from "./tab";
 
 // Type Exports (optional, useful for TypeScript users)
 export type { default as ContainerProps } from "./container";
@@ -18,3 +19,4 @@ export type { default as InputProps } from "./input";
 export type { default as IconProps } from "./icon";
 export type { default as LoadingProps } from "./loading";
 export type { default as ModalProps } from "./modal";
+export type { default as TabProps } from "./tab";

@@ -21,7 +21,8 @@ export default function SearchBar({
 
   return (
     <View
-      className={`flex-row items-center bg-white border border-stock-border rounded-lg px-4 py-3 ${className}`}
+      className={`flex-row items-center bg-white border border-stock-border rounded-lg px-4 ${className}`}
+      style={{ height: 52 }}
     >
       <View className="mr-3">
         <Icon family="MaterialIcons" name="search" size={20} color="#6D706F" />
@@ -31,6 +32,16 @@ export default function SearchBar({
         className="flex-1 text-base text-stock-dark font-normal"
         placeholder={placeholder}
         placeholderTextColor="#73767A"
+        textAlign="left"
+        textAlignVertical="center"
+        style={{
+          minHeight: 44,
+          paddingVertical: 12,
+          paddingHorizontal: 4,
+          margin: 0,
+          lineHeight: 20,
+        }}
+        multiline={false}
         onChangeText={handleChangeText}
         {...props}
       />

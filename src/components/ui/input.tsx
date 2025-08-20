@@ -13,6 +13,7 @@ interface InputProps extends TextInputProps {
   fullWidth?: boolean;
   className?: string;
   inputClassName?: string;
+  style?: any;
 }
 
 export default function Input({
@@ -26,6 +27,7 @@ export default function Input({
   fullWidth = true,
   className = "",
   inputClassName = "",
+  style,
   ...props
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
@@ -37,9 +39,15 @@ export default function Input({
   };
 
   const sizeClasses = {
-    sm: "px-3 py-2",
-    md: "px-4 py-3",
-    lg: "px-5 py-4",
+    sm: "px-3",
+    md: "px-4",
+    lg: "px-5",
+  };
+
+  const inputHeights = {
+    sm: 44,
+    md: 52,
+    lg: 60,
   };
 
   const textSizes = {
@@ -63,6 +71,10 @@ export default function Input({
     .filter(Boolean)
     .join(" ");
 
+  const containerStyle = {
+    height: inputHeights[size],
+  };
+
   return (
     <View className={`${fullWidth ? "w-full" : ""} ${className}`}>
       {label && (
@@ -75,12 +87,23 @@ export default function Input({
         </Typography>
       )}
 
-      <View className={containerClasses}>
+      <View className={containerClasses} style={containerStyle}>
         {leftIcon && <View className="mr-3">{leftIcon}</View>}
 
         <TextInput
           className={`flex-1 ${textSizes[size]} text-stock-dark font-normal`}
           placeholderTextColor="#73767A"
+          textAlign={style?.textAlign || "center"}
+          textAlignVertical="center"
+          style={{
+            minHeight: inputHeights[size] - 8,
+            paddingVertical: 12,
+            paddingHorizontal: 4,
+            margin: 0,
+            lineHeight: size === "sm" ? 18 : size === "md" ? 20 : 22,
+            ...style,
+          }}
+          multiline={false}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           {...props}
