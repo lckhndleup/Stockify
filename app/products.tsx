@@ -165,6 +165,8 @@ export default function ProductsPage() {
   const tabs = [
     { id: "active", label: "Aktif Ürünler" },
     { id: "passive", label: "Pasif Ürünler" },
+    { id: "passisddsve", label: "Pasif Ürünler" },
+    { id: "passisddsssve", label: "Pasif Ürünler" },
   ];
 
   const handleSearch = (text: string) => {

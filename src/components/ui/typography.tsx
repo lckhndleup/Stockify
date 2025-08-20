@@ -32,6 +32,8 @@ interface TypographyProps extends TextProps {
   align?: "left" | "center" | "right" | "justify";
   className?: string;
   style?: any;
+  numberOfLines?: number;
+  ellipsizeMode?: "head" | "middle" | "tail" | "clip";
 }
 
 export default function Typography({
@@ -43,6 +45,8 @@ export default function Typography({
   align,
   className = "",
   style,
+  numberOfLines,
+  ellipsizeMode,
   ...props
 }: TypographyProps) {
   const variantStyles = {
@@ -113,7 +117,13 @@ export default function Typography({
     .join(" ");
 
   return (
-    <Text className={classes} style={style} {...props}>
+    <Text
+      className={classes}
+      style={style}
+      numberOfLines={numberOfLines}
+      ellipsizeMode={ellipsizeMode}
+      {...props}
+    >
       {children}
     </Text>
   );

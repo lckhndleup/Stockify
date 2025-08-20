@@ -25,10 +25,33 @@ export default function Tab({
   variant = "pills",
   size = "md",
 }: TabProps) {
+  // Dinamik font size hesaplama
+  const calculateFontSize = (tabCount: number, baseSize: string) => {
+    const baseSizes = { sm: 14, md: 16, lg: 18 };
+    const baseValue = baseSizes[size];
+
+    // Tab sayısına göre font size azaltma
+    if (tabCount <= 2) return baseValue;
+    if (tabCount === 3) return Math.max(baseValue - 1, 12);
+    if (tabCount === 4) return Math.max(baseValue - 2, 11);
+    if (tabCount === 5) return Math.max(baseValue - 3, 10);
+    return Math.max(baseValue - 4, 9); // 6+ tab için minimum 9px
+  };
+
+  // Dinamik padding hesaplama
+  const calculatePadding = (tabCount: number) => {
+    if (tabCount <= 2) return "px-4 py-3";
+    if (tabCount <= 4) return "px-3 py-3";
+    return "px-2 py-3"; // 5+ tab için daha az padding
+  };
+
+  const dynamicFontSize = calculateFontSize(tabs.length, size);
+  const dynamicPadding = calculatePadding(tabs.length);
+
   const sizeClasses = {
-    sm: { padding: "px-3 py-2", text: "sm" },
-    md: { padding: "px-4 py-3", text: "base" },
-    lg: { padding: "px-6 py-4", text: "lg" },
+    sm: { padding: dynamicPadding, text: "sm" },
+    md: { padding: dynamicPadding, text: "base" },
+    lg: { padding: dynamicPadding, text: "lg" },
   };
 
   const variantStyles = {
@@ -65,8 +88,6 @@ export default function Tab({
           {tabs.map((tab, index) => {
             const isActive = tab.id === activeTab;
             const isDisabled = tab.disabled;
-            const isFirst = index === 0;
-            const isLast = index === tabs.length - 1;
 
             return (
               <TouchableOpacity
@@ -88,7 +109,6 @@ export default function Tab({
               >
                 <Typography
                   variant="body"
-                  size={currentSize.text as any}
                   weight={isActive ? "semibold" : "medium"}
                   className={`
                     ${
@@ -98,6 +118,12 @@ export default function Tab({
                     }
                     ${isDisabled ? "opacity-60" : ""}
                   `}
+                  style={{
+                    fontSize: dynamicFontSize,
+                    lineHeight: dynamicFontSize + 4,
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   {tab.label}
                 </Typography>
