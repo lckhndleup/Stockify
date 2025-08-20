@@ -3,6 +3,7 @@ import {
   TouchableOpacity,
   TouchableOpacityProps,
   ActivityIndicator,
+  View,
 } from "react-native";
 import Typography from "./typography";
 
@@ -78,7 +79,7 @@ export default function Button({
     "flex-row",
     "items-center",
     "justify-center",
-    "space-x-2",
+    // space-x-3 kaldırıldı, çünkü doğrudan margin kullanıyoruz
     sizeClasses[size],
     variantClasses[variant],
     fullWidth && "w-full",
@@ -103,18 +104,42 @@ export default function Button({
         />
       )}
 
-      {!loading && leftIcon && leftIcon}
+      {!loading && leftIcon && (
+        <View
+          style={{
+            height: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 8, // Doğrudan margin ekleyerek boşluk oluşturuyoruz
+          }}
+        >
+          {leftIcon}
+        </View>
+      )}
 
       <Typography
         variant="body"
         size={textSizes[size] as any}
         weight="semibold"
-        className={textColors[variant]}
+        className={`${textColors[variant]}`}
       >
         {children}
       </Typography>
 
-      {!loading && rightIcon && rightIcon}
+      {!loading && rightIcon && (
+        <View
+          style={{
+            height: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginLeft: 8, // Sağ ikonlar için sol margin ekliyoruz
+          }}
+        >
+          {rightIcon}
+        </View>
+      )}
     </TouchableOpacity>
   );
 }

@@ -579,7 +579,7 @@ export default function BrokersPage() {
                   <Icon
                     family="MaterialIcons"
                     name="add"
-                    size={20}
+                    size={18}
                     color="white"
                   />
                 }
@@ -616,8 +616,8 @@ export default function BrokersPage() {
                 leftIcon={
                   <Icon
                     family="MaterialIcons"
-                    name="add_shopping_cart"
-                    size={20}
+                    name="sell"
+                    size={18}
                     color="white"
                   />
                 }
