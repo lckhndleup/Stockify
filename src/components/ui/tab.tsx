@@ -41,8 +41,8 @@ export default function Tab({
   // Dinamik padding hesaplama
   const calculatePadding = (tabCount: number) => {
     if (tabCount <= 2) return "px-4 py-3";
-    if (tabCount <= 4) return "px-3 py-3";
-    return "px-2 py-3"; // 5+ tab için daha az padding
+    if (tabCount <= 4) return "px-3 py-2";
+    return "px-2 py-1"; // 5+ tab için daha az padding
   };
 
   const dynamicFontSize = calculateFontSize(tabs.length, size);
@@ -56,7 +56,7 @@ export default function Tab({
 
   const variantStyles = {
     default: {
-      container: "bg-stock-gray rounded-lg p-1 border border-stock-border",
+      container: "bg-stock-gray rounded-lg border border-stock-border p-1",
       active: "bg-stock-red shadow-sm",
       inactive: "bg-transparent",
       activeText: "text-stock-white",

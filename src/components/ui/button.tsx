@@ -60,11 +60,12 @@ export default function Button({
     ghost: "text-stock-dark",
   };
 
+  // Tüm boyutlar için standart yükseklik (52px) ayarlanıyor, padding-x değerleri korunuyor
   const sizeClasses = {
-    sm: "px-3 py-2",
-    md: "px-6 py-3",
-    lg: "px-8 py-4",
-    xl: "px-10 py-5",
+    sm: "px-3", // py değerleri kaldırıldı, çünkü height ile ayarlanacak
+    md: "px-6",
+    lg: "px-8",
+    xl: "px-10",
   };
 
   const textSizes = {
@@ -75,10 +76,11 @@ export default function Button({
   };
 
   const baseClasses = [
-    "rounded-lg",
+    "rounded-lg", // Tüm komponentlerde tutarlı border radius
     "flex-row",
     "items-center",
     "justify-center",
+    "border border-stock-border", // SearchBar ile tutarlı border eklendi
     // space-x-3 kaldırıldı, çünkü doğrudan margin kullanıyoruz
     sizeClasses[size],
     variantClasses[variant],
@@ -95,6 +97,7 @@ export default function Button({
       disabled={isDisabled}
       onPress={onPress}
       activeOpacity={0.8}
+      style={[{ height: 52 }, props.style]} // Standart 52px yükseklik eklendi
       {...props}
     >
       {loading && (
