@@ -13,6 +13,7 @@ interface InputProps extends TextInputProps {
   fullWidth?: boolean;
   className?: string;
   inputClassName?: string;
+  style?: any;
 }
 
 export default function Input({
@@ -26,20 +27,27 @@ export default function Input({
   fullWidth = true,
   className = "",
   inputClassName = "",
+  style,
   ...props
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
 
   const variantClasses = {
-    default: "border-b border-gray-300 bg-transparent",
-    outlined: "border border-gray-300 rounded-lg bg-white",
-    filled: "bg-gray-100 border border-gray-200 rounded-lg",
+    default: "border-b border-stock-border bg-transparent",
+    outlined: "border border-stock-border rounded-lg bg-stock-white",
+    filled: "bg-stock-gray border border-stock-border rounded-lg",
   };
 
   const sizeClasses = {
-    sm: "px-3 py-2",
-    md: "px-4 py-3",
-    lg: "px-5 py-4",
+    sm: "px-3",
+    md: "px-4",
+    lg: "px-5",
+  };
+
+  const inputHeights = {
+    sm: 44,
+    md: 52,
+    lg: 60,
   };
 
   const textSizes = {
@@ -48,8 +56,8 @@ export default function Input({
     lg: "text-lg",
   };
 
-  const focusClasses = isFocused ? "border-primary-500" : "";
-  const errorClasses = error ? "border-red-500" : "";
+  const focusClasses = isFocused ? "border-stock-red" : "";
+  const errorClasses = error ? "border-stock-red" : "";
 
   const containerClasses = [
     "flex-row items-center",
@@ -63,24 +71,42 @@ export default function Input({
     .filter(Boolean)
     .join(" ");
 
+  const containerStyle = {
+    height: inputHeights[size],
+  };
+
   return (
     <View className={`${fullWidth ? "w-full" : ""} ${className}`}>
       {label && (
         <Typography
           variant="caption"
           weight="medium"
-          className="mb-2 text-gray-700"
+          className="mb-2 text-stock-dark"
         >
           {label}
         </Typography>
       )}
 
-      <View className={containerClasses}>
+      <View className={containerClasses} style={containerStyle}>
         {leftIcon && <View className="mr-3">{leftIcon}</View>}
 
         <TextInput
-          className={`flex-1 ${textSizes[size]} text-gray-900 font-normal`}
-          placeholderTextColor="#9CA3AF"
+          className={`flex-1 ${textSizes[size]} text-stock-dark font-normal`}
+          placeholderTextColor="#73767A"
+          textAlign={
+            style?.textAlign ||
+            (props.keyboardType === "numeric" ? "left" : "left")
+          }
+          textAlignVertical="center"
+          style={{
+            minHeight: inputHeights[size] - 8,
+            paddingVertical: 12,
+            paddingHorizontal: 4,
+            margin: 0,
+            lineHeight: size === "sm" ? 18 : size === "md" ? 20 : 22,
+            ...style,
+          }}
+          multiline={false}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           {...props}
@@ -92,7 +118,7 @@ export default function Input({
       {(error || helperText) && (
         <Typography
           variant="caption"
-          className={`mt-1 ${error ? "text-red-600" : "text-gray-500"}`}
+          className={`mt-1 ${error ? "text-stock-red" : "text-stock-text"}`}
         >
           {error || helperText}
         </Typography>

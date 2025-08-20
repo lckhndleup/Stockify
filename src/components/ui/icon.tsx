@@ -30,7 +30,7 @@ export default function Icon({
   family = "MaterialIcons",
   name,
   size = 24,
-  color = "#374151",
+  color = "#6D706F", // Default icon color (text-tertiary)
   pressable = false,
   onPress,
   className = "",

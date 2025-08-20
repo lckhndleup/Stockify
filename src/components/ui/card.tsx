@@ -27,10 +27,10 @@ export default function Card({
   ...props
 }: CardProps) {
   const variantClasses = {
-    default: "bg-white border border-gray-200",
-    elevated: "bg-white shadow-lg",
-    outlined: "bg-transparent border-2 border-gray-300",
-    filled: "bg-gray-50 border border-gray-100",
+    default: "bg-surface-primary border border-border-default",
+    elevated: "bg-surface-primary shadow-lg",
+    outlined: "bg-transparent border-2 border-border-dark",
+    filled: "bg-surface-secondary border border-border-light",
   };
 
   const paddingClasses = {

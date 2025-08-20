@@ -40,23 +40,23 @@ export default function Button({
   const isDisabled = disabled || loading;
 
   const variantClasses = {
-    primary: "bg-primary-600 active:bg-primary-700",
-    secondary: "bg-gray-600 active:bg-gray-700",
-    success: "bg-green-600 active:bg-green-700",
-    danger: "bg-red-600 active:bg-red-700",
-    warning: "bg-orange-600 active:bg-orange-700",
-    outline: "border-2 border-primary-600 bg-transparent active:bg-primary-50",
-    ghost: "bg-transparent active:bg-gray-100",
+    primary: "bg-stock-red active:bg-[#CC0018]",
+    secondary: "bg-stock-gray active:bg-[#E5E8F0]",
+    success: "bg-green-500 active:bg-green-600",
+    danger: "bg-stock-red active:bg-[#CC0018]",
+    warning: "bg-yellow-500 active:bg-yellow-600",
+    outline: "border-2 border-stock-red bg-transparent active:bg-[#FFF1F2]",
+    ghost: "bg-transparent active:bg-stock-gray",
   };
 
   const textColors = {
-    primary: "text-white",
-    secondary: "text-white",
+    primary: "text-stock-white",
+    secondary: "text-stock-dark",
     success: "text-white",
-    danger: "text-white",
+    danger: "text-stock-white",
     warning: "text-white",
-    outline: "text-primary-600",
-    ghost: "text-gray-700",
+    outline: "text-stock-red",
+    ghost: "text-stock-dark",
   };
 
   const sizeClasses = {
@@ -99,7 +99,7 @@ export default function Button({
       {loading && (
         <ActivityIndicator
           size="small"
-          color={textColors[variant].includes("white") ? "white" : "#0284c7"}
+          color={textColors[variant].includes("white") ? "white" : "#E3001B"}
         />
       )}
 
