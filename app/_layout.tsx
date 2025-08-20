@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import Providers from "@/src/components/common/Providers";
-import { BottomNavigation } from "@/src/components/ui";
+
 import "../global.css";
 
 export default function RootLayout() {
@@ -20,40 +20,39 @@ export default function RootLayout() {
               fontWeight: "bold",
             },
             contentStyle: {
-              paddingBottom: 90, // BottomNavigation için alan bırakın
-            }
+              paddingBottom: 0,
+            },
           }}
-      >
-        <Stack.Screen
-          name="index"
-          options={{
-            title: "Stockify",
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="products"
-          options={{
-            title: "Ürünler",
-            headerShown: true,
-          }}
-        />
-        <Stack.Screen
-          name="brokers"
-          options={{
-            title: "Aracılar",
-            headerShown: true,
-          }}
-        />
-        <Stack.Screen
-          name="stock"
-          options={{
-            title: "Stok Takip",
-            headerShown: true,
-          }}
-        />
-      </Stack>
-        <BottomNavigation className="absolute bottom-10 left-5 right-5" />
+        >
+          <Stack.Screen
+            name="index"
+            options={{
+              title: "Stockify",
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="products"
+            options={{
+              title: "Ürünler",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="brokers"
+            options={{
+              title: "Aracılar",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="stock"
+            options={{
+              title: "Stok Takip",
+              headerShown: true,
+            }}
+          />
+        </Stack>
       </View>
     </Providers>
   );
