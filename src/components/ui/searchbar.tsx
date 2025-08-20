@@ -35,7 +35,7 @@ export default function SearchBar({
         textAlign="left"
         textAlignVertical="center"
         style={{
-          minHeight: 44,
+          height: 52,
           paddingVertical: 12,
           paddingHorizontal: 4,
           margin: 0,

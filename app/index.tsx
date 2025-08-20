@@ -38,6 +38,16 @@ export default function HomePage() {
   return (
     <Container className="bg-white" padding="sm">
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Uygulama Adı */}
+        <Typography
+          variant="h1"
+          weight="bold"
+          size="xl"
+          className="text-stock-red mb-4 mt-1"
+        >
+          Stockify
+        </Typography>
+
         {/* SearchBar */}
         <SearchBar
           placeholder="Ara..."

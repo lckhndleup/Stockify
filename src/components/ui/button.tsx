@@ -3,6 +3,7 @@ import {
   TouchableOpacity,
   TouchableOpacityProps,
   ActivityIndicator,
+  View,
 } from "react-native";
 import Typography from "./typography";
 
@@ -59,11 +60,12 @@ export default function Button({
     ghost: "text-stock-dark",
   };
 
+  // Tüm boyutlar için standart yükseklik (52px) ayarlanıyor, padding-x değerleri korunuyor
   const sizeClasses = {
-    sm: "px-3 py-2",
-    md: "px-6 py-3",
-    lg: "px-8 py-4",
-    xl: "px-10 py-5",
+    sm: "px-3", // py değerleri kaldırıldı, çünkü height ile ayarlanacak
+    md: "px-6",
+    lg: "px-8",
+    xl: "px-10",
   };
 
   const textSizes = {
@@ -74,11 +76,12 @@ export default function Button({
   };
 
   const baseClasses = [
-    "rounded-lg",
+    "rounded-lg", // Tüm komponentlerde tutarlı border radius
     "flex-row",
     "items-center",
     "justify-center",
-    "space-x-2",
+    "border border-stock-border", // SearchBar ile tutarlı border eklendi
+    // space-x-3 kaldırıldı, çünkü doğrudan margin kullanıyoruz
     sizeClasses[size],
     variantClasses[variant],
     fullWidth && "w-full",
@@ -94,6 +97,7 @@ export default function Button({
       disabled={isDisabled}
       onPress={onPress}
       activeOpacity={0.8}
+      style={[{ height: 52 }, props.style]} // Standart 52px yükseklik eklendi
       {...props}
     >
       {loading && (
@@ -103,18 +107,42 @@ export default function Button({
         />
       )}
 
-      {!loading && leftIcon && leftIcon}
+      {!loading && leftIcon && (
+        <View
+          style={{
+            height: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 8, // Doğrudan margin ekleyerek boşluk oluşturuyoruz
+          }}
+        >
+          {leftIcon}
+        </View>
+      )}
 
       <Typography
         variant="body"
         size={textSizes[size] as any}
         weight="semibold"
-        className={textColors[variant]}
+        className={`${textColors[variant]}`}
       >
         {children}
       </Typography>
 
-      {!loading && rightIcon && rightIcon}
+      {!loading && rightIcon && (
+        <View
+          style={{
+            height: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginLeft: 8, // Sağ ikonlar için sol margin ekliyoruz
+          }}
+        >
+          {rightIcon}
+        </View>
+      )}
     </TouchableOpacity>
   );
 }

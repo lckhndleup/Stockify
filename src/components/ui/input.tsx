@@ -34,7 +34,7 @@ export default function Input({
 
   const variantClasses = {
     default: "border-b border-stock-border bg-transparent",
-    outlined: "border border-stock-border rounded-lg bg-stock-white",
+    outlined: "border border-stock-border rounded-lg bg-stock-white", // rounded-lg zaten standart
     filled: "bg-stock-gray border border-stock-border rounded-lg",
   };
 
@@ -45,9 +45,9 @@ export default function Input({
   };
 
   const inputHeights = {
-    sm: 44,
+    sm: 52, // Tüm yükseklikler 52px olarak standartlaştırıldı
     md: 52,
-    lg: 60,
+    lg: 52,
   };
 
   const textSizes = {
