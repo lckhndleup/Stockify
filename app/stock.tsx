@@ -353,18 +353,18 @@ export default function StockPage() {
         />
 
         {/* İstatistikler */}
-        <View className="flex-row mb-4">
-          <View className="flex-1 mr-2">
-            <Card
-              variant="default"
-              padding="sm"
-              className="bg-blue-50 border border-blue-200"
-              radius="md"
-            >
+        <View className="flex-row mb-4 gap-2">
+          <Card
+            variant="default"
+            padding="sm"
+            className="flex-1 bg-blue-50 border border-blue-200 h-[90px] justify-center"
+            radius="md"
+          >
+            <View className="items-center">
               <Typography
                 variant="caption"
                 size="xs"
-                className="text-blue-700"
+                className="text-blue-700 mb-1"
                 weight="medium"
               >
                 TOPLAM DEĞER
@@ -377,20 +377,20 @@ export default function StockPage() {
               >
                 ₺{calculateTotalStockValue().toLocaleString()}
               </Typography>
-            </Card>
-          </View>
+            </View>
+          </Card>
 
-          <View className="flex-1 mx-1">
-            <Card
-              variant="default"
-              padding="sm"
-              className="bg-yellow-50 border border-yellow-200"
-              radius="md"
-            >
+          <Card
+            variant="default"
+            padding="sm"
+            className="flex-1 bg-yellow-50 border border-yellow-200 h-[90px] justify-center"
+            radius="md"
+          >
+            <View className="items-center">
               <Typography
                 variant="caption"
                 size="xs"
-                className="text-yellow-700"
+                className="text-yellow-700 mb-1"
                 weight="medium"
               >
                 KRİTİK STOK
@@ -403,20 +403,20 @@ export default function StockPage() {
               >
                 {getCriticalProductsCount()} Ürün
               </Typography>
-            </Card>
-          </View>
+            </View>
+          </Card>
 
-          <View className="flex-1 ml-2">
-            <Card
-              variant="default"
-              padding="sm"
-              className="bg-red-50 border border-red-200"
-              radius="md"
-            >
+          <Card
+            variant="default"
+            padding="sm"
+            className="flex-1 bg-red-50 border border-red-200 h-[90px] justify-center"
+            radius="md"
+          >
+            <View className="items-center">
               <Typography
                 variant="caption"
                 size="xs"
-                className="text-red-700"
+                className="text-red-700 mb-1"
                 weight="medium"
               >
                 TÜKENEN
@@ -429,8 +429,8 @@ export default function StockPage() {
               >
                 {getOutOfStockCount()} Ürün
               </Typography>
-            </Card>
-          </View>
+            </View>
+          </Card>
         </View>
 
         {/* Tab'lar */}
@@ -571,15 +571,20 @@ export default function StockPage() {
         height="medium"
       >
         {selectedProduct && (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={{ flex: 1 }}
-            contentContainerStyle={{
-              flexGrow: 1,
+          <View
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
               justifyContent: "space-between",
             }}
           >
-            <View>
+            {/* Üst kısım - İçerik */}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 4 }}
+            >
               <View className="bg-stock-gray p-4 rounded-lg mb-4">
                 <Typography
                   variant="body"
@@ -604,7 +609,7 @@ export default function StockPage() {
                 placeholder="0"
                 variant="outlined"
                 keyboardType="numeric"
-                className="mb-4"
+                className="mb-3"
               />
 
               <Input
@@ -613,11 +618,11 @@ export default function StockPage() {
                 onChangeText={setUpdateReason}
                 placeholder="Stok güncelleme sebebi..."
                 variant="outlined"
-                className="mb-4"
+                className="mb-3"
               />
 
               {updateQuantity && (
-                <View className="bg-blue-50 p-4 rounded-lg mb-6">
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
                   <Typography
                     variant="caption"
                     className="text-blue-700"
@@ -635,12 +640,13 @@ export default function StockPage() {
                   </Typography>
                 </View>
               )}
-            </View>
+            </ScrollView>
 
-            <View className="mt-6">
+            {/* Alt kısım - Butonlar */}
+            <View className="mt-2 mb-2">
               <Button
                 variant="outline"
-                className="w-full border-stock-border mb-6"
+                className="w-full border-stock-border mb-2"
                 onPress={handleCloseUpdateBottomSheet}
               >
                 <Typography className="text-stock-dark">İptal</Typography>
@@ -653,7 +659,7 @@ export default function StockPage() {
                 <Typography className="text-white">Güncelle</Typography>
               </Button>
             </View>
-          </ScrollView>
+          </View>
         )}
       </BottomSheet>
     </Container>

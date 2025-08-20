@@ -38,9 +38,9 @@ export default function BottomSheet({
   ...props
 }: BottomSheetProps) {
   const heightClasses = {
-    small: screenHeight * 0.5, // 50% ekran - artırıldı
-    medium: screenHeight * 0.8, // 80% ekran - artırıldı
-    large: screenHeight * 0.9, // 90% ekran - artırıldı
+    small: screenHeight * 0.5, // 50% ekran
+    medium: screenHeight * 0.85, // 85% ekran - daha fazla içerik sığdırmak için artırıldı
+    large: screenHeight * 0.9, // 90% ekran
     full: screenHeight * 0.95, // 95% ekran
   };
 
