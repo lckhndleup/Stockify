@@ -57,7 +57,7 @@ export default function BottomNavigation({
       <View className="flex-row items-center h-full" style={{ gap: 8 }}>
         {/* Soldaki menü grubu - artık daha geniş */}
         <View
-          className="bg-[#222222] rounded-full flex-row items-center overflow-hidden flex-1"
+          className="bg-stock-black rounded-full flex-row items-center overflow-hidden flex-1"
           style={{
             height: 58,
             paddingHorizontal: 4,
@@ -114,7 +114,7 @@ export default function BottomNavigation({
               height: 58,
               width: 58,
               aspectRatio: 1,
-              shadowColor: "#E3001B",
+              shadowColor: "#E3001B", // stock-red
               shadowOffset: { width: 0, height: 3 },
               shadowOpacity: 0.3,
               shadowRadius: 5,
@@ -122,7 +122,7 @@ export default function BottomNavigation({
             }}
             activeOpacity={0.8}
           >
-            <Icon family="MaterialIcons" name="add" size={28} color="#FFFFFF" />
+            <Icon family="MaterialIcons" name="add" size={28} color="#FFFEFF" />
           </TouchableOpacity>
         </Link>
       </View>
