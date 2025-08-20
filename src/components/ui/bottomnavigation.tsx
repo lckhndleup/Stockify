@@ -48,14 +48,10 @@ export default function BottomNavigation({
 
   return (
     <View
-      className={`bg-transparent ${className}`}
+      className={`${className}`}
       style={{
         height: 58,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 10,
+        backgroundColor: "transparent",
       }}
     >
       <View className="flex-row items-center h-full" style={{ gap: 8 }}>
@@ -74,10 +70,15 @@ export default function BottomNavigation({
             return (
               <Link key={index} href={item.path as any} asChild>
                 <TouchableOpacity
-                  className={`px-4 py-2 flex-row items-center rounded-full ${
-                    isActive ? "bg-stock-gray" : "bg-transparent"
+                  className={`py-2 flex-row items-center rounded-full ${
+                    isActive ? "bg-stock-gray px-6" : "bg-transparent px-3"
                   }`}
-                  style={{ flex: 1, height: 50, justifyContent: "center" }}
+                  style={{
+                    flex: isActive ? 1.7 : 1,
+                    height: 50,
+                    justifyContent: "center",
+                    minWidth: isActive ? 60 : 50,
+                  }}
                   activeOpacity={0.7}
                 >
                   <Icon
