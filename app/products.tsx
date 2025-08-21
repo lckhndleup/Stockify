@@ -99,14 +99,13 @@ const CATEGORIES = [
   { label: "Kuru Meyve", value: "kuru_meyve" },
 ];
 
-// Ürün interface'i
+// Ürün interface'i - Adet bazına güncellendi
 interface Product {
   id: string;
   name: string;
   category: string;
-  stock: number;
-  price: number;
-  unit: string;
+  stock: number; // Artık adet cinsinden
+  price: number; // Artık adet başına fiyat
   isActive: boolean; // Aktif/Pasif durumu
 }
 
@@ -121,42 +120,38 @@ export default function ProductsPage() {
   const [productPrice, setProductPrice] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Mock ürünler listesi - gerçek uygulamada state management ile gelecek
+  // Mock ürünler listesi - Adet bazında güncellendi
   const [products, setProducts] = useState<Product[]>([
     {
       id: "1",
-      name: "Antep Fıstığı (Çiğ)",
+      name: "Antep Fıstığı Paketi (200g)",
       category: "kuruyemis",
-      stock: 45,
-      price: 850,
-      unit: "kg",
+      stock: 45, // 45 adet paket
+      price: 85, // 85 TL per paket
       isActive: true,
     },
     {
       id: "2",
-      name: "Ceviz İçi",
+      name: "Ceviz İçi Paketi (250g)",
       category: "kuruyemis",
-      stock: 23,
-      price: 320,
-      unit: "kg",
+      stock: 23, // 23 adet paket
+      price: 32, // 32 TL per paket
       isActive: true,
     },
     {
       id: "3",
-      name: "Badem (Kabuklu)",
+      name: "Badem Paketi (300g)",
       category: "kuruyemis",
-      stock: 78,
-      price: 290,
-      unit: "kg",
+      stock: 78, // 78 adet paket
+      price: 45, // 45 TL per paket
       isActive: true,
     },
     {
       id: "4",
-      name: "Kaju",
+      name: "Kaju Paketi (150g)",
       category: "kuruyemis",
-      stock: 12,
-      price: 450,
-      unit: "kg",
+      stock: 12, // 12 adet paket
+      price: 65, // 65 TL per paket
       isActive: true,
     },
   ]);
@@ -195,7 +190,7 @@ export default function ProductsPage() {
 
     Alert.alert(
       "Ürün Ekle",
-      `"${productName}" ürününü eklemek istediğinizden emin misiniz?\n\nStok: ${stock} kg\nFiyat: ₺${price}/kg`,
+      `"${productName}" ürününü eklemek istediğinizden emin misiniz?\n\nStok: ${stock} adet\nFiyat: ₺${price}/adet`,
       [
         {
           text: "İptal",
@@ -212,7 +207,6 @@ export default function ProductsPage() {
               category: selectedCategory,
               stock: stock,
               price: price,
-              unit: "kg",
               isActive: true, // Yeni ürünler varsayılan olarak aktif
             };
 
@@ -249,7 +243,7 @@ export default function ProductsPage() {
 
     Alert.alert(
       "Ürün Güncelle",
-      `"${productName}" ürününü güncellemek istediğinizden emin misiniz?\n\nYeni Bilgiler:\nStok: ${stock} kg\nFiyat: ₺${price}/kg`,
+      `"${productName}" ürününü güncellemek istediğinizden emin misiniz?\n\nYeni Bilgiler:\nStok: ${stock} adet\nFiyat: ₺${price}/adet`,
       [
         {
           text: "İptal",
@@ -332,7 +326,7 @@ export default function ProductsPage() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Search ve Add Butonu - Homepage gibi spacing */}
+        {/* Search ve Add Butonu */}
         <View className="flex-row items-center mb-3">
           <SearchBar
             placeholder="Ürün ara..."
@@ -387,8 +381,7 @@ export default function ProductsPage() {
                     size="sm"
                     className="text-stock-text mt-1"
                   >
-                    Stok: {product.stock} {product.unit} • Fiyat: ₺
-                    {product.price}/{product.unit}
+                    Stok: {product.stock} adet • Fiyat: ₺{product.price}/adet
                   </Typography>
                 </View>
 
@@ -467,34 +460,34 @@ export default function ProductsPage() {
             label="Ürün Adı"
             value={productName}
             onChangeText={setProductName}
-            placeholder="Ürün adını girin..."
+            placeholder="Ürün adını girin... (örn: Antep Fıstığı Paketi 200g)"
             variant="outlined"
             className="mb-4"
           />
 
-          {/* Stok Miktarı */}
+          {/* Stok Adedi */}
           <Input
-            label="Stok Miktarı (kg)"
+            label="Stok Adedi"
             value={productStock}
             onChangeText={setProductStock}
-            placeholder="0"
+            placeholder="Kaç adet var?"
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
           />
 
-          {/* Fiyat */}
+          {/* Adet Fiyatı */}
           <Input
-            label="Fiyat (₺/kg)"
+            label="Adet Fiyatı (₺)"
             value={productPrice}
             onChangeText={setProductPrice}
-            placeholder="0"
+            placeholder="Bir adet kaç TL?"
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
           />
 
-          {/* Butonlar - Alt Alta */}
+          {/* Butonlar */}
           <View className="mt-6">
             <Button
               variant="primary"
@@ -545,29 +538,29 @@ export default function ProductsPage() {
             className="mb-4"
           />
 
-          {/* Stok Miktarı */}
+          {/* Stok Adedi */}
           <Input
-            label="Stok Miktarı (kg)"
+            label="Stok Adedi"
             value={productStock}
             onChangeText={setProductStock}
-            placeholder="0"
+            placeholder="Kaç adet var?"
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
           />
 
-          {/* Fiyat */}
+          {/* Adet Fiyatı */}
           <Input
-            label="Fiyat (₺/kg)"
+            label="Adet Fiyatı (₺)"
             value={productPrice}
             onChangeText={setProductPrice}
-            placeholder="0"
+            placeholder="Bir adet kaç TL?"
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
           />
 
-          {/* Butonlar - Alt Alta */}
+          {/* Butonlar */}
           <View className="mt-6">
             <Button
               variant="primary"
