@@ -10,6 +10,8 @@ import {
   SearchBar,
   Icon,
 } from "@/src/components/ui";
+import Toast from "@/src/components/ui/toast";
+import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
 import DebugPanel from "@/src/components/ui/debugPanel";
 
@@ -17,6 +19,7 @@ export default function HomePage() {
   const { t } = useTranslation();
   const [searchText, setSearchText] = useState("");
   const { user, logout } = useAuthStore();
+  const { toast, hideToast } = useToast();
 
   const handleSearch = (text: string) => {
     setSearchText(text);
@@ -61,6 +64,14 @@ export default function HomePage() {
 
   return (
     <Container className="bg-white" padding="sm">
+      {/* Toast Notification */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with User Info and Logout */}
         <View className="flex-row items-start justify-between mb-4 mt-1">
