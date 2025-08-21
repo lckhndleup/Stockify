@@ -93,7 +93,7 @@ export default function HomePage() {
         </View>
 
         {/* Debug Panel */}
-        <DebugPanel />
+        {/* <DebugPanel /> */}
 
         {/* SearchBar */}
         <SearchBar
