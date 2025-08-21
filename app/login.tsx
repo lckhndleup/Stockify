@@ -7,7 +7,7 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { Image } from "expo-image";
+import BackgroundSvg from "@/src/components/svg/backgorundsvg";
 
 import {
   Container,
@@ -68,20 +68,16 @@ export default function LoginPage() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
         >
-          {/* Background Image - Üst Kısım */}
-          <View className="relative">
-            <Image
-              source={require("@/src/assets/bg.svg")}
-              style={{
-                width: "100%",
-                height: 280,
-                backgroundColor: "#E3001B", // Fallback color
-              }}
-              contentFit="cover"
-            />
+          {/* Background with Real SVG - Üst Kısım */}
+          <View className="relative" style={{ height: 280 }}>
+            {/* Gerçek SVG Background */}
+            <BackgroundSvg width={undefined} height={280} />
 
             {/* Logo/Title Overlay */}
-            <View className="absolute inset-0 items-center justify-center">
+            <View
+              className="absolute inset-0 items-center justify-center"
+              style={{ paddingBottom: 60 }}
+            >
               <Typography
                 variant="h1"
                 size="4xl"
@@ -89,13 +85,6 @@ export default function LoginPage() {
                 className="text-stock-white mb-2"
               >
                 Stockify
-              </Typography>
-              <Typography
-                variant="body"
-                size="lg"
-                className="text-stock-white/90"
-              >
-                Stok Yönetim Sistemi
               </Typography>
             </View>
           </View>
@@ -182,17 +171,6 @@ export default function LoginPage() {
                   label="Beni hatırla"
                   size="md"
                 />
-
-                {/* Forgot Password - İsteğe bağlı */}
-                {/* <TouchableOpacity>
-                  <Typography
-                    variant="caption"
-                    className="text-stock-red"
-                    weight="medium"
-                  >
-                    Şifremi unuttum
-                  </Typography>
-                </TouchableOpacity> */}
               </View>
             </View>
 
