@@ -14,6 +14,7 @@ module.exports = {
         "stock-red": "#E3001B", // Ana kırmızı
         "stock-gray": "#F4F7FB", // Pasif buton/tab
         "stock-white": "#FFFEFF", // Başlıklar
+        "stock-black": "#222222", // Navigation background ve text
         "stock-border": "#ECECEC", // Input border
         "stock-text": "#73767A", // Pasif text
         "stock-icon": "#6D706F", // İconlar

@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import Providers from "@/src/components/common/Providers";
-
+import { BottomNavigation } from "@/src/components/ui";
 import "../global.css";
 
 export default function RootLayout() {
@@ -18,9 +18,6 @@ export default function RootLayout() {
             headerTintColor: "#000",
             headerTitleStyle: {
               fontWeight: "bold",
-            },
-            contentStyle: {
-              paddingBottom: 0,
             },
           }}
         >
@@ -53,6 +50,7 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+        <BottomNavigation className="absolute bottom-10 left-2 right-2" />
       </View>
     </Providers>
   );

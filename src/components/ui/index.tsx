@@ -10,6 +10,7 @@ export { default as Modal } from "./modal";
 export { default as SearchBar } from "./searchbar";
 export { default as Tab } from "./tab";
 export { default as BottomSheet } from "./bottomsheet";
+export { default as BottomNavigation } from "./bottomnavigation";
 
 // Type Exports (optional, useful for TypeScript users)
 export type { default as ContainerProps } from "./container";
