@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -17,6 +17,8 @@ import {
   Icon,
   Checkbox,
 } from "@/src/components/ui";
+import Toast from "@/src/components/ui/toast";
+import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
 
 export default function LoginPage() {
@@ -25,9 +27,25 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, error, clearError } = useAuthStore();
+  const { toast, showError, hideToast } = useToast();
+
+  // Error'ı toast olarak göster
+  useEffect(() => {
+    if (error) {
+      showError(error);
+      // Error'ı temizle
+      const timer = setTimeout(() => {
+        clearError();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [error, showError, clearError]);
 
   const handleLogin = async () => {
+    // Error'ı temizle
+    clearError();
+
     // Validation
     if (!username.trim()) {
       Alert.alert("Hata", "Lütfen kullanıcı adınızı girin.");
@@ -50,12 +68,8 @@ export default function LoginPage() {
     if (success) {
       // Direkt ana sayfaya yönlendir
       router.replace("/");
-    } else {
-      Alert.alert(
-        "Giriş Hatası",
-        "Kullanıcı adı veya şifre hatalı.\n\nDeneyebileceğiniz hesaplar:\n• admin / 123456\n• stockify / password\n• test / test123"
-      );
     }
+    // Error handling artık store'da yapılıyor
   };
 
   return (
@@ -64,6 +78,14 @@ export default function LoginPage() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <Container className="bg-white" padding="none" safeTop={false}>
+        {/* Toast Notification */}
+        <Toast
+          visible={toast.visible}
+          message={toast.message}
+          type={toast.type}
+          onHide={hideToast}
+        />
+
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ flexGrow: 1 }}
@@ -179,7 +201,7 @@ export default function LoginPage() {
               variant="primary"
               size="lg"
               fullWidth
-              className="bg-stock-red mb-4"
+              className="bg-stock-red"
               onPress={handleLogin}
               loading={isLoading}
               disabled={isLoading}
@@ -188,26 +210,6 @@ export default function LoginPage() {
                 {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
               </Typography>
             </Button>
-
-            {/* Demo Credentials Info */}
-            <View className="bg-stock-gray p-4 rounded-lg">
-              <Typography
-                variant="caption"
-                className="text-stock-dark mb-2"
-                weight="medium"
-                align="center"
-              >
-                Demo Hesapları:
-              </Typography>
-              <Typography
-                variant="caption"
-                size="xs"
-                className="text-stock-text"
-                align="center"
-              >
-                admin / 123456 • stockify / password • test / test123
-              </Typography>
-            </View>
           </View>
         </ScrollView>
       </Container>

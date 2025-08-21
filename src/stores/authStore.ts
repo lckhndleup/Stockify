@@ -1,6 +1,8 @@
+// src/stores/authStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import apiService, { LoginRequest, ApiError } from "@/src/services/api";
 
 interface User {
   id: string;
@@ -11,9 +13,11 @@ interface User {
 
 interface AuthStore {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   rememberMe: boolean;
   isLoading: boolean;
+  error: string | null;
 
   // Actions
   login: (
@@ -23,81 +27,153 @@ interface AuthStore {
   ) => Promise<boolean>;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  clearError: () => void;
+  initializeAuth: () => void;
 }
-
-// Mock login function - gerçek uygulamada API çağrısı olacak
-const mockLogin = async (
-  username: string,
-  password: string
-): Promise<User | null> => {
-  // Simülasyon için 1 saniye bekle
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  // Basit validation - gerçek uygulamada API'den gelecek
-  const validCredentials = [
-    { username: "admin", password: "123456" },
-    { username: "stockify", password: "password" },
-    { username: "test", password: "test123" },
-  ];
-
-  const isValid = validCredentials.some(
-    (cred) => cred.username === username && cred.password === password
-  );
-
-  if (isValid) {
-    return {
-      id: Date.now().toString(),
-      username: username,
-      email: `${username}@stockify.com`,
-      loginTime: new Date().toISOString(),
-    };
-  }
-
-  return null;
-};
 
 const middleware = persist<AuthStore>(
   (set, get) => ({
     user: null,
+    token: null,
     isAuthenticated: false,
     rememberMe: false,
     isLoading: false,
+    error: null,
 
     login: async (username: string, password: string, rememberMe: boolean) => {
-      set({ isLoading: true });
+      set({ isLoading: true, error: null });
 
       try {
-        const user = await mockLogin(username, password);
+        console.log("🔐 Login attempt:", { username, rememberMe });
 
-        if (user) {
+        const credentials: LoginRequest = { username, password };
+        const response = await apiService.login(credentials);
+
+        console.log("✅ Login response:", response);
+
+        if (response.token) {
+          console.log("🎯 Token received:", {
+            tokenLength: response.token.length,
+            tokenPreview: response.token.substring(0, 20) + "...",
+            tokenType: typeof response.token,
+          });
+
+          // Token'ı API service'e set et
+          apiService.setToken(response.token);
+
+          // User objesi oluştur (API'den user bilgisi gelmediği için username'den oluşturuyoruz)
+          const user: User = {
+            id: Date.now().toString(), // Geçici ID
+            username: username,
+            email: `${username}@stockify.com`, // Geçici email
+            loginTime: new Date().toISOString(),
+          };
+
+          console.log("👤 User created:", user);
+
           set({
             user,
+            token: response.token,
             isAuthenticated: true,
             rememberMe,
             isLoading: false,
+            error: null,
           });
+
+          console.log("🎉 Login successful! State updated.");
           return true;
         } else {
-          set({ isLoading: false });
+          console.log("❌ No token in response:", response);
+          set({
+            isLoading: false,
+            error: "Giriş başarısız. Token alınamadı.",
+          });
           return false;
         }
       } catch (error) {
-        set({ isLoading: false });
+        // Console'da göster ama sessizce - kullanıcıya toast gösterme
+        console.log("❌ Login error (handled quietly):", error);
+
+        const apiError = error as ApiError;
+        let errorMessage = "Giriş başarısız.";
+
+        if (apiError.status === 401 || apiError.status === 500) {
+          // Backend hem 401 hem de 500 ile auth error dönebiliyor
+          if (
+            apiError.message?.toLowerCase().includes("bad credentials") ||
+            apiError.message?.toLowerCase().includes("unauthorized")
+          ) {
+            errorMessage = "Kullanıcı adı veya şifre hatalı.";
+          } else {
+            errorMessage =
+              "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.";
+          }
+        } else if (apiError.status === 0) {
+          errorMessage =
+            "Sunucuya bağlanılamıyor. Lütfen Docker'ın çalıştığından emin olun.";
+        } else if (apiError.message) {
+          errorMessage = apiError.message;
+        }
+
+        console.log(
+          "💔 Login failed - showing user friendly message:",
+          errorMessage
+        );
+
+        set({
+          isLoading: false,
+          error: errorMessage,
+          isAuthenticated: false,
+          user: null,
+          token: null,
+        });
+
         return false;
       }
     },
 
     logout: () => {
+      console.log("🚪 Logout triggered");
+
+      // API service'den token'ı temizle
+      apiService.clearToken();
+
       set({
         user: null,
+        token: null,
         isAuthenticated: false,
         rememberMe: false,
         isLoading: false,
+        error: null,
       });
+
+      console.log("✅ Logout completed - all state cleared");
     },
 
     setLoading: (loading: boolean) => {
       set({ isLoading: loading });
+    },
+
+    clearError: () => {
+      set({ error: null });
+    },
+
+    initializeAuth: () => {
+      const state = get();
+      console.log("🔄 Initializing auth:", {
+        hasToken: !!state.token,
+        isAuthenticated: state.isAuthenticated,
+        username: state.user?.username,
+        rememberMe: state.rememberMe,
+      });
+
+      if (state.token && state.isAuthenticated) {
+        // Uygulama başlarken token'ı API service'e set et
+        apiService.setToken(state.token);
+        console.log("🔑 Token restored to API service");
+      } else {
+        console.log("ℹ️ No token to restore");
+      }
     },
   }),
   {
@@ -108,22 +184,30 @@ const middleware = persist<AuthStore>(
       if (state.rememberMe) {
         return {
           user: state.user,
+          token: state.token,
           isAuthenticated: state.isAuthenticated,
           rememberMe: state.rememberMe,
           isLoading: false,
+          error: null,
           login: state.login,
           logout: state.logout,
           setLoading: state.setLoading,
+          clearError: state.clearError,
+          initializeAuth: state.initializeAuth,
         };
       }
       return {
         user: null,
+        token: null,
         isAuthenticated: false,
         rememberMe: false,
         isLoading: false,
+        error: null,
         login: state.login,
         logout: state.logout,
         setLoading: state.setLoading,
+        clearError: state.clearError,
+        initializeAuth: state.initializeAuth,
       };
     },
   }

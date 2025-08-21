@@ -9,36 +9,60 @@ import { useAuthStore } from "@/src/stores/authStore";
 import "../global.css";
 
 export default function RootLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, initializeAuth } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
   const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   // Navigation hazır olduğunda auth kontrolü yap
   useEffect(() => {
+    console.log("📱 RootLayout mounted");
     // Navigation'ın mount olması için kısa bir gecikme
     const timer = setTimeout(() => {
       setIsNavigationReady(true);
+      console.log("✅ Navigation ready");
     }, 100);
 
     return () => clearTimeout(timer);
   }, []);
 
+  // Auth initialization - token'ı API service'e restore et
+  useEffect(() => {
+    if (isNavigationReady) {
+      console.log("🔄 Starting auth initialization...");
+      initializeAuth();
+    }
+  }, [isNavigationReady, initializeAuth]);
+
   // Auth kontrolü - sadece navigation hazır olduğunda
   useEffect(() => {
     if (!isNavigationReady) return;
+
+    console.log("🔍 Auth check:", {
+      pathname,
+      isAuthenticated,
+      shouldRedirect: pathname !== "/login" && !isAuthenticated,
+    });
 
     // Login sayfasındaysa hiçbir şey yapma
     if (pathname === "/login") return;
 
     // Eğer giriş yapmamışsa login sayfasına yönlendir
     if (!isAuthenticated) {
+      console.log("🔄 Redirecting to login...");
       router.replace("/login");
     }
   }, [isAuthenticated, pathname, isNavigationReady]);
 
   // Login sayfasında BottomNavigation gösterme
   const shouldShowBottomNav = isAuthenticated && pathname !== "/login";
+
+  console.log("🎯 RootLayout render:", {
+    pathname,
+    isAuthenticated,
+    shouldShowBottomNav,
+    isNavigationReady,
+  });
 
   return (
     <Providers>
