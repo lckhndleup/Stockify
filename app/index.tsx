@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 
@@ -10,14 +10,37 @@ import {
   SearchBar,
   Icon,
 } from "@/src/components/ui";
+import { useAuthStore } from "@/src/stores/authStore";
 
 export default function HomePage() {
   const { t } = useTranslation();
   const [searchText, setSearchText] = useState("");
+  const { user, logout } = useAuthStore();
 
   const handleSearch = (text: string) => {
     setSearchText(text);
     console.log("Arama yapılıyor:", text);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Çıkış Yap",
+      "Hesabınızdan çıkış yapmak istediğinizden emin misiniz?",
+      [
+        {
+          text: "İptal",
+          style: "cancel",
+        },
+        {
+          text: "Çıkış Yap",
+          style: "destructive",
+          onPress: () => {
+            logout();
+            router.replace("/login");
+          },
+        },
+      ]
+    );
   };
 
   const handleProducts = () => {
@@ -38,15 +61,35 @@ export default function HomePage() {
   return (
     <Container className="bg-white" padding="sm">
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Uygulama Adı */}
-        <Typography
-          variant="h1"
-          weight="bold"
-          size="xl"
-          className="text-stock-red mb-4 mt-1"
-        >
-          Stockify
-        </Typography>
+        {/* Header with User Info and Logout */}
+        <View className="flex-row items-start justify-between mb-4 mt-1">
+          <View className="flex-1">
+            <Typography
+              variant="h1"
+              weight="bold"
+              size="xl"
+              className="text-stock-red"
+            >
+              Stockify
+            </Typography>
+            {user && (
+              <Typography variant="caption" className="text-stock-text mt-1">
+                Hoş geldin, {user.username}!
+              </Typography>
+            )}
+          </View>
+
+          {/* Logout Button - Küçültüldü */}
+          <Icon
+            family="MaterialIcons"
+            name="logout"
+            size={20}
+            color="#E3001B"
+            pressable
+            onPress={handleLogout}
+            containerClassName="p-1 mt-1"
+          />
+        </View>
 
         {/* SearchBar */}
         <SearchBar
