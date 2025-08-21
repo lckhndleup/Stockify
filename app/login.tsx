@@ -69,14 +69,14 @@ export default function LoginPage() {
           contentContainerStyle={{ flexGrow: 1 }}
         >
           {/* Background with Real SVG - Üst Kısım */}
-          <View className="relative" style={{ height: 280 }}>
+          <View className="relative" style={{ height: 220 }}>
             {/* Gerçek SVG Background */}
-            <BackgroundSvg width={undefined} height={280} />
+            <BackgroundSvg width={undefined} height={220} />
 
             {/* Logo/Title Overlay */}
             <View
               className="absolute inset-0 items-center justify-center"
-              style={{ paddingBottom: 60 }}
+              style={{ paddingBottom: 40 }}
             >
               <Typography
                 variant="h1"
@@ -90,9 +90,9 @@ export default function LoginPage() {
           </View>
 
           {/* Login Form */}
-          <View className="flex-1 px-6 pt-8 pb-6" style={{ minHeight: 400 }}>
+          <View className="flex-1 px-6 pt-2 pb-6" style={{ minHeight: 400 }}>
             {/* Welcome Text */}
-            <View className="mb-8">
+            <View className="mb-6">
               <Typography
                 variant="h3"
                 weight="bold"
