@@ -3,4 +3,16 @@ const { withNativeWind } = require("nativewind/metro");
 
 const config = getDefaultConfig(__dirname);
 
-module.exports = withNativeWind(config, { input: "./global.css" });
+// JSON dosyaları için resolver ayarı
+config.resolver.assetExts.push("json");
+
+// CSS dosyaları için (NativeWind)
+config.resolver.sourceExts.push("css");
+
+// Src klasörü için watchFolders
+config.watchFolders = [__dirname];
+
+module.exports = withNativeWind(config, {
+  input: "./global.css",
+  inlineRem: 16,
+});

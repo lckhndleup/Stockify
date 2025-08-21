@@ -30,6 +30,9 @@
       "expo-router",
       "expo-font"
     ],
-    "scheme": "stockify"
+    "scheme": "stockify",
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

@@ -5,5 +5,9 @@ module.exports = function (api) {
       ["babel-preset-expo", { jsxImportSource: "nativewind" }],
       "nativewind/babel",
     ],
+    plugins: [
+      // NativeWind için gerekli plugin'ler
+      "react-native-reanimated/plugin", // En sonda olmalı
+    ],
   };
 };

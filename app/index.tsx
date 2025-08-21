@@ -1,23 +1,248 @@
-import React from "react";
-import { Text, View, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { ScrollView, View, Alert } from "react-native";
+import { useTranslation } from "react-i18next";
+import { router } from "expo-router";
 
-export default function HomeScreen() {
+import {
+  Container,
+  Typography,
+  Card,
+  SearchBar,
+  Icon,
+} from "@/src/components/ui";
+import { useAuthStore } from "@/src/stores/authStore";
+import DebugPanel from "@/src/components/ui/debugPanel";
+
+export default function HomePage() {
+  const { t } = useTranslation();
+  const [searchText, setSearchText] = useState("");
+  const { user, logout } = useAuthStore();
+
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+    console.log("Arama yapılıyor:", text);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Çıkış Yap",
+      "Hesabınızdan çıkış yapmak istediğinizden emin misiniz?",
+      [
+        {
+          text: "İptal",
+          style: "cancel",
+        },
+        {
+          text: "Çıkış Yap",
+          style: "destructive",
+          onPress: () => {
+            logout();
+            router.replace("/login");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleProducts = () => {
+    console.log("Ürünler sayfasına gidiliyor...");
+    router.push("/products");
+  };
+
+  const handleBrokers = () => {
+    console.log("Aracılar sayfasına gidiliyor...");
+    router.push("/brokers");
+  };
+
+  const handleStock = () => {
+    console.log("Stok Takip sayfasına gidiliyor...");
+    router.push("/stock");
+  };
+
   return (
-    <View className="flex-1 bg-gray-50 justify-center items-center px-6">
-      <View className="items-center mb-8">
-        <Text className="text-6xl mb-4">📦</Text>
-        <Text className="text-3xl font-bold text-gray-800 mt-4">Stockify</Text>
-        <Text className="text-gray-600 text-center mt-2">
-          Stok takibinizi kolaylaştıran uygulama
-        </Text>
-      </View>
+    <Container className="bg-white" padding="sm">
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header with User Info and Logout */}
+        <View className="flex-row items-start justify-between mb-4 mt-1">
+          <View className="flex-1">
+            <Typography
+              variant="h1"
+              weight="bold"
+              size="xl"
+              className="text-stock-red"
+            >
+              Stockify
+            </Typography>
+            {user && (
+              <Typography variant="caption" className="text-stock-text mt-1">
+                Hoş geldin, {user.username}!
+              </Typography>
+            )}
+          </View>
 
-      <TouchableOpacity className="bg-primary-600 px-8 py-4 rounded-lg">
-        <Text className="text-white font-semibold text-lg">Başlayalım 🚀</Text>
-      </TouchableOpacity>
-      <TouchableOpacity className="bg-primary-600 px-8 py-4 rounded-lg">
-        <Text className="text-white font-semibold text-lg">Başlayalım 🚀</Text>
-      </TouchableOpacity>
-    </View>
+          {/* Logout Button - Küçültüldü */}
+          <Icon
+            family="MaterialIcons"
+            name="logout"
+            size={20}
+            color="#E3001B"
+            pressable
+            onPress={handleLogout}
+            containerClassName="p-1 mt-1"
+          />
+        </View>
+
+        {/* Debug Panel */}
+        {/* <DebugPanel /> */}
+
+        {/* SearchBar */}
+        <SearchBar
+          placeholder="Ara..."
+          onSearch={handleSearch}
+          className="mb-4"
+        />
+
+        {/* Ana Menü Kartları - Her karta margin-bottom ekledim */}
+        <View>
+          {/* ÜRÜN Kartı */}
+          <Card
+            variant="default"
+            padding="none"
+            pressable
+            onPress={handleProducts}
+            className="bg-stock-red border-0 px-4 py-4 mb-3"
+            radius="md"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="mr-4">
+                  <Icon
+                    family="MaterialCommunityIcons"
+                    name="package-variant"
+                    size={22}
+                    color="#FFFEFF"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    size="lg"
+                    className="text-stock-white mb-1"
+                  >
+                    ÜRÜN
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    size="sm"
+                    className="text-stock-white/80"
+                  >
+                    Kuruyemiş ürünlerinizi yönetin
+                  </Typography>
+                </View>
+              </View>
+              <Icon
+                family="MaterialIcons"
+                name="arrow-forward-ios"
+                size={16}
+                color="#FFFEFF"
+              />
+            </View>
+          </Card>
+
+          {/* ARACILAR Kartı */}
+          <Card
+            variant="default"
+            padding="none"
+            pressable
+            onPress={handleBrokers}
+            className="bg-stock-red border-0 px-4 py-4 mb-3"
+            radius="md"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="mr-4">
+                  <Icon
+                    family="MaterialCommunityIcons"
+                    name="account-group"
+                    size={22}
+                    color="#FFFEFF"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    size="lg"
+                    className="text-stock-white mb-1"
+                  >
+                    ARACILAR
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    size="sm"
+                    className="text-stock-white/80"
+                  >
+                    Aracı ve tedarikçi bilgileri
+                  </Typography>
+                </View>
+              </View>
+              <Icon
+                family="MaterialIcons"
+                name="arrow-forward-ios"
+                size={16}
+                color="#FFFEFF"
+              />
+            </View>
+          </Card>
+
+          {/* STOK TAKİP Kartı */}
+          <Card
+            variant="default"
+            padding="none"
+            pressable
+            onPress={handleStock}
+            className="bg-stock-red border-0 px-4 py-4"
+            radius="md"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="mr-4">
+                  <Icon
+                    family="MaterialCommunityIcons"
+                    name="chart-line"
+                    size={22}
+                    color="#FFFEFF"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    size="lg"
+                    className="text-stock-white mb-1"
+                  >
+                    STOK TAKİP
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    size="sm"
+                    className="text-stock-white/80"
+                  >
+                    Stok durumu ve raporlar
+                  </Typography>
+                </View>
+              </View>
+              <Icon
+                family="MaterialIcons"
+                name="arrow-forward-ios"
+                size={16}
+                color="#FFFEFF"
+              />
+            </View>
+          </Card>
+        </View>
+      </ScrollView>
+    </Container>
   );
 }

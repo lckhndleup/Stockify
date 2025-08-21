@@ -1,0 +1,21 @@
+{
+    "appName": "Stockify",
+    "tagline": "Stok takibinizi kolaylaştıran uygulama",
+    "version": "v1.0.0 - Geliştirme Modu",
+    "buttons": {
+        "viewProducts": "Ürünler 📁",
+        "brokers": "Brokers ➕",
+        "stock": "Stock 📊",
+        "start": "Başlayalım 🚀"
+    },
+    "common": {
+        "loading": "Yükleniyor...",
+        "error": "Hata oluştu",
+        "success": "Başarılı",
+        "cancel": "İptal",
+        "save": "Kaydet",
+        "delete": "Sil",
+        "edit": "Düzenle",
+        "add": "Ekle"
+    }
+}

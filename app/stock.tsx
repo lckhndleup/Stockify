@@ -1,0 +1,659 @@
+import React, { useState, useEffect } from "react";
+import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
+
+import {
+  Container,
+  Typography,
+  Card,
+  SearchBar,
+  Icon,
+  Button,
+  Modal,
+  Input,
+  Tab,
+  BottomSheet,
+} from "@/src/components/ui";
+
+// Dropdown Component
+interface DropdownProps {
+  label?: string;
+  value?: string;
+  placeholder?: string;
+  options: { label: string; value: string }[];
+  onSelect: (value: string) => void;
+  className?: string;
+}
+
+function Dropdown({
+  label,
+  value,
+  placeholder = "Seçiniz...",
+  options,
+  onSelect,
+  className = "",
+}: DropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <View className={`w-full ${className}`}>
+      {label && (
+        <Typography
+          variant="caption"
+          weight="medium"
+          className="mb-2 text-stock-dark"
+        >
+          {label}
+        </Typography>
+      )}
+
+      <View className="relative">
+        <TouchableOpacity
+          className="flex-row items-center justify-between border border-stock-border rounded-lg px-4 py-3 bg-white"
+          onPress={() => setIsOpen(!isOpen)}
+          activeOpacity={0.8}
+        >
+          <Typography
+            variant="body"
+            className={selectedOption ? "text-stock-dark" : "text-stock-text"}
+          >
+            {selectedOption ? selectedOption.label : placeholder}
+          </Typography>
+          <Icon
+            family="MaterialIcons"
+            name={isOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+            size={20}
+            color="#6D706F"
+          />
+        </TouchableOpacity>
+
+        {isOpen && (
+          <View className="absolute top-full left-0 right-0 mt-1 bg-white border border-stock-border rounded-lg shadow-lg z-50">
+            {options.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                className="px-4 py-3 border-b border-stock-border last:border-b-0"
+                onPress={() => {
+                  onSelect(option.value);
+                  setIsOpen(false);
+                }}
+                activeOpacity={0.8}
+              >
+                <Typography variant="body" className="text-stock-dark">
+                  {option.label}
+                </Typography>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// Veri yapıları - Adet bazına güncellendi
+interface StockProduct {
+  id: string;
+  name: string;
+  category: string;
+  stock: number; // Adet cinsinden
+  price: number; // Adet başına fiyat
+  criticalLevel: number; // Kritik stok seviyesi (adet)
+  isActive: boolean;
+}
+
+interface StockMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  type: "in" | "out"; // giriş veya çıkış
+  quantity: number; // Adet cinsinden
+  reason: string; // "ürün eklendi", "aracıya verildi", "stok güncellendi"
+  date: string;
+}
+
+export default function StockPage() {
+  const [searchText, setSearchText] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [isUpdateBottomSheetVisible, setIsUpdateBottomSheetVisible] =
+    useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<StockProduct | null>(
+    null
+  );
+  const [updateQuantity, setUpdateQuantity] = useState("");
+  const [updateReason, setUpdateReason] = useState("");
+
+  // Mock data - Adet bazında güncellendi
+  const [products, setProducts] = useState<StockProduct[]>([
+    {
+      id: "1",
+      name: "Antep Fıstığı Paketi (200g)",
+      category: "Kuruyemiş",
+      stock: 45, // 45 adet paket
+      price: 85, // 85 TL per paket
+      criticalLevel: 10, // 10 adet altında kritik
+      isActive: true,
+    },
+    {
+      id: "2",
+      name: "Ceviz İçi Paketi (250g)",
+      category: "Kuruyemiş",
+      stock: 8, // Kritik seviyede
+      price: 32,
+      criticalLevel: 10,
+      isActive: true,
+    },
+    {
+      id: "3",
+      name: "Badem Paketi (300g)",
+      category: "Kuruyemiş",
+      stock: 78,
+      price: 45,
+      criticalLevel: 15,
+      isActive: true,
+    },
+    {
+      id: "4",
+      name: "Kaju Paketi (150g)",
+      category: "Kuruyemiş",
+      stock: 5, // Kritik seviyede
+      price: 65,
+      criticalLevel: 10,
+      isActive: true,
+    },
+    {
+      id: "5",
+      name: "Fındık İçi Paketi (200g)",
+      category: "Kuruyemiş",
+      stock: 0, // Stokta yok
+      price: 38,
+      criticalLevel: 12,
+      isActive: true,
+    },
+  ]);
+
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>([
+    {
+      id: "1",
+      productId: "2",
+      productName: "Ceviz İçi Paketi (250g)",
+      type: "out",
+      quantity: 15, // 15 adet
+      reason: "Ahmet Yılmaz aracısına verildi",
+      date: "2024-08-19",
+    },
+  ]);
+
+  // Tab tanımları
+  const tabs = [
+    { id: "all", label: "Tüm Stoklar" },
+    { id: "critical", label: "Kritik Stoklar" },
+    { id: "outofstock", label: "Tükenenler" },
+  ];
+
+  // Product options for dropdown
+  const productOptions = products
+    .filter((p) => p.isActive)
+    .map((product) => ({
+      label: `${product.name} (Mevcut: ${product.stock} adet)`,
+      value: product.id,
+    }));
+
+  // Helper functions
+  const isCriticalStock = (product: StockProduct) => {
+    return product.stock > 0 && product.stock <= product.criticalLevel;
+  };
+
+  const isOutOfStock = (product: StockProduct) => {
+    return product.stock === 0;
+  };
+
+  const getStockStatus = (product: StockProduct) => {
+    if (isOutOfStock(product)) {
+      return {
+        status: "Tükendi",
+        color: "bg-red-500",
+        textColor: "text-red-700",
+      };
+    } else if (isCriticalStock(product)) {
+      return {
+        status: "Kritik",
+        color: "bg-yellow-500",
+        textColor: "text-yellow-700",
+      };
+    } else {
+      return {
+        status: "Normal",
+        color: "bg-green-500",
+        textColor: "text-green-700",
+      };
+    }
+  };
+
+  const calculateTotalStockValue = () => {
+    return products.reduce(
+      (total, product) => total + product.stock * product.price,
+      0
+    );
+  };
+
+  const getCriticalProductsCount = () => {
+    return products.filter(isCriticalStock).length;
+  };
+
+  const getOutOfStockCount = () => {
+    return products.filter(isOutOfStock).length;
+  };
+
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+  };
+
+  const handleUpdateStock = (product: StockProduct) => {
+    setSelectedProduct(product);
+    setUpdateQuantity(product.stock.toString());
+    setUpdateReason("");
+    setIsUpdateBottomSheetVisible(true);
+  };
+
+  const handleSaveStockUpdate = () => {
+    if (!selectedProduct || !updateQuantity.trim()) {
+      Alert.alert("Hata", "Lütfen geçerli bir adet girin.");
+      return;
+    }
+
+    const newStock = parseInt(updateQuantity);
+    const oldStock = selectedProduct.stock;
+
+    if (newStock < 0) {
+      Alert.alert("Hata", "Stok adedi 0'dan küçük olamaz.");
+      return;
+    }
+
+    Alert.alert(
+      "Stok Güncelle",
+      `${selectedProduct.name} ürününün stok adedini ${oldStock} adetten ${newStock} adete güncellemek istediğinizden emin misiniz?`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Güncelle",
+          onPress: () => {
+            // Stok güncelleme
+            setProducts((prev) =>
+              prev.map((p) =>
+                p.id === selectedProduct.id ? { ...p, stock: newStock } : p
+              )
+            );
+
+            // Stok hareketi kaydet
+            const movement: StockMovement = {
+              id: Date.now().toString(),
+              productId: selectedProduct.id,
+              productName: selectedProduct.name,
+              type: newStock > oldStock ? "in" : "out",
+              quantity: Math.abs(newStock - oldStock),
+              reason: updateReason || "Manuel stok güncellemesi",
+              date: new Date().toISOString().split("T")[0],
+            };
+
+            setStockMovements((prev) => [movement, ...prev]);
+            handleCloseUpdateBottomSheet();
+            Alert.alert("Başarılı", "Stok güncellendi!");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCloseUpdateBottomSheet = () => {
+    setIsUpdateBottomSheetVisible(false);
+    setSelectedProduct(null);
+    setUpdateQuantity("");
+    setUpdateReason("");
+  };
+
+  // Filtering
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchText.toLowerCase());
+
+    let matchesTab = true;
+    switch (activeTab) {
+      case "all":
+        matchesTab = product.isActive;
+        break;
+      case "critical":
+        matchesTab = product.isActive && isCriticalStock(product);
+        break;
+      case "outofstock":
+        matchesTab = product.isActive && isOutOfStock(product);
+        break;
+      default:
+        matchesTab = true;
+    }
+
+    return matchesSearch && matchesTab;
+  });
+
+  return (
+    <Container className="bg-white" padding="sm" safeTop={false}>
+      <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
+        {/* Search Bar */}
+        <SearchBar
+          placeholder="Ürün ara..."
+          onSearch={handleSearch}
+          className="mb-3"
+        />
+
+        {/* İstatistikler */}
+        <View className="flex-row mb-4 gap-2">
+          <Card
+            variant="default"
+            padding="sm"
+            className="flex-1 bg-blue-50 border border-blue-200 h-[90px] justify-center"
+            radius="md"
+          >
+            <View className="items-center">
+              <Typography
+                variant="caption"
+                size="xs"
+                className="text-blue-700 mb-1"
+                weight="medium"
+              >
+                TOPLAM DEĞER
+              </Typography>
+              <Typography
+                variant="body"
+                size="lg"
+                weight="bold"
+                className="text-blue-800"
+              >
+                ₺{calculateTotalStockValue().toLocaleString()}
+              </Typography>
+            </View>
+          </Card>
+
+          <Card
+            variant="default"
+            padding="sm"
+            className="flex-1 bg-yellow-50 border border-yellow-200 h-[90px] justify-center"
+            radius="md"
+          >
+            <View className="items-center">
+              <Typography
+                variant="caption"
+                size="xs"
+                className="text-yellow-700 mb-1"
+                weight="medium"
+              >
+                KRİTİK STOK
+              </Typography>
+              <Typography
+                variant="body"
+                size="lg"
+                weight="bold"
+                className="text-yellow-800"
+              >
+                {getCriticalProductsCount()} Ürün
+              </Typography>
+            </View>
+          </Card>
+
+          <Card
+            variant="default"
+            padding="sm"
+            className="flex-1 bg-red-50 border border-red-200 h-[90px] justify-center"
+            radius="md"
+          >
+            <View className="items-center">
+              <Typography
+                variant="caption"
+                size="xs"
+                className="text-red-700 mb-1"
+                weight="medium"
+              >
+                TÜKENEN
+              </Typography>
+              <Typography
+                variant="body"
+                size="lg"
+                weight="bold"
+                className="text-red-800"
+              >
+                {getOutOfStockCount()} Ürün
+              </Typography>
+            </View>
+          </Card>
+        </View>
+
+        {/* Tab'lar */}
+        <Tab
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          variant="pills"
+          size="md"
+          className="mb-4"
+        />
+
+        {/* Ürün Listesi */}
+        <View className="mt-3">
+          {filteredProducts.map((product) => {
+            const stockStatus = getStockStatus(product);
+
+            return (
+              <Card
+                key={product.id}
+                variant="default"
+                padding="sm"
+                className="border border-stock-border mb-3"
+                radius="md"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <View className="flex-row items-center mb-2">
+                      <Typography
+                        variant="body"
+                        weight="semibold"
+                        align="left"
+                        className="text-stock-dark flex-1"
+                      >
+                        {product.name}
+                      </Typography>
+
+                      {/* Stok Durumu Badge */}
+                      <View
+                        className={`px-2 py-1 rounded-full ${
+                          stockStatus.status === "Tükendi"
+                            ? "bg-red-100"
+                            : stockStatus.status === "Kritik"
+                            ? "bg-yellow-100"
+                            : "bg-green-100"
+                        }`}
+                      >
+                        <Typography
+                          variant="caption"
+                          size="xs"
+                          className={stockStatus.textColor}
+                          weight="medium"
+                        >
+                          {stockStatus.status}
+                        </Typography>
+                      </View>
+                    </View>
+
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-1">
+                        <Typography
+                          variant="caption"
+                          size="sm"
+                          className="text-stock-text"
+                        >
+                          Stok: {product.stock} adet
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          size="sm"
+                          className="text-stock-text"
+                        >
+                          Fiyat: ₺{product.price}/adet
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          size="xs"
+                          className="text-stock-text"
+                        >
+                          Kritik Seviye: {product.criticalLevel} adet
+                        </Typography>
+                      </View>
+
+                      <View className="flex-row items-center">
+                        <Typography
+                          variant="body"
+                          weight="bold"
+                          className="text-stock-dark mr-3"
+                        >
+                          ₺{(product.stock * product.price).toLocaleString()}
+                        </Typography>
+
+                        <Icon
+                          family="MaterialIcons"
+                          name="edit"
+                          size={18}
+                          color="#67686A"
+                          pressable
+                          onPress={() => handleUpdateStock(product)}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </Card>
+            );
+          })}
+        </View>
+
+        {/* Boş durum */}
+        {filteredProducts.length === 0 && (
+          <Card
+            variant="default"
+            padding="lg"
+            className="border border-stock-border"
+            radius="md"
+          >
+            <Typography
+              variant="body"
+              align="center"
+              className="text-stock-text"
+            >
+              {activeTab === "critical"
+                ? "Kritik seviyede ürün bulunamadı."
+                : activeTab === "outofstock"
+                ? "Tükenen ürün bulunamadı."
+                : "Ürün bulunamadı."}
+            </Typography>
+          </Card>
+        )}
+      </ScrollView>
+
+      {/* Stok Güncelleme BottomSheet */}
+      <BottomSheet
+        visible={isUpdateBottomSheetVisible}
+        onClose={handleCloseUpdateBottomSheet}
+        title="Stok Güncelle"
+        height="medium"
+      >
+        {selectedProduct && (
+          <View
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            {/* Üst kısım - İçerik */}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 4 }}
+            >
+              <View className="bg-stock-gray p-4 rounded-lg mb-4">
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  className="text-stock-dark mb-2"
+                >
+                  {selectedProduct.name}
+                </Typography>
+                <Typography variant="caption" className="text-stock-text">
+                  Mevcut Stok: {selectedProduct.stock} adet
+                </Typography>
+                <Typography variant="caption" className="text-stock-text">
+                  Kritik Seviye: {selectedProduct.criticalLevel} adet
+                </Typography>
+              </View>
+
+              <Input
+                label="Yeni Stok Adedi"
+                value={updateQuantity}
+                onChangeText={setUpdateQuantity}
+                placeholder="0"
+                variant="outlined"
+                keyboardType="numeric"
+                className="mb-3"
+              />
+
+              <Input
+                label="Açıklama (İsteğe Bağlı)"
+                value={updateReason}
+                onChangeText={setUpdateReason}
+                placeholder="Stok güncelleme sebebi..."
+                variant="outlined"
+                className="mb-3"
+              />
+
+              {updateQuantity && (
+                <View className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <Typography
+                    variant="caption"
+                    className="text-blue-700"
+                    weight="medium"
+                  >
+                    Değişiklik:{" "}
+                    {parseInt(updateQuantity) - selectedProduct.stock} adet
+                  </Typography>
+                  <Typography variant="caption" className="text-blue-700">
+                    Yeni Değer: ₺
+                    {(
+                      parseInt(updateQuantity) * selectedProduct.price
+                    ).toLocaleString()}
+                  </Typography>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Alt kısım - Butonlar */}
+            <View className="mt-2 mb-2">
+              <Button
+                variant="outline"
+                className="w-full border-stock-border mb-2"
+                onPress={handleCloseUpdateBottomSheet}
+              >
+                <Typography className="text-stock-dark">İptal</Typography>
+              </Button>
+              <Button
+                variant="primary"
+                className="w-full bg-stock-red"
+                onPress={handleSaveStockUpdate}
+              >
+                <Typography className="text-white">Güncelle</Typography>
+              </Button>
+            </View>
+          </View>
+        )}
+      </BottomSheet>
+    </Container>
+  );
+}
