@@ -4,30 +4,15 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@/stores/*": [
-        "./stores/*"
-      ],
-      "@/types/*": [
-        "./types/*"
-      ],
-      "@/utils/*": [
-        "./utils/*"
-      ],
-      "@/hooks/*": [
-        "./hooks/*"
-      ],
-      "@/src/*": [
-        "./src/*"
-      ],
-      "@/styles/*": [
-        "./styles/*"
-      ]
+      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/stores/*": ["./stores/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/types/*": ["./types/*"],
+      "@/utils/*": ["./utils/*"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/src/*": ["./src/*"],
+      "@/styles/*": ["./styles/*"]
     },
     "resolveJsonModule": true
   },

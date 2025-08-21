@@ -11,6 +11,7 @@ import {
   Icon,
 } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
+import DebugPanel from "@/src/components/ui/debugPanel";
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -90,6 +91,9 @@ export default function HomePage() {
             containerClassName="p-1 mt-1"
           />
         </View>
+
+        {/* Debug Panel */}
+        <DebugPanel />
 
         {/* SearchBar */}
         <SearchBar
