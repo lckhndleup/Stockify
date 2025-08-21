@@ -91,15 +91,14 @@ function Dropdown({
   );
 }
 
-// Veri yapıları
+// Veri yapıları - Adet bazına güncellendi
 interface StockProduct {
   id: string;
   name: string;
   category: string;
-  stock: number;
-  price: number;
-  unit: string;
-  criticalLevel: number; // Kritik stok seviyesi
+  stock: number; // Adet cinsinden
+  price: number; // Adet başına fiyat
+  criticalLevel: number; // Kritik stok seviyesi (adet)
   isActive: boolean;
 }
 
@@ -108,7 +107,7 @@ interface StockMovement {
   productId: string;
   productName: string;
   type: "in" | "out"; // giriş veya çıkış
-  quantity: number;
+  quantity: number; // Adet cinsinden
   reason: string; // "ürün eklendi", "aracıya verildi", "stok güncellendi"
   date: string;
 }
@@ -124,55 +123,50 @@ export default function StockPage() {
   const [updateQuantity, setUpdateQuantity] = useState("");
   const [updateReason, setUpdateReason] = useState("");
 
-  // Mock data - Products with stock info
+  // Mock data - Adet bazında güncellendi
   const [products, setProducts] = useState<StockProduct[]>([
     {
       id: "1",
-      name: "Antep Fıstığı (Çiğ)",
+      name: "Antep Fıstığı Paketi (200g)",
       category: "Kuruyemiş",
-      stock: 45,
-      price: 850,
-      unit: "kg",
-      criticalLevel: 10,
+      stock: 45, // 45 adet paket
+      price: 85, // 85 TL per paket
+      criticalLevel: 10, // 10 adet altında kritik
       isActive: true,
     },
     {
       id: "2",
-      name: "Ceviz İçi",
+      name: "Ceviz İçi Paketi (250g)",
       category: "Kuruyemiş",
       stock: 8, // Kritik seviyede
-      price: 320,
-      unit: "kg",
+      price: 32,
       criticalLevel: 10,
       isActive: true,
     },
     {
       id: "3",
-      name: "Badem (Kabuklu)",
+      name: "Badem Paketi (300g)",
       category: "Kuruyemiş",
       stock: 78,
-      price: 290,
-      unit: "kg",
+      price: 45,
       criticalLevel: 15,
       isActive: true,
     },
     {
       id: "4",
-      name: "Kaju",
+      name: "Kaju Paketi (150g)",
       category: "Kuruyemiş",
       stock: 5, // Kritik seviyede
-      price: 450,
-      unit: "kg",
+      price: 65,
       criticalLevel: 10,
       isActive: true,
     },
     {
       id: "5",
-      name: "Fındık İçi",
+      name: "Fındık İçi Paketi (200g)",
       category: "Kuruyemiş",
       stock: 0, // Stokta yok
-      price: 380,
-      unit: "kg",
+      price: 38,
       criticalLevel: 12,
       isActive: true,
     },
@@ -182,9 +176,9 @@ export default function StockPage() {
     {
       id: "1",
       productId: "2",
-      productName: "Ceviz İçi",
+      productName: "Ceviz İçi Paketi (250g)",
       type: "out",
-      quantity: 15,
+      quantity: 15, // 15 adet
       reason: "Ahmet Yılmaz aracısına verildi",
       date: "2024-08-19",
     },
@@ -201,7 +195,7 @@ export default function StockPage() {
   const productOptions = products
     .filter((p) => p.isActive)
     .map((product) => ({
-      label: `${product.name} (Mevcut: ${product.stock} ${product.unit})`,
+      label: `${product.name} (Mevcut: ${product.stock} adet)`,
       value: product.id,
     }));
 
@@ -264,7 +258,7 @@ export default function StockPage() {
 
   const handleSaveStockUpdate = () => {
     if (!selectedProduct || !updateQuantity.trim()) {
-      Alert.alert("Hata", "Lütfen geçerli bir miktar girin.");
+      Alert.alert("Hata", "Lütfen geçerli bir adet girin.");
       return;
     }
 
@@ -272,13 +266,13 @@ export default function StockPage() {
     const oldStock = selectedProduct.stock;
 
     if (newStock < 0) {
-      Alert.alert("Hata", "Stok miktarı 0'dan küçük olamaz.");
+      Alert.alert("Hata", "Stok adedi 0'dan küçük olamaz.");
       return;
     }
 
     Alert.alert(
       "Stok Güncelle",
-      `${selectedProduct.name} ürününün stok miktarını ${oldStock} ${selectedProduct.unit}'dan ${newStock} ${selectedProduct.unit}'a güncellemek istediğinizden emin misiniz?`,
+      `${selectedProduct.name} ürününün stok adedini ${oldStock} adetten ${newStock} adete güncellemek istediğinizden emin misiniz?`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -496,21 +490,21 @@ export default function StockPage() {
                           size="sm"
                           className="text-stock-text"
                         >
-                          Stok: {product.stock} {product.unit}
+                          Stok: {product.stock} adet
                         </Typography>
                         <Typography
                           variant="caption"
                           size="sm"
                           className="text-stock-text"
                         >
-                          Fiyat: ₺{product.price}/{product.unit}
+                          Fiyat: ₺{product.price}/adet
                         </Typography>
                         <Typography
                           variant="caption"
                           size="xs"
                           className="text-stock-text"
                         >
-                          Kritik Seviye: {product.criticalLevel} {product.unit}
+                          Kritik Seviye: {product.criticalLevel} adet
                         </Typography>
                       </View>
 
@@ -594,16 +588,15 @@ export default function StockPage() {
                   {selectedProduct.name}
                 </Typography>
                 <Typography variant="caption" className="text-stock-text">
-                  Mevcut Stok: {selectedProduct.stock} {selectedProduct.unit}
+                  Mevcut Stok: {selectedProduct.stock} adet
                 </Typography>
                 <Typography variant="caption" className="text-stock-text">
-                  Kritik Seviye: {selectedProduct.criticalLevel}{" "}
-                  {selectedProduct.unit}
+                  Kritik Seviye: {selectedProduct.criticalLevel} adet
                 </Typography>
               </View>
 
               <Input
-                label={`Yeni Stok Miktarı (${selectedProduct.unit})`}
+                label="Yeni Stok Adedi"
                 value={updateQuantity}
                 onChangeText={setUpdateQuantity}
                 placeholder="0"
@@ -629,8 +622,7 @@ export default function StockPage() {
                     weight="medium"
                   >
                     Değişiklik:{" "}
-                    {parseInt(updateQuantity) - selectedProduct.stock}{" "}
-                    {selectedProduct.unit}
+                    {parseInt(updateQuantity) - selectedProduct.stock} adet
                   </Typography>
                   <Typography variant="caption" className="text-blue-700">
                     Yeni Değer: ₺

@@ -90,13 +90,13 @@ function Dropdown({
   );
 }
 
-// Veri yapıları
+// Veri yapıları - Adet bazına güncellendi
 interface Transaction {
   id: string;
   productId: string;
   productName: string;
-  quantity: number;
-  unitPrice: number;
+  quantity: number; // Adet cinsinden
+  unitPrice: number; // Adet başına fiyat
   totalAmount: number;
   date: string;
 }
@@ -112,9 +112,8 @@ interface Broker {
 interface Product {
   id: string;
   name: string;
-  price: number;
-  unit: string;
-  stock: number;
+  price: number; // Adet başına fiyat
+  stock: number; // Adet cinsinden
 }
 
 export default function BrokersPage() {
@@ -139,35 +138,31 @@ export default function BrokersPage() {
   const [selectedBrokerId, setSelectedBrokerId] = useState("");
   const [productQuantity, setProductQuantity] = useState("");
 
-  // Mock data - Products
+  // Mock data - Products (Adet bazında)
   const [products] = useState<Product[]>([
     {
       id: "1",
-      name: "Antep Fıstığı (Çiğ)",
-      price: 850,
-      unit: "kg",
-      stock: 45,
+      name: "Antep Fıstığı Paketi (200g)",
+      price: 85, // 85 TL per paket
+      stock: 45, // 45 adet
     },
     {
       id: "2",
-      name: "Ceviz İçi",
-      price: 320,
-      unit: "kg",
-      stock: 23,
+      name: "Ceviz İçi Paketi (250g)",
+      price: 32, // 32 TL per paket
+      stock: 23, // 23 adet
     },
     {
       id: "3",
-      name: "Badem (Kabuklu)",
-      price: 290,
-      unit: "kg",
-      stock: 78,
+      name: "Badem Paketi (300g)",
+      price: 45, // 45 TL per paket
+      stock: 78, // 78 adet
     },
     {
       id: "4",
-      name: "Kaju",
-      price: 450,
-      unit: "kg",
-      stock: 12,
+      name: "Kaju Paketi (150g)",
+      price: 65, // 65 TL per paket
+      stock: 12, // 12 adet
     },
   ]);
 
@@ -182,19 +177,19 @@ export default function BrokersPage() {
         {
           id: "t1",
           productId: "1",
-          productName: "Antep Fıstığı (Çiğ)",
-          quantity: 10,
-          unitPrice: 850,
-          totalAmount: 8500,
+          productName: "Antep Fıstığı Paketi (200g)",
+          quantity: 10, // 10 adet
+          unitPrice: 85, // 85 TL per adet
+          totalAmount: 850, // 10 * 85 = 850 TL
           date: "2024-08-20",
         },
         {
           id: "t2",
           productId: "2",
-          productName: "Ceviz İçi",
-          quantity: 5,
-          unitPrice: 320,
-          totalAmount: 1600,
+          productName: "Ceviz İçi Paketi (250g)",
+          quantity: 5, // 5 adet
+          unitPrice: 32, // 32 TL per adet
+          totalAmount: 160, // 5 * 32 = 160 TL
           date: "2024-08-19",
         },
       ],
@@ -208,10 +203,10 @@ export default function BrokersPage() {
         {
           id: "t3",
           productId: "3",
-          productName: "Badem (Kabuklu)",
-          quantity: 20,
-          unitPrice: 290,
-          totalAmount: 5800,
+          productName: "Badem Paketi (300g)",
+          quantity: 20, // 20 adet
+          unitPrice: 45, // 45 TL per adet
+          totalAmount: 900, // 20 * 45 = 900 TL
           date: "2024-08-18",
         },
       ],
@@ -226,7 +221,7 @@ export default function BrokersPage() {
 
   // Options for dropdowns
   const productOptions = products.map((product) => ({
-    label: `${product.name} (₺${product.price}/${product.unit})`,
+    label: `${product.name} (₺${product.price}/adet)`,
     value: product.id,
     price: product.price,
   }));
@@ -370,7 +365,7 @@ export default function BrokersPage() {
 
     Alert.alert(
       "Ürün Ver",
-      `${selectedBroker.name} ${selectedBroker.surname} aracısına ${quantity} ${selectedProduct.unit} ${selectedProduct.name} vermek istediğinizden emin misiniz?\n\nTutar: ₺${totalAmount}`,
+      `${selectedBroker.name} ${selectedBroker.surname} aracısına ${quantity} adet ${selectedProduct.name} vermek istediğinizden emin misiniz?\n\nTutar: ₺${totalAmount}`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -750,7 +745,7 @@ export default function BrokersPage() {
             label="Adet"
             value={productQuantity}
             onChangeText={setProductQuantity}
-            placeholder="Adet girin..."
+            placeholder="Kaç adet verilecek?"
             variant="outlined"
             keyboardType="numeric"
             className="mb-4"
