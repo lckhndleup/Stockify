@@ -13,8 +13,11 @@ import {
   Input,
   Tab,
 } from "@/src/components/ui";
+import Toast from "@/src/components/ui/toast";
+import { useToast } from "@/src/hooks/useToast";
+import { useAppStore, Product } from "@/src/stores/appStore";
 
-// Dropdown Component - Tüm alan tıklanabilir
+// Dropdown Component
 interface DropdownProps {
   label?: string;
   value?: string;
@@ -99,19 +102,9 @@ const CATEGORIES = [
   { label: "Kuru Meyve", value: "kuru_meyve" },
 ];
 
-// Ürün interface'i - Adet bazına güncellendi
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  stock: number; // Artık adet cinsinden
-  price: number; // Artık adet başına fiyat
-  isActive: boolean; // Aktif/Pasif durumu
-}
-
 export default function ProductsPage() {
   const [searchText, setSearchText] = useState("");
-  const [activeTab, setActiveTab] = useState("active"); // Tab state
+  const [activeTab, setActiveTab] = useState("active");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -120,41 +113,17 @@ export default function ProductsPage() {
   const [productPrice, setProductPrice] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Mock ürünler listesi - Adet bazında güncellendi
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "1",
-      name: "Antep Fıstığı Paketi (200g)",
-      category: "kuruyemis",
-      stock: 45, // 45 adet paket
-      price: 85, // 85 TL per paket
-      isActive: true,
-    },
-    {
-      id: "2",
-      name: "Ceviz İçi Paketi (250g)",
-      category: "kuruyemis",
-      stock: 23, // 23 adet paket
-      price: 32, // 32 TL per paket
-      isActive: true,
-    },
-    {
-      id: "3",
-      name: "Badem Paketi (300g)",
-      category: "kuruyemis",
-      stock: 78, // 78 adet paket
-      price: 45, // 45 TL per paket
-      isActive: true,
-    },
-    {
-      id: "4",
-      name: "Kaju Paketi (150g)",
-      category: "kuruyemis",
-      stock: 12, // 12 adet paket
-      price: 65, // 65 TL per paket
-      isActive: true,
-    },
-  ]);
+  // Global Store
+  const {
+    products,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    getActiveProducts,
+  } = useAppStore();
+
+  // Toast
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Tab tanımları
   const tabs = [
@@ -164,7 +133,6 @@ export default function ProductsPage() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    console.log("Ürün arama:", text);
   };
 
   const handleAddProduct = () => {
@@ -181,12 +149,22 @@ export default function ProductsPage() {
 
   const handleConfirmAdd = () => {
     if (!selectedCategory || !productName.trim()) {
-      Alert.alert("Hata", "Lütfen kategori seçin ve ürün adını girin.");
+      showError("Lütfen kategori seçin ve ürün adını girin.");
       return;
     }
 
     const stock = productStock ? parseInt(productStock) : 0;
     const price = productPrice ? parseFloat(productPrice) : 0;
+
+    if (stock < 0) {
+      showError("Stok adedi 0'dan küçük olamaz.");
+      return;
+    }
+
+    if (price <= 0) {
+      showError("Fiyat 0'dan büyük olmalıdır.");
+      return;
+    }
 
     Alert.alert(
       "Ürün Ekle",
@@ -200,23 +178,19 @@ export default function ProductsPage() {
           text: "Ekle",
           style: "default",
           onPress: () => {
-            // Yeni ürün oluştur
-            const newProduct: Product = {
-              id: Date.now().toString(),
-              name: productName,
-              category: selectedCategory,
-              stock: stock,
-              price: price,
-              isActive: true, // Yeni ürünler varsayılan olarak aktif
-            };
+            try {
+              addProduct({
+                name: productName,
+                category: selectedCategory,
+                stock: stock,
+                price: price,
+              });
 
-            // Listeye en başa ekle
-            setProducts((prev) => [newProduct, ...prev]);
-
-            // Modal'ı kapat ve formu temizle
-            handleModalClose();
-
-            Alert.alert("Başarılı", "Ürün başarıyla eklendi!");
+              handleModalClose();
+              showSuccess("Ürün başarıyla eklendi!");
+            } catch (error) {
+              showError("Ürün eklenirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -234,12 +208,22 @@ export default function ProductsPage() {
 
   const handleUpdateProduct = () => {
     if (!selectedCategory || !productName.trim() || !editingProduct) {
-      Alert.alert("Hata", "Lütfen tüm alanları doldurun.");
+      showError("Lütfen tüm alanları doldurun.");
       return;
     }
 
     const stock = productStock ? parseInt(productStock) : 0;
     const price = productPrice ? parseFloat(productPrice) : 0;
+
+    if (stock < 0) {
+      showError("Stok adedi 0'dan küçük olamaz.");
+      return;
+    }
+
+    if (price <= 0) {
+      showError("Fiyat 0'dan büyük olmalıdır.");
+      return;
+    }
 
     Alert.alert(
       "Ürün Güncelle",
@@ -253,25 +237,19 @@ export default function ProductsPage() {
           text: "Güncelle",
           style: "default",
           onPress: () => {
-            // Ürünü güncelle
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === editingProduct.id
-                  ? {
-                      ...p,
-                      name: productName,
-                      category: selectedCategory,
-                      stock: stock,
-                      price: price,
-                    }
-                  : p
-              )
-            );
+            try {
+              updateProduct(editingProduct.id, {
+                name: productName,
+                category: selectedCategory,
+                stock: stock,
+                price: price,
+              });
 
-            // Modal'ı kapat ve formu temizle
-            handleEditModalClose();
-
-            Alert.alert("Başarılı", "Ürün başarıyla güncellendi!");
+              handleEditModalClose();
+              showSuccess("Ürün başarıyla güncellendi!");
+            } catch (error) {
+              showError("Ürün güncellenirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -291,13 +269,12 @@ export default function ProductsPage() {
           text: "Sil",
           style: "destructive",
           onPress: () => {
-            // Ürünü pasif yap
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === product.id ? { ...p, isActive: false } : p
-              )
-            );
-            Alert.alert("Başarılı", "Ürün silindi!");
+            try {
+              deleteProduct(product.id);
+              showSuccess("Ürün başarıyla silindi!");
+            } catch (error) {
+              showError("Ürün silinirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -325,6 +302,14 @@ export default function ProductsPage() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
+      {/* Toast Notification */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search ve Add Butonu */}
         <View className="flex-row items-center mb-3">

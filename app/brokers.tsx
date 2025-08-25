@@ -12,6 +12,9 @@ import {
   Input,
   Tab,
 } from "@/src/components/ui";
+import Toast from "@/src/components/ui/toast";
+import { useToast } from "@/src/hooks/useToast";
+import { useAppStore, Broker } from "@/src/stores/appStore";
 
 // Dropdown Component (Ürün seçimi için)
 interface DropdownProps {
@@ -90,32 +93,6 @@ function Dropdown({
   );
 }
 
-// Veri yapıları - Adet bazına güncellendi
-interface Transaction {
-  id: string;
-  productId: string;
-  productName: string;
-  quantity: number; // Adet cinsinden
-  unitPrice: number; // Adet başına fiyat
-  totalAmount: number;
-  date: string;
-}
-
-interface Broker {
-  id: string;
-  name: string;
-  surname: string;
-  transactions: Transaction[];
-  hasReceipt: boolean;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number; // Adet başına fiyat
-  stock: number; // Adet cinsinden
-}
-
 export default function BrokersPage() {
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("brokers");
@@ -138,80 +115,21 @@ export default function BrokersPage() {
   const [selectedBrokerId, setSelectedBrokerId] = useState("");
   const [productQuantity, setProductQuantity] = useState("");
 
-  // Mock data - Products (Adet bazında)
-  const [products] = useState<Product[]>([
-    {
-      id: "1",
-      name: "Antep Fıstığı Paketi (200g)",
-      price: 85, // 85 TL per paket
-      stock: 45, // 45 adet
-    },
-    {
-      id: "2",
-      name: "Ceviz İçi Paketi (250g)",
-      price: 32, // 32 TL per paket
-      stock: 23, // 23 adet
-    },
-    {
-      id: "3",
-      name: "Badem Paketi (300g)",
-      price: 45, // 45 TL per paket
-      stock: 78, // 78 adet
-    },
-    {
-      id: "4",
-      name: "Kaju Paketi (150g)",
-      price: 65, // 65 TL per paket
-      stock: 12, // 12 adet
-    },
-  ]);
+  // Global Store
+  const {
+    brokers,
+    getActiveProducts,
+    getProductById,
+    addBroker,
+    updateBroker,
+    deleteBroker,
+    toggleBrokerReceipt,
+    giveProductToBroker,
+    getBrokerTotalDebt,
+  } = useAppStore();
 
-  // Mock data - Brokers
-  const [brokers, setBrokers] = useState<Broker[]>([
-    {
-      id: "1",
-      name: "Ahmet",
-      surname: "Yılmaz",
-      hasReceipt: true,
-      transactions: [
-        {
-          id: "t1",
-          productId: "1",
-          productName: "Antep Fıstığı Paketi (200g)",
-          quantity: 10, // 10 adet
-          unitPrice: 85, // 85 TL per adet
-          totalAmount: 850, // 10 * 85 = 850 TL
-          date: "2024-08-20",
-        },
-        {
-          id: "t2",
-          productId: "2",
-          productName: "Ceviz İçi Paketi (250g)",
-          quantity: 5, // 5 adet
-          unitPrice: 32, // 32 TL per adet
-          totalAmount: 160, // 5 * 32 = 160 TL
-          date: "2024-08-19",
-        },
-      ],
-    },
-    {
-      id: "2",
-      name: "Mehmet",
-      surname: "Kaya",
-      hasReceipt: false,
-      transactions: [
-        {
-          id: "t3",
-          productId: "3",
-          productName: "Badem Paketi (300g)",
-          quantity: 20, // 20 adet
-          unitPrice: 45, // 45 TL per adet
-          totalAmount: 900, // 20 * 45 = 900 TL
-          date: "2024-08-18",
-        },
-      ],
-    },
-  ]);
+  // Toast
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Tab tanımları
   const tabs = [
@@ -220,8 +138,9 @@ export default function BrokersPage() {
   ];
 
   // Options for dropdowns
-  const productOptions = products.map((product) => ({
-    label: `${product.name} (₺${product.price}/adet)`,
+  const activeProducts = getActiveProducts();
+  const productOptions = activeProducts.map((product) => ({
+    label: `${product.name} (Stok: ${product.stock}, ₺${product.price}/adet)`,
     value: product.id,
     price: product.price,
   }));
@@ -230,14 +149,6 @@ export default function BrokersPage() {
     label: `${broker.name} ${broker.surname}`,
     value: broker.id,
   }));
-
-  // Helper functions
-  const calculateTotalDebt = (transactions: Transaction[]) => {
-    return transactions.reduce(
-      (total, transaction) => total + transaction.totalAmount,
-      0
-    );
-  };
 
   const handleSearch = (text: string) => {
     setSearchText(text);
@@ -265,8 +176,12 @@ export default function BrokersPage() {
           text: "Sil",
           style: "destructive",
           onPress: () => {
-            setBrokers((prev) => prev.filter((b) => b.id !== broker.id));
-            Alert.alert("Başarılı", "Aracı silindi!");
+            try {
+              deleteBroker(broker.id);
+              showSuccess("Aracı başarıyla silindi!");
+            } catch (error) {
+              showError("Aracı silinirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -275,7 +190,7 @@ export default function BrokersPage() {
 
   const handleSaveBroker = () => {
     if (!brokerName.trim() || !brokerSurname.trim()) {
-      Alert.alert("Hata", "Lütfen ad ve soyad alanlarını doldurun.");
+      showError("Lütfen ad ve soyad alanlarını doldurun.");
       return;
     }
 
@@ -287,16 +202,16 @@ export default function BrokersPage() {
         {
           text: "Ekle",
           onPress: () => {
-            const newBroker: Broker = {
-              id: Date.now().toString(),
-              name: brokerName,
-              surname: brokerSurname,
-              transactions: [],
-              hasReceipt: false,
-            };
-            setBrokers((prev) => [newBroker, ...prev]);
-            handleCloseBrokerModal();
-            Alert.alert("Başarılı", "Aracı eklendi!");
+            try {
+              addBroker({
+                name: brokerName,
+                surname: brokerSurname,
+              });
+              handleCloseBrokerModal();
+              showSuccess("Aracı başarıyla eklendi!");
+            } catch (error) {
+              showError("Aracı eklenirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -305,7 +220,7 @@ export default function BrokersPage() {
 
   const handleUpdateBroker = () => {
     if (!brokerName.trim() || !brokerSurname.trim() || !editingBroker) {
-      Alert.alert("Hata", "Lütfen ad ve soyad alanlarını doldurun.");
+      showError("Lütfen ad ve soyad alanlarını doldurun.");
       return;
     }
 
@@ -317,15 +232,16 @@ export default function BrokersPage() {
         {
           text: "Güncelle",
           onPress: () => {
-            setBrokers((prev) =>
-              prev.map((b) =>
-                b.id === editingBroker.id
-                  ? { ...b, name: brokerName, surname: brokerSurname }
-                  : b
-              )
-            );
-            handleCloseEditBrokerModal();
-            Alert.alert("Başarılı", "Aracı güncellendi!");
+            try {
+              updateBroker(editingBroker.id, {
+                name: brokerName,
+                surname: brokerSurname,
+              });
+              handleCloseEditBrokerModal();
+              showSuccess("Aracı başarıyla güncellendi!");
+            } catch (error) {
+              showError("Aracı güncellenirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -348,16 +264,21 @@ export default function BrokersPage() {
   // Product giving operations
   const handleGiveProduct = () => {
     if (!selectedProductId || !selectedBrokerId || !productQuantity.trim()) {
-      Alert.alert("Hata", "Lütfen tüm alanları doldurun.");
+      showError("Lütfen tüm alanları doldurun.");
       return;
     }
 
     const quantity = parseInt(productQuantity);
-    const selectedProduct = products.find((p) => p.id === selectedProductId);
+    const selectedProduct = getProductById(selectedProductId);
     const selectedBroker = brokers.find((b) => b.id === selectedBrokerId);
 
     if (!selectedProduct || !selectedBroker) {
-      Alert.alert("Hata", "Geçersiz ürün veya aracı seçimi.");
+      showError("Geçersiz ürün veya aracı seçimi.");
+      return;
+    }
+
+    if (quantity <= 0) {
+      showError("Adet sayısı 0'dan büyük olmalıdır.");
       return;
     }
 
@@ -365,35 +286,26 @@ export default function BrokersPage() {
 
     Alert.alert(
       "Ürün Ver",
-      `${selectedBroker.name} ${selectedBroker.surname} aracısına ${quantity} adet ${selectedProduct.name} vermek istediğinizden emin misiniz?\n\nTutar: ₺${totalAmount}`,
+      `${selectedBroker.name} ${selectedBroker.surname} aracısına ${quantity} adet ${selectedProduct.name} vermek istediğinizden emin misiniz?\n\nToplam Tutar: ₺${totalAmount}`,
       [
         { text: "İptal", style: "cancel" },
         {
           text: "Ver",
           onPress: () => {
-            const newTransaction: Transaction = {
-              id: Date.now().toString(),
-              productId: selectedProduct.id,
-              productName: selectedProduct.name,
-              quantity: quantity,
-              unitPrice: selectedProduct.price,
-              totalAmount: totalAmount,
-              date: new Date().toISOString().split("T")[0],
-            };
-
-            setBrokers((prev) =>
-              prev.map((broker) =>
-                broker.id === selectedBrokerId
-                  ? {
-                      ...broker,
-                      transactions: [...broker.transactions, newTransaction],
-                    }
-                  : broker
-              )
+            const result = giveProductToBroker(
+              selectedBrokerId,
+              selectedProductId,
+              quantity
             );
 
-            handleCloseGiveProductModal();
-            Alert.alert("Başarılı", "Ürün verildi!");
+            if (result.success) {
+              handleCloseGiveProductModal();
+              showSuccess(
+                `${selectedBroker.name} ${selectedBroker.surname} aracısına ${quantity} adet ürün başarıyla verildi!`
+              );
+            } else {
+              showError(result.error || "Ürün verilirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -408,14 +320,8 @@ export default function BrokersPage() {
     setProductQuantity("");
   };
 
-  const toggleReceipt = (brokerId: string) => {
-    setBrokers((prev) =>
-      prev.map((broker) =>
-        broker.id === brokerId
-          ? { ...broker, hasReceipt: !broker.hasReceipt }
-          : broker
-      )
-    );
+  const handleToggleReceipt = (brokerId: string) => {
+    toggleBrokerReceipt(brokerId);
   };
 
   // Filtering
@@ -427,6 +333,14 @@ export default function BrokersPage() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
+      {/* Toast Notification */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search Bar */}
         <SearchBar
@@ -450,7 +364,7 @@ export default function BrokersPage() {
           <View className="mt-3">
             {/* Aracı Listesi */}
             {filteredBrokers.map((broker) => {
-              const totalDebt = calculateTotalDebt(broker.transactions);
+              const totalDebt = getBrokerTotalDebt(broker.id);
 
               return (
                 <Card
@@ -483,7 +397,7 @@ export default function BrokersPage() {
                     <View className="flex-row items-center">
                       {/* Makbuz Durumu */}
                       <TouchableOpacity
-                        onPress={() => toggleReceipt(broker.id)}
+                        onPress={() => handleToggleReceipt(broker.id)}
                         className={`px-2 py-1 rounded mr-2 ${
                           broker.hasReceipt ? "bg-green-100" : "bg-red-100"
                         }`}
