@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 
 import {
   Container,
@@ -378,9 +379,13 @@ export default function BrokersPage() {
                     title={`${broker.name} ${broker.surname}`}
                     subtitle="Mevcut Bakiye"
                     amount={`₺${totalDebt.toLocaleString()}`}
-                    onPress={() => handleEditBroker(broker)}
-                    onDelete={() => handleDeleteBroker(broker)}
-                    showDeleteIcon={true}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/brokerDetail",
+                        params: { brokerId: broker.id },
+                      })
+                    }
+                    showDeleteIcon={false}
                   />
                 );
               })}

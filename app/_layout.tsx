@@ -114,6 +114,13 @@ export default function RootLayout() {
               headerShown: true,
             }}
           />
+          <Stack.Screen
+            name="brokerDetail"
+            options={{
+              title: "Aracı Detayı",
+              headerShown: true,
+            }}
+          />
         </Stack>
 
         {/* BottomNavigation sadece login olmamış kullanıcılarda göster */}
