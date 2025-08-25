@@ -128,13 +128,6 @@ export default function BrokerDetailPage() {
                   >
                     SATIŞ YAP
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
-                    Aracıya ürün ver
-                  </Typography>
                 </View>
               </View>
               <Icon
@@ -173,13 +166,6 @@ export default function BrokerDetailPage() {
                     className="text-stock-white mb-1"
                   >
                     TAHSİLAT
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
-                    Tahsilat işlemleri yap
                   </Typography>
                 </View>
               </View>
@@ -220,13 +206,6 @@ export default function BrokerDetailPage() {
                   >
                     EKSTRELER
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
-                    Tüm işlem geçmişi
-                  </Typography>
                 </View>
               </View>
               <Icon
@@ -265,13 +244,6 @@ export default function BrokerDetailPage() {
                     className="text-stock-white mb-1"
                   >
                     FATURALAR
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
-                    Fatura bilgilerini görüntüle
                   </Typography>
                 </View>
               </View>
@@ -312,13 +284,6 @@ export default function BrokerDetailPage() {
                   >
                     ARACIYI DÜZENLE
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
-                    Aracı bilgilerini güncelle
-                  </Typography>
                 </View>
               </View>
               <Icon
@@ -357,13 +322,6 @@ export default function BrokerDetailPage() {
                     className="text-stock-white mb-1"
                   >
                     ARACIYI SİL
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
-                    Aracıyı sistemden kaldır
                   </Typography>
                 </View>
               </View>
