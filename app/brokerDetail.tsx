@@ -79,28 +79,23 @@ export default function BrokerDetailPage() {
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Aracı Başlık Bilgileri */}
-        <View className="mb-6">
+        <View className="mb-6 items-center">
           <Typography
-            variant="h2"
+            variant="h1"
             weight="bold"
-            size="xl"
-            className="text-stock-red"
+            size="3xl"
+            className="text-stock-black text-center mb-2"
           >
             {`${broker.name} ${broker.surname}`}
           </Typography>
 
-          <View className="flex-row items-center justify-between mt-2">
-            <Typography variant="caption" className="text-stock-text">
-              Mevcut İskonto: %20
-            </Typography>
-            <Typography
-              variant="body"
-              weight="semibold"
-              className="text-stock-dark"
-            >
-              Bakiye: ₺{totalDebt.toLocaleString()}
-            </Typography>
-          </View>
+          <Typography
+            variant="body"
+            weight="semibold"
+            className="text-stock-red text-center mt-2"
+          >
+            Bakiye: ₺{totalDebt.toLocaleString()}
+          </Typography>
         </View>
 
         {/* İşlem Kartları */}
