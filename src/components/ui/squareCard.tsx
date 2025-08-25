@@ -37,8 +37,12 @@ export default function SquareCard({
       {...props}
     >
       {/* Üst kısım - Başlık ve Sil ikonu */}
-      <View className={`flex-row ${!showDeleteIcon ? 'justify-center' : 'justify-between'} items-start mb-2`}>
-        <View className={`${showDeleteIcon ? 'flex-1 mr-2' : 'px-2'}`}>
+      <View
+        className={`flex-row ${
+          !showDeleteIcon ? "justify-center" : "justify-between"
+        } items-start mb-2`}
+      >
+        <View className={`${showDeleteIcon ? "flex-1 mr-2" : "px-2"}`}>
           <Typography
             variant="body"
             weight="semibold"
@@ -47,7 +51,7 @@ export default function SquareCard({
             numberOfLines={1}
             ellipsizeMode="tail"
             style={{
-              letterSpacing: -0.2 // Karakterler arasındaki boşluğu hafifçe azalt
+              letterSpacing: -0.2, // Karakterler arasındaki boşluğu hafifçe azalt
             }}
           >
             {title}

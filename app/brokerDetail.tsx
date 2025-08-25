@@ -10,13 +10,16 @@ import {
   Icon,
   Button,
   Toast,
+  Modal,
+  Input,
 } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
 import { useAppStore } from "@/src/stores/appStore";
 
 export default function BrokerDetailPage() {
   const { brokerId } = useLocalSearchParams();
-  const { brokers, deleteBroker, getBrokerTotalDebt } = useAppStore();
+  const { brokers, deleteBroker, updateBroker, getBrokerTotalDebt } =
+    useAppStore();
   const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Broker bilgilerini al
@@ -35,11 +38,53 @@ export default function BrokerDetailPage() {
   }
 
   const totalDebt = getBrokerTotalDebt(broker.id);
+  const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] =
+    useState(false);
+  const [brokerName, setBrokerName] = useState(broker.name);
+  const [brokerSurname, setBrokerSurname] = useState(broker.surname);
+
   const handleEditBroker = () => {
-    // Şimdilik brokers sayfasına geri dönelim
-    Alert.alert("Bilgi", "Düzenleme sayfası henüz uygulanmadı");
-    // router.push("/brokers");
+    setIsEditBrokerModalVisible(true);
   };
+
+  const handleCloseEditBrokerModal = () => {
+    setIsEditBrokerModalVisible(false);
+    setBrokerName(broker.name);
+    setBrokerSurname(broker.surname);
+  };
+
+  const handleUpdateBroker = () => {
+    if (!brokerName.trim() || !brokerSurname.trim()) {
+      showError("Lütfen ad ve soyad alanlarını doldurun.");
+      return;
+    }
+
+    Alert.alert(
+      "Aracı Güncelle",
+      `"${brokerName} ${brokerSurname}" olarak güncellemek istediğinizden emin misiniz?`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Güncelle",
+          onPress: () => {
+            try {
+              updateBroker(broker.id, {
+                name: brokerName,
+                surname: brokerSurname,
+              });
+              handleCloseEditBrokerModal();
+
+              // Sadece toast mesajı göster, sayfayı yenilemeden
+              showSuccess("Aracı başarıyla güncellendi!");
+            } catch (error) {
+              showError("Aracı güncellenirken bir hata oluştu.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDeleteBroker = () => {
     Alert.alert(
       "Aracı Sil",
@@ -53,7 +98,11 @@ export default function BrokerDetailPage() {
             try {
               deleteBroker(broker.id);
               showSuccess("Aracı başarıyla silindi!");
-              router.back();
+
+              // Toast görünür olduktan sonra geriye git
+              setTimeout(() => {
+                router.back();
+              }, 1500);
             } catch (error) {
               showError("Aracı silinirken bir hata oluştu.");
             }
@@ -86,7 +135,7 @@ export default function BrokerDetailPage() {
             size="3xl"
             className="text-stock-black text-center mb-2"
           >
-            {`${broker.name} ${broker.surname}`}
+            {broker ? `${broker.name} ${broker.surname}` : ""}
           </Typography>
 
           <Typography
@@ -335,6 +384,54 @@ export default function BrokerDetailPage() {
           </Card>
         </View>
       </ScrollView>
+
+      {/* Aracı Düzenleme Modal'ı */}
+      <Modal
+        visible={isEditBrokerModalVisible}
+        onClose={handleCloseEditBrokerModal}
+        title="Aracı Düzenle"
+        size="lg"
+        className="bg-white mx-6"
+      >
+        <View>
+          <Input
+            label="Ad"
+            value={brokerName}
+            onChangeText={setBrokerName}
+            placeholder="Aracının adını girin..."
+            variant="outlined"
+            className="mb-4"
+          />
+
+          <Input
+            label="Soyad"
+            value={brokerSurname}
+            onChangeText={setBrokerSurname}
+            placeholder="Aracının soyadını girin..."
+            variant="outlined"
+            className="mb-4"
+          />
+
+          <View className="mt-6">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-stock-red mb-3"
+              onPress={handleUpdateBroker}
+            >
+              <Typography className="text-white">Güncelle</Typography>
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth
+              className="border-stock-border"
+              onPress={handleCloseEditBrokerModal}
+            >
+              <Typography className="text-stock-dark">İptal</Typography>
+            </Button>
+          </View>
+        </View>
+      </Modal>
     </Container>
   );
 }
