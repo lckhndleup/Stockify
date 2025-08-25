@@ -25,7 +25,7 @@ export default function SquareCard({
     <TouchableOpacity
       className={`bg-stock-red rounded-lg p-4 ${className}`}
       style={{
-        width: "48%", // 2 kart yan yana, aralarında boşluk için %48
+        width: "48.5%", // Biraz daha geniş kartlar
         aspectRatio: 1, // Kare şeklinde
         shadowColor: "#E3001B",
         shadowOffset: { width: 0, height: 2 },
@@ -37,15 +37,18 @@ export default function SquareCard({
       {...props}
     >
       {/* Üst kısım - Başlık ve Sil ikonu */}
-      <View className="flex-row justify-between items-start mb-2">
-        <View className="flex-1 mr-2">
+      <View className={`flex-row ${!showDeleteIcon ? 'justify-center' : 'justify-between'} items-start mb-2`}>
+        <View className={`${showDeleteIcon ? 'flex-1 mr-2' : 'px-2'}`}>
           <Typography
             variant="body"
             weight="semibold"
-            className="text-stock-white"
-            size="lg"
-            numberOfLines={2}
+            className="text-stock-white text-center"
+            size="base"
+            numberOfLines={1}
             ellipsizeMode="tail"
+            style={{
+              letterSpacing: -0.2 // Karakterler arasındaki boşluğu hafifçe azalt
+            }}
           >
             {title}
           </Typography>
@@ -80,10 +83,10 @@ export default function SquareCard({
       />
 
       {/* Alt kısım - Subtitle ve Miktar */}
-      <View className="flex-1 justify-end">
+      <View className="flex-1 justify-end items-center">
         <Typography
           variant="caption"
-          className="text-stock-white mb-1"
+          className="text-stock-white mb-1 text-center"
           style={{ opacity: 0.8 }}
         >
           {subtitle}
@@ -91,7 +94,7 @@ export default function SquareCard({
         <Typography
           variant="h3"
           weight="bold"
-          className="text-stock-white"
+          className="text-stock-white text-center"
           size="xl"
           numberOfLines={1}
           ellipsizeMode="tail"

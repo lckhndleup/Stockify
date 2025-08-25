@@ -368,7 +368,7 @@ export default function BrokersPage() {
             {/* Aracı Grid Listesi */}
             <View
               className="flex-row flex-wrap justify-between"
-              style={{ gap: 12 }}
+              style={{ gap: 10 }}
             >
               {filteredBrokers.map((broker) => {
                 const totalDebt = getBrokerTotalDebt(broker.id);
@@ -386,6 +386,7 @@ export default function BrokersPage() {
                       })
                     }
                     showDeleteIcon={false}
+                    className="mb-2"
                   />
                 );
               })}
