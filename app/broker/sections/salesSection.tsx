@@ -1,12 +1,551 @@
-import { View, Text } from "react-native";
-import React from "react";
+import React, { useState, useMemo } from "react";
+import { View, ScrollView, Alert } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import {
+  Container,
+  Typography,
+  Card,
+  SelectBox,
+  Input,
+  Button,
+  Icon,
+  Divider,
+  Modal,
+  type SelectBoxOption,
+} from "@/src/components/ui";
+import { useAppStore } from "@/src/stores/appStore";
+import {
+  salesQuantitySchema,
+  editQuantitySchema,
+} from "@/src/validations/salesValidation";
 
-const SalesSection = () => {
-  return (
-    <View>
-      <Text>SalesSection</Text>
-    </View>
+// Eklenen ürün tipi
+interface AddedProduct {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export default function SalesSection() {
+  const { brokerId } = useLocalSearchParams();
+  const { brokers, getActiveProducts, giveProductToBroker } = useAppStore();
+
+  // State'ler
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [quantityError, setQuantityError] = useState("");
+  const [addedProducts, setAddedProducts] = useState<AddedProduct[]>([]);
+
+  // Modal state'leri
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<AddedProduct | null>(
+    null
   );
-};
+  const [editQuantity, setEditQuantity] = useState("");
+  const [editQuantityError, setEditQuantityError] = useState("");
 
-export default SalesSection;
+  // Broker bilgisini al
+  const broker = brokers.find((b) => b.id === brokerId);
+  const activeProducts = getActiveProducts();
+
+  // Kullanılabilir ürünler (eklenenler çıkarılır)
+  const availableProducts = useMemo(() => {
+    const addedProductIds = addedProducts.map((p) => p.id);
+    return activeProducts.filter(
+      (product) => !addedProductIds.includes(product.id)
+    );
+  }, [activeProducts, addedProducts]);
+
+  // SelectBox için ürün seçenekleri
+  const productOptions: SelectBoxOption[] = availableProducts.map(
+    (product) => ({
+      label: `${product.name} (Stok: ${product.stock}, ₺${product.price}/adet)`,
+      value: product.id,
+    })
+  );
+
+  // Seçilen ürünün bilgilerini al
+  const selectedProductData = availableProducts.find(
+    (p) => p.id === selectedProduct
+  );
+
+  const handleProductSelect = (productId: string) => {
+    setSelectedProduct(productId);
+    setQuantity(""); // Yeni ürün seçildiğinde adet sıfırlanır
+    setQuantityError(""); // Error temizle
+  };
+
+  const validateQuantity = (value: string, maxStock?: number) => {
+    try {
+      const result = salesQuantitySchema.parse({ quantity: value });
+      const qty = parseInt(value);
+
+      if (maxStock && qty > maxStock) {
+        return `Yetersiz stok! Mevcut stok: ${maxStock} adet`;
+      }
+
+      return "";
+    } catch (error: any) {
+      return error.errors?.[0]?.message || "Geçersiz adet";
+    }
+  };
+
+  const handleQuantityChange = (text: string) => {
+    setQuantity(text);
+    if (text) {
+      const error = validateQuantity(text, selectedProductData?.stock);
+      setQuantityError(error);
+    } else {
+      setQuantityError("");
+    }
+  };
+
+  const handleAddProduct = () => {
+    if (!selectedProductData || !quantity) return;
+
+    const error = validateQuantity(quantity, selectedProductData.stock);
+    if (error) {
+      setQuantityError(error);
+      return;
+    }
+
+    const qty = parseInt(quantity);
+    const newProduct: AddedProduct = {
+      id: selectedProductData.id,
+      name: selectedProductData.name,
+      quantity: qty,
+      unitPrice: selectedProductData.price,
+      totalPrice: qty * selectedProductData.price,
+    };
+
+    setAddedProducts((prev) => [...prev, newProduct]);
+    setSelectedProduct(""); // Seçimi temizle
+    setQuantity(""); // Adet girişini temizle
+    setQuantityError(""); // Error temizle
+  };
+
+  const handleRemoveProduct = (productId: string) => {
+    Alert.alert(
+      "Ürün Kaldır",
+      "Bu ürünü listeden kaldırmak istediğinizden emin misiniz?",
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Kaldır",
+          style: "destructive",
+          onPress: () => {
+            setAddedProducts((prev) => prev.filter((p) => p.id !== productId));
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEditProduct = (productId: string) => {
+    const product = addedProducts.find((p) => p.id === productId);
+    if (!product) return;
+
+    setEditingProduct(product);
+    setEditQuantity(product.quantity.toString());
+    setEditQuantityError("");
+    setEditModalVisible(true);
+  };
+
+  const handleEditQuantityChange = (text: string) => {
+    setEditQuantity(text);
+    if (text) {
+      try {
+        const result = editQuantitySchema.parse({ quantity: text });
+        const qty = parseInt(text);
+        const originalProduct = activeProducts.find(
+          (p) => p.id === editingProduct?.id
+        );
+
+        if (originalProduct && qty > originalProduct.stock) {
+          setEditQuantityError(
+            `Yetersiz stok! Mevcut stok: ${originalProduct.stock} adet`
+          );
+        } else {
+          setEditQuantityError("");
+        }
+      } catch (error: any) {
+        setEditQuantityError(error.errors?.[0]?.message || "Geçersiz adet");
+      }
+    } else {
+      setEditQuantityError("");
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingProduct || !editQuantity || editQuantityError) return;
+
+    const qty = parseInt(editQuantity);
+    const updatedProducts = addedProducts.map((p) =>
+      p.id === editingProduct.id
+        ? {
+            ...p,
+            quantity: qty,
+            totalPrice: qty * p.unitPrice,
+          }
+        : p
+    );
+
+    setAddedProducts(updatedProducts);
+    setEditModalVisible(false);
+    setEditingProduct(null);
+    setEditQuantity("");
+    setEditQuantityError("");
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalVisible(false);
+    setEditingProduct(null);
+    setEditQuantity("");
+    setEditQuantityError("");
+  };
+
+  const calculateTotalAmount = () => {
+    return addedProducts.reduce(
+      (total, product) => total + product.totalPrice,
+      0
+    );
+  };
+
+  const handleCompleteSale = () => {
+    if (addedProducts.length === 0) {
+      Alert.alert("Hata", "Lütfen en az bir ürün ekleyiniz.");
+      return;
+    }
+
+    const totalAmount = calculateTotalAmount();
+
+    Alert.alert(
+      "Satışı Tamamla",
+      `${broker?.name} ${
+        broker?.surname
+      } aracısına toplam ₺${totalAmount.toLocaleString()} tutarında satış yapılacaktır.\n\nBu tutar aracının bakiyesine eklenecektir.\n\nOnaylıyor musunuz?`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Onayla",
+          onPress: () => {
+            // Her ürün için satış işlemi yap
+            let allSuccess = true;
+
+            for (const product of addedProducts) {
+              const result = giveProductToBroker(
+                brokerId as string,
+                product.id,
+                product.quantity
+              );
+
+              if (!result.success) {
+                Alert.alert("Hata", result.error || "Satış işlemi başarısız.");
+                allSuccess = false;
+                break;
+              }
+            }
+
+            if (allSuccess) {
+              Alert.alert(
+                "Başarılı",
+                "Satış işlemi tamamlandı! Ürünler aracının bakiyesine eklendi.",
+                [
+                  {
+                    text: "Tamam",
+                    onPress: () => router.back(),
+                  },
+                ]
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (!broker) {
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <View className="items-center justify-center flex-1">
+          <Typography variant="body" className="text-stock-text">
+            Aracı bulunamadı...
+          </Typography>
+        </View>
+      </Container>
+    );
+  }
+
+  return (
+    <Container className="bg-white" padding="sm" safeTop={false}>
+      <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
+        {/* Header - Sadece aracı ismi */}
+        <View className="mb-6 items-center">
+          <Typography
+            variant="h2"
+            weight="bold"
+            className="text-stock-black text-center"
+          >
+            {broker.name} {broker.surname}
+          </Typography>
+        </View>
+
+        {/* Ürün Seçim Formu - Dış Card kaldırıldı */}
+        <View className="mb-4">
+          {/* Ürün Seçimi - SelectBox */}
+          <SelectBox
+            label="Ürün Seçiniz"
+            placeholder="Satılacak ürünü seçiniz..."
+            options={productOptions}
+            value={selectedProduct}
+            onSelect={handleProductSelect}
+            className="mb-4"
+          />
+
+          {/* Adet Girişi - Sadece ürün seçildiğinde görünür */}
+          {selectedProduct && (
+            <>
+              <Input
+                label="Adet Giriniz"
+                placeholder="Kaç adet?"
+                value={quantity}
+                onChangeText={handleQuantityChange}
+                numericOnly={true}
+                error={quantityError}
+                helperText={
+                  !quantityError && selectedProductData
+                    ? `Mevcut stok: ${selectedProductData.stock} adet`
+                    : ""
+                }
+                className="mb-4"
+              />
+
+              {/* Ekle Butonu */}
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                className="bg-stock-red"
+                onPress={handleAddProduct}
+                disabled={
+                  !quantity || !!quantityError || parseInt(quantity) <= 0
+                }
+              >
+                <Typography className="text-white" weight="semibold">
+                  EKLE
+                </Typography>
+              </Button>
+            </>
+          )}
+        </View>
+
+        {/* Divider */}
+        {addedProducts.length > 0 && (
+          <View className="mb-4">
+            <Divider />
+          </View>
+        )}
+
+        {/* Eklenen Ürünler */}
+        {addedProducts.length > 0 && (
+          <View className={`mb-4 ${addedProducts.length >= 3 ? "mb-8" : ""}`}>
+            <Typography
+              variant="h4"
+              weight="semibold"
+              className="text-stock-dark mb-4"
+            >
+              EKLENEN ÜRÜNLER
+            </Typography>
+
+            {addedProducts.map((product) => (
+              <Card
+                key={product.id}
+                variant="default"
+                padding="md"
+                className="border border-stock-border mb-3"
+                radius="md"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Typography
+                      variant="body"
+                      weight="semibold"
+                      className="text-stock-dark mb-1"
+                    >
+                      {product.name}
+                    </Typography>
+                    <Typography variant="caption" className="text-stock-text">
+                      {product.quantity} adet × ₺{product.unitPrice} = ₺
+                      {product.totalPrice.toLocaleString()}
+                    </Typography>
+                  </View>
+
+                  <View className="flex-row items-center">
+                    {/* Düzenleme Butonu */}
+                    <Icon
+                      family="MaterialIcons"
+                      name="edit"
+                      size={20}
+                      color="#67686A"
+                      pressable
+                      onPress={() => handleEditProduct(product.id)}
+                      containerClassName="mr-3 p-1"
+                    />
+
+                    {/* Silme Butonu */}
+                    <Icon
+                      family="MaterialIcons"
+                      name="cancel"
+                      size={20}
+                      color="#E3001B"
+                      pressable
+                      onPress={() => handleRemoveProduct(product.id)}
+                      containerClassName="p-1"
+                    />
+                  </View>
+                </View>
+              </Card>
+            ))}
+
+            {/* Toplam Tutar */}
+            <Card
+              variant="default"
+              padding="md"
+              className="bg-stock-red border-0 mb-4"
+              radius="md"
+            >
+              <View className="flex-row items-center justify-between">
+                <Typography
+                  variant="h4"
+                  weight="bold"
+                  className="text-stock-white"
+                >
+                  TOPLAM TUTAR
+                </Typography>
+                <Typography
+                  variant="h3"
+                  weight="bold"
+                  className="text-stock-white"
+                >
+                  ₺{calculateTotalAmount().toLocaleString()}
+                </Typography>
+              </View>
+            </Card>
+
+            {/* Satışı Tamamla Butonu */}
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              className="bg-stock-red"
+              onPress={handleCompleteSale}
+              leftIcon={
+                <Icon
+                  family="MaterialIcons"
+                  name="check_circle"
+                  size={20}
+                  color="white"
+                />
+              }
+            >
+              <Typography className="text-white" weight="bold">
+                SATIŞI TAMAMLA
+              </Typography>
+            </Button>
+          </View>
+        )}
+
+        {/* Boş durum mesajı */}
+        {addedProducts.length === 0 && (
+          <View className="items-center py-8">
+            <Icon
+              family="MaterialIcons"
+              name="shopping_cart"
+              size={48}
+              color="#ECECEC"
+              containerClassName="mb-4"
+            />
+            <Typography variant="body" className="text-stock-text text-center">
+              Henüz ürün eklenmedi.{"\n"}Yukarıdan ürün seçerek satış listesi
+              oluşturun.
+            </Typography>
+          </View>
+        )}
+
+        {/* 3+ ürün için ekstra alt margin */}
+        {addedProducts.length >= 3 && <View style={{ height: 80 }} />}
+      </ScrollView>
+
+      {/* Ürün Düzenleme Modalı */}
+      <Modal
+        visible={editModalVisible}
+        onClose={handleCloseEditModal}
+        title="Ürün Düzenle"
+        size="lg"
+        className="bg-white mx-6"
+      >
+        <View>
+          {editingProduct && (
+            <>
+              <Typography
+                variant="body"
+                weight="semibold"
+                className="text-stock-dark mb-4"
+              >
+                {editingProduct.name}
+              </Typography>
+
+              <Input
+                label="Yeni Adet"
+                placeholder="Kaç adet?"
+                value={editQuantity}
+                onChangeText={handleEditQuantityChange}
+                numericOnly={true}
+                error={editQuantityError}
+                className="mb-4"
+                helperText={`Birim fiyat: ₺${editingProduct.unitPrice}`}
+              />
+
+              {editQuantity && !editQuantityError && (
+                <View className="bg-blue-50 p-3 rounded-lg mb-4">
+                  <Typography
+                    variant="caption"
+                    className="text-blue-700"
+                    weight="medium"
+                  >
+                    Yeni Toplam: ₺
+                    {(
+                      parseInt(editQuantity) * editingProduct.unitPrice
+                    ).toLocaleString()}
+                  </Typography>
+                </View>
+              )}
+            </>
+          )}
+
+          <View className="mt-6">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-stock-red mb-3"
+              onPress={handleSaveEdit}
+              disabled={!editQuantity || !!editQuantityError}
+            >
+              <Typography className="text-white">Güncelle</Typography>
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth
+              className="border-stock-border"
+              onPress={handleCloseEditModal}
+            >
+              <Typography className="text-stock-dark">İptal</Typography>
+            </Button>
+          </View>
+        </View>
+      </Modal>
+    </Container>
+  );
+}

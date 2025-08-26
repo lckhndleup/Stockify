@@ -55,7 +55,11 @@ export default function RootLayout() {
   }, [isAuthenticated, pathname, isNavigationReady]);
 
   // Login sayfasında BottomNavigation gösterme
-  const shouldShowBottomNav = isAuthenticated && pathname !== "/login";
+  // Login sayfasında ve sections altında BottomNavigation gösterme
+  const shouldShowBottomNav =
+    isAuthenticated &&
+    pathname !== "/login" &&
+    !pathname.includes("/broker/sections/"); // Sections altındaki tüm sayfalar
 
   console.log("🎯 RootLayout render:", {
     pathname,

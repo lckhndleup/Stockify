@@ -11,6 +11,7 @@ interface InputProps extends TextInputProps {
   variant?: "default" | "outlined" | "filled";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
+  numericOnly?: boolean; // YENİ: Sadece sayı girişi için
   className?: string;
   inputClassName?: string;
   style?: any;
@@ -25,16 +26,18 @@ export default function Input({
   variant = "outlined",
   size = "md",
   fullWidth = true,
+  numericOnly = false, // YENİ PROP
   className = "",
   inputClassName = "",
   style,
+  onChangeText, // Mevcut onChangeText'i alıyoruz
   ...props
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
 
   const variantClasses = {
     default: "border-b border-stock-border bg-transparent",
-    outlined: "border border-stock-border rounded-lg bg-stock-white", // rounded-lg zaten standart
+    outlined: "border border-stock-border rounded-lg bg-stock-white",
     filled: "bg-stock-gray border border-stock-border rounded-lg",
   };
 
@@ -45,7 +48,7 @@ export default function Input({
   };
 
   const inputHeights = {
-    sm: 52, // Tüm yükseklikler 52px olarak standartlaştırıldı
+    sm: 52,
     md: 52,
     lg: 52,
   };
@@ -75,6 +78,29 @@ export default function Input({
     height: inputHeights[size],
   };
 
+  // YENİ: Numeric validation fonksiyonu
+  const handleTextChange = (text: string) => {
+    if (numericOnly) {
+      // Sadece sayıları ve ondalık nokta/virgülü kabul et
+      const numericText = text.replace(/[^0-9.,]/g, "");
+      // Virgülü noktaya çevir (Türkiye'de virgül kullanılır)
+      const normalizedText = numericText.replace(",", ".");
+
+      // Birden fazla nokta varsa sadece ilkini tut
+      const parts = normalizedText.split(".");
+      const finalText =
+        parts.length > 2
+          ? parts[0] + "." + parts.slice(1).join("")
+          : normalizedText;
+
+      // Orijinal onChangeText fonksiyonunu çağır
+      onChangeText?.(finalText);
+    } else {
+      // Normal metin girişi
+      onChangeText?.(text);
+    }
+  };
+
   return (
     <View className={`${fullWidth ? "w-full" : ""} ${className}`}>
       {label && (
@@ -95,7 +121,7 @@ export default function Input({
           placeholderTextColor="#73767A"
           textAlign={
             style?.textAlign ||
-            (props.keyboardType === "numeric" ? "left" : "left")
+            (numericOnly || props.keyboardType === "numeric" ? "left" : "left")
           }
           textAlignVertical="center"
           style={{
@@ -107,8 +133,11 @@ export default function Input({
             ...style,
           }}
           multiline={false}
+          // YENİ: numericOnly true ise keyboard type'ı otomatik ayarla
+          keyboardType={numericOnly ? "numeric" : props.keyboardType}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          onChangeText={handleTextChange} // YENİ HANDLER
           {...props}
         />
 
