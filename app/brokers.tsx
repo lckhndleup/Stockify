@@ -131,6 +131,8 @@ export default function BrokersPage() {
     toggleBrokerReceipt,
     giveProductToBroker,
     getBrokerTotalDebt,
+    globalToast,
+    hideGlobalToast,
   } = useAppStore();
 
   // Toast
@@ -336,30 +338,6 @@ export default function BrokersPage() {
       .includes(searchText.toLowerCase())
   );
 
-  useEffect(() => {
-    if (params.showToast && params.toastMessage) {
-      console.log(
-        "📢 Showing toast from navigation params:",
-        params.toastMessage
-      );
-
-      // Toast mesajını göster
-      const toastMessage = params.toastMessage as string;
-      if (params.showToast === "success") {
-        showSuccess(toastMessage);
-      } else if (params.showToast === "error") {
-        showError(toastMessage);
-      }
-
-      // Toast tamamen render olduktan sonra parametreleri temizle
-      const timer = setTimeout(() => {
-        router.replace("/brokers");
-      }, 1500); // 1.5 saniye bekle
-
-      return () => clearTimeout(timer);
-    }
-  }, [params.showToast, params.toastMessage, showSuccess, showError]);
-
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
@@ -369,7 +347,13 @@ export default function BrokersPage() {
         type={toast.type}
         onHide={hideToast}
       />
-
+      {/* Global Toast - BUNU EKLEYİN */}
+      <Toast
+        visible={globalToast.visible}
+        message={globalToast.message}
+        type={globalToast.type}
+        onHide={hideGlobalToast}
+      />
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search Bar */}
         <SearchBar

@@ -51,7 +51,10 @@ export default function Toast({
       duration: 250,
       useNativeDriver: true,
     }).start(() => {
-      onHide?.();
+      // State update'ini bir sonraki render cycle'a ertele
+      setTimeout(() => {
+        onHide?.();
+      }, 0);
     });
   };
 

@@ -21,8 +21,14 @@ export default function BrokerDetailPage() {
 
   // HOOKS - HER ZAMAN AYNI SIRADA ÇAĞRILMALI
   const { brokerId } = useLocalSearchParams();
-  const { brokers, deleteBroker, updateBroker, getBrokerTotalDebt } =
-    useAppStore();
+  const {
+    brokers,
+    deleteBroker,
+    updateBroker,
+    getBrokerTotalDebt,
+    showGlobalToast,
+  } = useAppStore();
+
   const { toast, showSuccess, showError, hideToast } = useToast();
 
   // STATE'LER - HER ZAMAN AYNI SIRADA
@@ -155,16 +161,13 @@ export default function BrokerDetailPage() {
               console.log("🗑️ Step 1: Delete broker from store");
               deleteBroker(broker.id);
 
-              console.log(
-                "🚀 Step 2: Navigate to brokers with success message"
-              );
-              router.push({
-                pathname: "/brokers",
-                params: {
-                  showToast: "success",
-                  toastMessage: `${brokerName} başarıyla silindi!`,
-                },
-              });
+              console.log("🚀 Step 2: Navigate to brokers");
+              router.push("/brokers");
+
+              console.log("🎉 Step 3: Show global toast after navigation");
+              setTimeout(() => {
+                showGlobalToast(`${brokerName} başarıyla silindi!`, "success");
+              }, 500);
             } catch (error) {
               console.error("❌ Delete broker error:", error);
               showError("Aracı silinirken bir hata oluştu.");
