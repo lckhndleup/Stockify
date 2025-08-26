@@ -16,51 +16,45 @@ export default function Toast({
   visible,
   message,
   type = "error",
-  duration = 3000,
+  duration = 3000, // Süreyi 3 saniyeye çıkardık
   onHide,
 }: ToastProps) {
-  const translateY = useRef(new Animated.Value(-100)).current;
+  // Sadece opacity animasyonu kullan, translateY kaldırıldı
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
     if (visible) {
-      // Toast'ı göster
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      // Toast'ı göster (sadece opacity animasyonu, daha hızlı)
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 200, // Daha hızlı görünme
+        useNativeDriver: true,
+      }).start();
 
       // Belirtilen süre sonra gizle
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         hideToast();
       }, duration);
-
-      return () => clearTimeout(timer);
     }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [visible, duration]);
 
   const hideToast = () => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -100,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onHide?.();
+    // Sadece opacity animasyonu
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      // State update'ini bir sonraki render cycle'a ertele
+      setTimeout(() => {
+        onHide?.();
+      }, 0);
     });
   };
 
@@ -104,44 +98,49 @@ export default function Toast({
 
   return (
     <View
-      className="absolute top-0 left-0 right-0 z-50"
-      style={{ paddingTop: 60 }}
+      className="absolute top-0 left-0 right-0"
+      style={{
+        paddingTop: 10, // En üste yakın olsun
+        zIndex: 10000, // Z-index'i arttır
+        elevation: 10000, // Android için elevation değerini arttır
+        position: "absolute", // Pozisyonu sabit tut
+      }}
     >
       <Animated.View
         style={[
           {
-            transform: [{ translateY }],
             opacity,
-            marginHorizontal: 16,
-            borderRadius: 12,
+            marginTop: 0, // Üstten sıfır boşluk
+            marginHorizontal: 20, // Yanlardan biraz daha fazla boşluk
+            borderRadius: 10,
             backgroundColor: toastStyle.backgroundColor,
-            borderLeftWidth: 4,
-            borderLeftColor: toastStyle.borderColor,
+            borderWidth: 1, // Dört tarafı borderlı
+            borderColor: toastStyle.borderColor,
             shadowColor: "#000",
             shadowOffset: {
               width: 0,
-              height: 2,
+              height: 4,
             },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
+            shadowOpacity: 0.6,
+            shadowRadius: 8,
+            elevation: 12,
           },
         ]}
       >
-        <View className="flex-row items-center p-4">
+        <View className="flex-row items-center py-3 px-4">
           <Icon
             family="MaterialIcons"
             name={toastStyle.iconName as any}
-            size={24}
+            size={20} // Daha küçük ikon
             color={toastStyle.iconColor}
-            containerClassName="mr-3"
+            containerClassName="mr-2"
           />
           <View className="flex-1">
             <Typography
               variant="body"
               className="text-white"
               size="sm"
-              weight="medium"
+              weight="normal" // Daha ince yazı
             >
               {message}
             </Typography>

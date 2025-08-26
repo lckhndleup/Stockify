@@ -81,6 +81,18 @@ interface AppStore {
   getOutOfStockProducts: () => Product[];
   getTotalStockValue: () => number;
   getBrokerTotalDebt: (brokerId: string) => number;
+
+  // Global Toast
+  globalToast: {
+    visible: boolean;
+    message: string;
+    type: "success" | "error" | "warning" | "info";
+  };
+  showGlobalToast: (
+    message: string,
+    type?: "success" | "error" | "warning" | "info"
+  ) => void;
+  hideGlobalToast: () => void;
 }
 
 const CRITICAL_LEVEL = 50; // Kritik seviye 50 adet
@@ -366,6 +378,33 @@ const middleware = persist<AppStore>(
         (total, transaction) => total + transaction.totalAmount,
         0
       );
+    },
+
+    // Global Toast State
+    globalToast: {
+      visible: false,
+      message: "",
+      type: "info",
+    },
+
+    showGlobalToast: (message: string, type = "info") => {
+      set({
+        globalToast: {
+          visible: true,
+          message,
+          type,
+        },
+      });
+    },
+
+    hideGlobalToast: () => {
+      set({
+        globalToast: {
+          visible: false,
+          message: "",
+          type: "info",
+        },
+      });
     },
   }),
   {

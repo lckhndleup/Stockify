@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 
 import {
   Container,
   Typography,
   Card,
+  SquareCard,
+  Divider,
   SearchBar,
   Icon,
   Button,
@@ -15,6 +18,8 @@ import {
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAppStore, Broker } from "@/src/stores/appStore";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 
 // Dropdown Component (Ürün seçimi için)
 interface DropdownProps {
@@ -96,6 +101,7 @@ function Dropdown({
 export default function BrokersPage() {
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("brokers");
+  const params = useLocalSearchParams();
 
   // Modal states
   const [isBrokerModalVisible, setIsBrokerModalVisible] = useState(false);
@@ -103,7 +109,6 @@ export default function BrokersPage() {
     useState(false);
   const [isGiveProductModalVisible, setIsGiveProductModalVisible] =
     useState(false);
-
   // Form states
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
@@ -126,6 +131,8 @@ export default function BrokersPage() {
     toggleBrokerReceipt,
     giveProductToBroker,
     getBrokerTotalDebt,
+    globalToast,
+    hideGlobalToast,
   } = useAppStore();
 
   // Toast
@@ -340,7 +347,13 @@ export default function BrokersPage() {
         type={toast.type}
         onHide={hideToast}
       />
-
+      {/* Global Toast - BUNU EKLEYİN */}
+      <Toast
+        visible={globalToast.visible}
+        message={globalToast.message}
+        type={globalToast.type}
+        onHide={hideGlobalToast}
+      />
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search Bar */}
         <SearchBar
@@ -362,122 +375,56 @@ export default function BrokersPage() {
         {/* Aracılar Tab Content */}
         {activeTab === "brokers" && (
           <View className="mt-3">
-            {/* Aracı Listesi */}
-            {filteredBrokers.map((broker) => {
-              const totalDebt = getBrokerTotalDebt(broker.id);
+            {/* Aracı Grid Listesi */}
+            <View
+              className="flex-row flex-wrap justify-between"
+              style={{ gap: 10 }}
+            >
+              {filteredBrokers.map((broker) => {
+                const totalDebt = getBrokerTotalDebt(broker.id);
 
-              return (
-                <Card
-                  key={broker.id}
-                  variant="default"
-                  padding="sm"
-                  className="border border-stock-border mb-3"
-                  radius="md"
+                return (
+                  <SquareCard
+                    key={broker.id}
+                    title={`${broker.name} ${broker.surname}`}
+                    subtitle="Mevcut Bakiye"
+                    amount={`₺${totalDebt.toLocaleString()}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/brokerDetail",
+                        params: { brokerId: broker.id },
+                      })
+                    }
+                    showDeleteIcon={false}
+                    className="mb-2"
+                  />
+                );
+              })}
+            </View>
+
+            {/* Boş durum */}
+            {filteredBrokers.length === 0 && (
+              <View className="items-center justify-center py-12">
+                <Icon
+                  family="MaterialCommunityIcons"
+                  name="account-group-outline"
+                  size={64}
+                  color="#ECECEC"
+                  containerClassName="mb-4"
+                />
+                <Typography
+                  variant="body"
+                  className="text-stock-text text-center"
                 >
-                  {/* Aracı Header */}
-                  <View className="flex-row items-center justify-between mb-3">
-                    <View className="flex-1">
-                      <Typography
-                        variant="body"
-                        weight="semibold"
-                        align="left"
-                        className="text-stock-dark"
-                      >
-                        {broker.name} {broker.surname}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        size="sm"
-                        className="text-stock-text mt-1"
-                      >
-                        Toplam Borç: ₺{totalDebt.toLocaleString()}
-                      </Typography>
-                    </View>
-
-                    <View className="flex-row items-center">
-                      {/* Makbuz Durumu */}
-                      <TouchableOpacity
-                        onPress={() => handleToggleReceipt(broker.id)}
-                        className={`px-2 py-1 rounded mr-2 ${
-                          broker.hasReceipt ? "bg-green-100" : "bg-red-100"
-                        }`}
-                      >
-                        <Typography
-                          variant="caption"
-                          size="xs"
-                          className={
-                            broker.hasReceipt
-                              ? "text-green-700"
-                              : "text-red-700"
-                          }
-                          weight="medium"
-                        >
-                          {broker.hasReceipt ? "Makbuz ✓" : "Makbuz ✗"}
-                        </Typography>
-                      </TouchableOpacity>
-
-                      {/* Edit/Delete */}
-                      <Icon
-                        family="MaterialIcons"
-                        name="edit"
-                        size={18}
-                        color="#67686A"
-                        pressable
-                        onPress={() => handleEditBroker(broker)}
-                        containerClassName="mr-2"
-                      />
-                      <Icon
-                        family="MaterialIcons"
-                        name="delete"
-                        size={18}
-                        color="#E3001B"
-                        pressable
-                        onPress={() => handleDeleteBroker(broker)}
-                      />
-                    </View>
-                  </View>
-
-                  {/* İşlemler */}
-                  {broker.transactions.length > 0 && (
-                    <View className="border-t border-stock-border pt-3">
-                      <Typography
-                        variant="caption"
-                        weight="medium"
-                        className="text-stock-dark mb-2"
-                      >
-                        İşlemler:
-                      </Typography>
-                      {broker.transactions.map((transaction) => (
-                        <View
-                          key={transaction.id}
-                          className="flex-row justify-between items-center mb-1"
-                        >
-                          <Typography
-                            variant="caption"
-                            size="sm"
-                            className="text-stock-text flex-1"
-                          >
-                            {transaction.productName}: {transaction.quantity}{" "}
-                            adet
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            size="sm"
-                            className="text-stock-dark"
-                            weight="medium"
-                          >
-                            ₺{transaction.totalAmount.toLocaleString()}
-                          </Typography>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </Card>
-              );
-            })}
+                  {searchText.trim()
+                    ? "Arama kriterinize uygun aracı bulunamadı."
+                    : "Henüz aracı eklenmemiş."}
+                </Typography>
+              </View>
+            )}
 
             {/* Yeni Aracı Ekle Butonu */}
-            <View className="mt-4 mb-6">
+            <View className="mt-6 mb-6">
               <Button
                 variant="primary"
                 size="lg"
