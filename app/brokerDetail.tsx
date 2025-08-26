@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 
@@ -17,43 +17,95 @@ import { useToast } from "@/src/hooks/useToast";
 import { useAppStore } from "@/src/stores/appStore";
 
 export default function BrokerDetailPage() {
+  console.log("🔍 BrokerDetailPage render started");
+
+  // HOOKS - HER ZAMAN AYNI SIRADA ÇAĞRILMALI
   const { brokerId } = useLocalSearchParams();
   const { brokers, deleteBroker, updateBroker, getBrokerTotalDebt } =
     useAppStore();
   const { toast, showSuccess, showError, hideToast } = useToast();
 
+  // STATE'LER - HER ZAMAN AYNI SIRADA
+  const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] =
+    useState(false);
+  const [brokerName, setBrokerName] = useState("");
+  const [brokerSurname, setBrokerSurname] = useState("");
+
+  console.log("📝 BrokerDetailPage state initialized:", {
+    brokerId,
+    brokersCount: brokers.length,
+    isEditModalVisible: isEditBrokerModalVisible,
+  });
+
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);
+  const totalDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
 
+  console.log("🔎 Broker lookup result:", {
+    brokerId,
+    brokerFound: !!broker,
+    brokerName: broker?.name,
+    totalDebt,
+  });
+
+  // EFFECT'LER - STATE'LERDEN SONRA
+  useEffect(() => {
+    console.log("🔄 useEffect - Broker check:", {
+      broker: !!broker,
+      brokerId,
+      shouldNavigate: !broker && brokerId,
+    });
+
+    if (!broker && brokerId) {
+      console.log("🚀 Navigation triggered - broker not found");
+      router.replace("/brokers");
+    }
+  }, [broker, brokerId]);
+
+  useEffect(() => {
+    console.log("🔄 useEffect - Broker state update:", {
+      broker: !!broker,
+      name: broker?.name,
+      surname: broker?.surname,
+    });
+
+    if (broker) {
+      setBrokerName(broker.name);
+      setBrokerSurname(broker.surname);
+    }
+  }, [broker]);
+
+  // ERKEN RETURN - TÜM HOOKS'LARDAN SONRA
   if (!broker) {
+    console.log("⚠️ Early return - broker not found, showing loading");
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
           <Typography variant="body" className="text-stock-text">
-            Aracı bulunamadı.
+            Yükleniyor...
           </Typography>
         </View>
       </Container>
     );
   }
 
-  const totalDebt = getBrokerTotalDebt(broker.id);
-  const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] =
-    useState(false);
-  const [brokerName, setBrokerName] = useState(broker.name);
-  const [brokerSurname, setBrokerSurname] = useState(broker.surname);
+  console.log("✅ Continuing with broker found:", broker.name);
 
   const handleEditBroker = () => {
+    console.log("✏️ Edit broker triggered");
     setIsEditBrokerModalVisible(true);
   };
 
   const handleCloseEditBrokerModal = () => {
+    console.log("❌ Close edit modal");
     setIsEditBrokerModalVisible(false);
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
   };
 
   const handleUpdateBroker = () => {
+    console.log("💾 Update broker:", { brokerName, brokerSurname });
+
     if (!brokerName.trim() || !brokerSurname.trim()) {
       showError("Lütfen ad ve soyad alanlarını doldurun.");
       return;
@@ -68,15 +120,15 @@ export default function BrokerDetailPage() {
           text: "Güncelle",
           onPress: () => {
             try {
+              console.log("🔄 Updating broker in store");
               updateBroker(broker.id, {
                 name: brokerName,
                 surname: brokerSurname,
               });
               handleCloseEditBrokerModal();
-
-              // Sadece toast mesajı göster, sayfayı yenilemeden
               showSuccess("Aracı başarıyla güncellendi!");
             } catch (error) {
+              console.error("❌ Update broker error:", error);
               showError("Aracı güncellenirken bir hata oluştu.");
             }
           },
@@ -86,6 +138,8 @@ export default function BrokerDetailPage() {
   };
 
   const handleDeleteBroker = () => {
+    console.log("🗑️ Delete broker triggered:", broker.name);
+
     Alert.alert(
       "Aracı Sil",
       `"${broker.name} ${broker.surname}" aracısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`,
@@ -96,14 +150,23 @@ export default function BrokerDetailPage() {
           style: "destructive",
           onPress: () => {
             try {
-              deleteBroker(broker.id);
-              showSuccess("Aracı başarıyla silindi!");
+              const brokerName = `${broker.name} ${broker.surname}`;
 
-              // Toast görünür olduktan sonra geriye git
-              setTimeout(() => {
-                router.back();
-              }, 1500);
+              console.log("🗑️ Step 1: Delete broker from store");
+              deleteBroker(broker.id);
+
+              console.log(
+                "🚀 Step 2: Navigate to brokers with success message"
+              );
+              router.push({
+                pathname: "/brokers",
+                params: {
+                  showToast: "success",
+                  toastMessage: `${brokerName} başarıyla silindi!`,
+                },
+              });
             } catch (error) {
+              console.error("❌ Delete broker error:", error);
               showError("Aracı silinirken bir hata oluştu.");
             }
           },
@@ -115,6 +178,8 @@ export default function BrokerDetailPage() {
   const showFeatureNotImplemented = () => {
     Alert.alert("Bilgi", "Bu özellik henüz uygulanmadı");
   };
+
+  console.log("🎨 Rendering BrokerDetailPage with broker:", broker.name);
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
@@ -135,7 +200,7 @@ export default function BrokerDetailPage() {
             size="3xl"
             className="text-stock-black text-center mb-2"
           >
-            {broker ? `${broker.name} ${broker.surname}` : ""}
+            {`${broker.name} ${broker.surname}`}
           </Typography>
 
           <Typography

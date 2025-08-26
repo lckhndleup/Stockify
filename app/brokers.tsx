@@ -18,6 +18,8 @@ import {
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAppStore, Broker } from "@/src/stores/appStore";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 
 // Dropdown Component (Ürün seçimi için)
 interface DropdownProps {
@@ -99,6 +101,7 @@ function Dropdown({
 export default function BrokersPage() {
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("brokers");
+  const params = useLocalSearchParams();
 
   // Modal states
   const [isBrokerModalVisible, setIsBrokerModalVisible] = useState(false);
@@ -106,7 +109,6 @@ export default function BrokersPage() {
     useState(false);
   const [isGiveProductModalVisible, setIsGiveProductModalVisible] =
     useState(false);
-
   // Form states
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
@@ -333,6 +335,30 @@ export default function BrokersPage() {
       .toLowerCase()
       .includes(searchText.toLowerCase())
   );
+
+  useEffect(() => {
+    if (params.showToast && params.toastMessage) {
+      console.log(
+        "📢 Showing toast from navigation params:",
+        params.toastMessage
+      );
+
+      // Toast mesajını göster
+      const toastMessage = params.toastMessage as string;
+      if (params.showToast === "success") {
+        showSuccess(toastMessage);
+      } else if (params.showToast === "error") {
+        showError(toastMessage);
+      }
+
+      // Toast tamamen render olduktan sonra parametreleri temizle
+      const timer = setTimeout(() => {
+        router.replace("/brokers");
+      }, 1500); // 1.5 saniye bekle
+
+      return () => clearTimeout(timer);
+    }
+  }, [params.showToast, params.toastMessage, showSuccess, showError]);
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
