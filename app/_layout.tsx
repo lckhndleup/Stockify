@@ -115,7 +115,7 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
-            name="brokerDetail"
+            name="broker/brokerDetail"
             options={{
               title: "Aracı Detayı",
               headerShown: true,

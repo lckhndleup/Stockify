@@ -391,7 +391,7 @@ export default function BrokersPage() {
                     amount={`₺${totalDebt.toLocaleString()}`}
                     onPress={() =>
                       router.push({
-                        pathname: "/brokerDetail",
+                        pathname: "/broker/brokerDetail",
                         params: { brokerId: broker.id },
                       })
                     }
