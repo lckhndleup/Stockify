@@ -121,6 +121,34 @@ export default function RootLayout() {
               headerShown: true,
             }}
           />
+          <Stack.Screen
+            name="broker/sections/salesSection"
+            options={{
+              title: "Satış İşlemleri",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/collectionSection"
+            options={{
+              title: "Tahsilat İşlemleri",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/statementSection"
+            options={{
+              title: "Ekstreler",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/invoiceSection"
+            options={{
+              title: "Faturalar",
+              headerShown: true,
+            }}
+          />
         </Stack>
 
         {/* BottomNavigation sadece login olmamış kullanıcılarda göster */}
