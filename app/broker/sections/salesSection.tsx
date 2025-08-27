@@ -12,9 +12,12 @@ import {
   Divider,
   Modal,
   Checkbox,
+  //@ts-ignore TODOMALİ
   type SelectBoxOption,
+  Toast,
 } from "@/src/components/ui";
 import { useAppStore } from "@/src/stores/appStore";
+import { useToast } from "@/src/hooks/useToast";
 import {
   salesQuantitySchema,
   editQuantitySchema,
@@ -61,6 +64,7 @@ export default function SalesSection() {
     getBrokerDiscount,
     updateBrokerDiscount,
   } = useAppStore();
+  const { toast, showSuccess, showError } = useToast();
 
   // State'ler
   const [selectedProduct, setSelectedProduct] = useState("");
@@ -342,7 +346,9 @@ export default function SalesSection() {
             );
 
             if (!result.success) {
-              Alert.alert("Hata", result.error || "Satış işlemi başarısız.");
+              const errorMessage = result.error || "Satış işlemi başarısız.";
+              showError(errorMessage);
+              Alert.alert("Hata", errorMessage);
               allSuccess = false;
               break;
             }
@@ -351,6 +357,9 @@ export default function SalesSection() {
           }
 
           if (allSuccess) {
+            // Toast mesajını göster
+            showSuccess("Satış işlemi başarıyla tamamlandı!");
+
             Alert.alert(
               "Başarılı",
               `Satış işlemi tamamlandı!\n\nİskonto (%${brokerDiscount}): -₺${discountAmount.toLocaleString()}\nAracının yeni bakiyesi: ₺${(
@@ -387,18 +396,19 @@ export default function SalesSection() {
         {/* Header - İsim ve Bakiye Altlı Üstlü */}
         <View className="mb-6 items-center">
           <Typography
-            variant="h2"
+            variant="h1"
             weight="bold"
-            className="text-stock-black text-center mb-2"
+            size="3xl"
+            className="text-stock-black text-center mb-0"
           >
-            {broker.name} {broker.surname}
+            {`${broker.name} ${broker.surname}`}
           </Typography>
           <Typography
             variant="body"
-            weight="medium"
-            className="text-stock-red text-center"
+            weight="semibold"
+            className="text-stock-red text-center mt-0"
           >
-            Mevcut Bakiye: ₺{brokerDebt.toLocaleString()}
+            Bakiye: ₺{brokerDebt.toLocaleString()}
           </Typography>
         </View>
 
@@ -781,6 +791,13 @@ export default function SalesSection() {
           </View>
         </View>
       </Modal>
+
+      {/* Toast mesajı */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+      />
     </Container>
   );
 }

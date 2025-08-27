@@ -224,15 +224,14 @@ export default function BrokerDetailPage() {
             variant="h1"
             weight="bold"
             size="3xl"
-            className="text-stock-black text-center mb-2"
+            className="text-stock-black text-center mb-0"
           >
             {`${broker.name} ${broker.surname}`}
           </Typography>
-
           <Typography
             variant="body"
             weight="semibold"
-            className="text-stock-red text-center mt-2"
+            className="text-stock-red text-center mt-0"
           >
             Bakiye: ₺{totalDebt.toLocaleString()}
           </Typography>
@@ -251,7 +250,7 @@ export default function BrokerDetailPage() {
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialIcons"
                     name="sell"
@@ -259,16 +258,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    SATIŞ YAP
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  SATIŞ YAP
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
@@ -290,7 +287,7 @@ export default function BrokerDetailPage() {
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialIcons"
                     name="payments"
@@ -298,16 +295,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    TAHSİLAT
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  TAHSİLAT
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
@@ -329,7 +324,7 @@ export default function BrokerDetailPage() {
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="file-document-outline"
@@ -337,16 +332,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    EKSTRELER
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  EKSTRELER
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
@@ -368,7 +361,7 @@ export default function BrokerDetailPage() {
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="receipt"
@@ -376,16 +369,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    FATURALAR
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  FATURALAR
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
