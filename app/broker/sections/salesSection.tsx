@@ -412,23 +412,19 @@ export default function SalesSection() {
           >
             <Card
               variant="default"
-              padding="lg"
-              className="bg-stock-red border-0"
+              padding="sm"
+              className="bg-stock-red border-0 justify-center"
               radius="md"
+              style={{ height: 48 }}
             >
-              <View
-                className="items-center justify-center"
-                style={{ minHeight: 20 }}
+              <Typography
+                variant="caption"
+                weight="bold"
+                className="text-stock-white text-center"
+                numberOfLines={1}
               >
-                <Typography
-                  variant="caption"
-                  weight="bold"
-                  className="text-stock-white text-center"
-                  numberOfLines={1}
-                >
-                  İSKONTO: %{brokerDiscount}
-                </Typography>
-              </View>
+                İSKONTO: %{brokerDiscount}
+              </Typography>
             </Card>
           </TouchableOpacity>
 
@@ -436,31 +432,27 @@ export default function SalesSection() {
           <View className="flex-1">
             <Card
               variant="default"
-              padding="lg"
-              className="bg-stock-red border-0"
+              padding="sm"
+              className="bg-stock-red border-0 justify-center"
               radius="md"
+              style={{ height: 48 }}
             >
-              <View
-                className="items-center justify-center"
-                style={{ minHeight: 20 }}
-              >
-                <View className="flex-row items-center">
-                  <Checkbox
-                    checked={createInvoice}
-                    onToggle={setCreateInvoice}
-                    label=""
-                    size="md"
-                    containerClassName="mr-3"
-                  />
-                  <Typography
-                    variant="overline"
-                    weight="bold"
-                    className="text-stock-white text-center flex-1"
-                    numberOfLines={1}
-                  >
-                    FATURA OLUŞTUR
-                  </Typography>
-                </View>
+              <View className="flex-row items-center justify-center">
+                <Checkbox
+                  checked={createInvoice}
+                  onToggle={setCreateInvoice}
+                  label=""
+                  size="md"
+                  className="mr-2"
+                />
+                <Typography
+                  variant="overline"
+                  weight="bold"
+                  className="text-stock-white text-center"
+                  numberOfLines={1}
+                >
+                  FATURA OLUŞTUR
+                </Typography>
               </View>
             </Card>
           </View>
