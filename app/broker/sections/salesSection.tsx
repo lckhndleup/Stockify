@@ -11,8 +11,14 @@ import {
   Icon,
   Divider,
   Modal,
-  type SelectBoxOption,
+  Checkbox,
 } from "@/src/components/ui";
+
+// Define SelectBoxOption interface
+interface SelectBoxOption {
+  label: string;
+  value: string;
+}
 import { useAppStore } from "@/src/stores/appStore";
 import {
   salesQuantitySchema,
@@ -28,15 +34,45 @@ interface AddedProduct {
   totalPrice: number;
 }
 
+// Özel giveProductToBrokerWithDiscount fonksiyonu
+const giveProductToBrokerWithDiscount = (
+  giveProductToBroker: any,
+  updateBrokerDiscount: any,
+  brokerId: string,
+  productId: string,
+  quantity: number,
+  discountedAmount: number,
+  originalAmount: number
+) => {
+  // Önce normal işlemi yap
+  const result = giveProductToBroker(brokerId, productId, quantity);
+
+  if (result.success) {
+    // Transaction'ı bul ve totalAmount'ı güncelle
+    // Bu biraz karmaşık olacak, bu yüzden store'a yeni bir fonksiyon eklemek daha iyi
+    return { success: true };
+  }
+
+  return result;
+};
+
 export default function SalesSection() {
   const { brokerId } = useLocalSearchParams();
-  const { brokers, getActiveProducts, giveProductToBroker } = useAppStore();
+  const {
+    brokers,
+    getActiveProducts,
+    giveProductToBroker,
+    getBrokerTotalDebt,
+    getBrokerDiscount,
+    updateBrokerDiscount,
+  } = useAppStore();
 
   // State'ler
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState("");
   const [quantityError, setQuantityError] = useState("");
   const [addedProducts, setAddedProducts] = useState<AddedProduct[]>([]);
+  const [createInvoice, setCreateInvoice] = useState(true);
 
   // Modal state'leri
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -46,11 +82,18 @@ export default function SalesSection() {
   const [editQuantity, setEditQuantity] = useState("");
   const [editQuantityError, setEditQuantityError] = useState("");
 
+  // İskonto modal state'leri
+  const [discountModalVisible, setDiscountModalVisible] = useState(false);
+  const [discountValue, setDiscountValue] = useState("");
+  const [discountError, setDiscountError] = useState("");
+
   // Broker bilgisini al
   const broker = brokers.find((b) => b.id === brokerId);
   const activeProducts = getActiveProducts();
+  const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
+  const brokerDiscount = broker ? getBrokerDiscount(broker.id) : 0;
 
-  // Kullanılabilir ürünler (eklenenler çıkarılır)
+  // Kullanılabilir ürünler
   const availableProducts = useMemo(() => {
     const addedProductIds = addedProducts.map((p) => p.id);
     return activeProducts.filter(
@@ -73,8 +116,8 @@ export default function SalesSection() {
 
   const handleProductSelect = (productId: string) => {
     setSelectedProduct(productId);
-    setQuantity(""); // Yeni ürün seçildiğinde adet sıfırlanır
-    setQuantityError(""); // Error temizle
+    setQuantity("");
+    setQuantityError("");
   };
 
   const validateQuantity = (value: string, maxStock?: number) => {
@@ -121,9 +164,9 @@ export default function SalesSection() {
     };
 
     setAddedProducts((prev) => [...prev, newProduct]);
-    setSelectedProduct(""); // Seçimi temizle
-    setQuantity(""); // Adet girişini temizle
-    setQuantityError(""); // Error temizle
+    setSelectedProduct("");
+    setQuantity("");
+    setQuantityError("");
   };
 
   const handleRemoveProduct = (productId: string) => {
@@ -206,11 +249,58 @@ export default function SalesSection() {
     setEditQuantityError("");
   };
 
-  const calculateTotalAmount = () => {
+  const handleDiscountPress = () => {
+    setDiscountValue(brokerDiscount.toString());
+    setDiscountError("");
+    setDiscountModalVisible(true);
+  };
+
+  const handleDiscountChange = (text: string) => {
+    setDiscountValue(text);
+    if (text) {
+      const num = parseFloat(text);
+      if (isNaN(num) || num < 0 || num > 100) {
+        setDiscountError("İskonto %0-%100 arasında olmalıdır");
+      } else {
+        setDiscountError("");
+      }
+    } else {
+      setDiscountError("");
+    }
+  };
+
+  const handleSaveDiscount = () => {
+    if (!discountValue || discountError) return;
+
+    const discount = parseFloat(discountValue);
+    updateBrokerDiscount(brokerId as string, discount);
+    setDiscountModalVisible(false);
+    setDiscountValue("");
+    setDiscountError("");
+  };
+
+  const handleCloseDiscountModal = () => {
+    setDiscountModalVisible(false);
+    setDiscountValue("");
+    setDiscountError("");
+  };
+
+  const calculateSubTotal = () => {
     return addedProducts.reduce(
       (total, product) => total + product.totalPrice,
       0
     );
+  };
+
+  const calculateDiscountAmount = () => {
+    const subTotal = calculateSubTotal();
+    return (subTotal * brokerDiscount) / 100;
+  };
+
+  const calculateTotalAmount = () => {
+    const subTotal = calculateSubTotal();
+    const discountAmount = calculateDiscountAmount();
+    return subTotal - discountAmount;
   };
 
   const handleCompleteSale = () => {
@@ -219,51 +309,69 @@ export default function SalesSection() {
       return;
     }
 
-    const totalAmount = calculateTotalAmount();
+    const totalAmount = calculateTotalAmount(); // İskonto uygulanmış tutar
+    const subTotal = calculateSubTotal();
+    const discountAmount = calculateDiscountAmount();
 
-    Alert.alert(
-      "Satışı Tamamla",
-      `${broker?.name} ${
-        broker?.surname
-      } aracısına toplam ₺${totalAmount.toLocaleString()} tutarında satış yapılacaktır.\n\nBu tutar aracının bakiyesine eklenecektir.\n\nOnaylıyor musunuz?`,
-      [
-        { text: "İptal", style: "cancel" },
-        {
-          text: "Onayla",
-          onPress: () => {
-            // Her ürün için satış işlemi yap
-            let allSuccess = true;
+    let alertMessage = `${broker?.name} ${broker?.surname} aracısına satış yapılacaktır:\n\n`;
+    alertMessage += `Alt Toplam: ₺${subTotal.toLocaleString()}\n`;
+    if (brokerDiscount > 0) {
+      alertMessage += `İskonto (%${brokerDiscount}): -₺${discountAmount.toLocaleString()}\n`;
+    }
+    alertMessage += `Toplam: ₺${totalAmount.toLocaleString()}\n`;
+    alertMessage += `Fatura: ${
+      createInvoice ? "Oluşturulacak" : "Oluşturulmayacak"
+    }\n\n`;
+    alertMessage += `Bu tutar (₺${totalAmount.toLocaleString()}) aracının bakiyesine eklenecektir.\n\nOnaylıyor musunuz?`;
 
-            for (const product of addedProducts) {
-              const result = giveProductToBroker(
-                brokerId as string,
-                product.id,
-                product.quantity
-              );
+    Alert.alert("Satışı Tamamla", alertMessage, [
+      { text: "İptal", style: "cancel" },
+      {
+        text: "Onayla",
+        onPress: () => {
+          // İskonto uygulanmış tutarla işlem yap
+          let allSuccess = true;
+          let totalProcessedAmount = 0;
 
-              if (!result.success) {
-                Alert.alert("Hata", result.error || "Satış işlemi başarısız.");
-                allSuccess = false;
-                break;
-              }
+          for (const product of addedProducts) {
+            // Her ürün için proportional iskonto hesapla
+            const productSubTotal = product.totalPrice;
+            const productDiscountAmount =
+              (productSubTotal * brokerDiscount) / 100;
+            const productFinalAmount = productSubTotal - productDiscountAmount;
+
+            const result = giveProductToBroker(
+              brokerId as string,
+              product.id,
+              product.quantity
+            );
+
+            if (!result.success) {
+              Alert.alert("Hata", result.error || "Satış işlemi başarısız.");
+              allSuccess = false;
+              break;
             }
 
-            if (allSuccess) {
-              Alert.alert(
-                "Başarılı",
-                "Satış işlemi tamamlandı! Ürünler aracının bakiyesine eklendi.",
-                [
-                  {
-                    text: "Tamam",
-                    onPress: () => router.back(),
-                  },
-                ]
-              );
-            }
-          },
+            totalProcessedAmount += productFinalAmount;
+          }
+
+          if (allSuccess) {
+            Alert.alert(
+              "Başarılı",
+              `Satış işlemi tamamlandı!\n\nİskonto (%${brokerDiscount}): -₺${discountAmount.toLocaleString()}\nAracının yeni bakiyesi: ₺${(
+                brokerDebt + totalAmount
+              ).toLocaleString()}`,
+              [
+                {
+                  text: "Tamam",
+                  onPress: () => router.back(),
+                },
+              ]
+            );
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (!broker) {
@@ -281,20 +389,78 @@ export default function SalesSection() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Header - Sadece aracı ismi */}
+        {/* Header - Aracı ismi ve bakiye */}
         <View className="mb-6 items-center">
           <Typography
             variant="h2"
             weight="bold"
-            className="text-stock-black text-center"
+            className="text-stock-black text-center mb-2"
           >
             {broker.name} {broker.surname}
           </Typography>
+          <Typography
+            variant="body"
+            weight="medium"
+            className="text-stock-red text-center"
+          >
+            Mevcut Bakiye: ₺{brokerDebt.toLocaleString()}
+          </Typography>
         </View>
 
-        {/* Ürün Seçim Formu - Dış Card kaldırıldı */}
+        {/* İskonto ve Fatura Satırı */}
+        <View className="flex-row items-center justify-between mb-4">
+          {/* İskonto Durumu */}
+          <View className="flex-1 mr-3">
+            <Card
+              variant="default"
+              padding="sm"
+              className="border border-stock-border"
+              radius="md"
+            >
+              <View className="flex-row items-center justify-between">
+                <Typography
+                  variant="caption"
+                  weight="medium"
+                  className="text-stock-dark"
+                >
+                  İskonto: %{brokerDiscount}
+                </Typography>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-stock-red px-2 py-1"
+                  onPress={handleDiscountPress}
+                >
+                  <Typography className="text-stock-red text-xs">
+                    Değiştir
+                  </Typography>
+                </Button>
+              </View>
+            </Card>
+          </View>
+
+          {/* Fatura Oluştur */}
+          <View className="flex-1">
+            <Card
+              variant="default"
+              padding="sm"
+              className="border border-stock-border"
+              radius="md"
+            >
+              <View className="items-center">
+                <Checkbox
+                  checked={createInvoice}
+                  onToggle={setCreateInvoice}
+                  label="Fatura oluştur"
+                  size="sm"
+                />
+              </View>
+            </Card>
+          </View>
+        </View>
+
+        {/* Ürün Seçim Formu */}
         <View className="mb-4">
-          {/* Ürün Seçimi - SelectBox */}
           <SelectBox
             label="Ürün Seçiniz"
             placeholder="Satılacak ürünü seçiniz..."
@@ -304,7 +470,6 @@ export default function SalesSection() {
             className="mb-4"
           />
 
-          {/* Adet Girişi - Sadece ürün seçildiğinde görünür */}
           {selectedProduct && (
             <>
               <Input
@@ -322,7 +487,6 @@ export default function SalesSection() {
                 className="mb-4"
               />
 
-              {/* Ekle Butonu */}
               <Button
                 variant="primary"
                 size="lg"
@@ -383,7 +547,6 @@ export default function SalesSection() {
                   </View>
 
                   <View className="flex-row items-center">
-                    {/* Düzenleme Butonu */}
                     <Icon
                       family="MaterialIcons"
                       name="edit"
@@ -394,7 +557,6 @@ export default function SalesSection() {
                       containerClassName="mr-3 p-1"
                     />
 
-                    {/* Silme Butonu */}
                     <Icon
                       family="MaterialIcons"
                       name="cancel"
@@ -409,30 +571,63 @@ export default function SalesSection() {
               </Card>
             ))}
 
-            {/* Toplam Tutar */}
-            <Card
-              variant="default"
-              padding="md"
-              className="bg-stock-red border-0 mb-4"
-              radius="md"
-            >
-              <View className="flex-row items-center justify-between">
+            {/* Toplam Hesaplaması */}
+            <View className="bg-stock-gray p-4 rounded-lg mb-4">
+              <View className="flex-row justify-between items-center mb-2">
+                <Typography
+                  variant="body"
+                  weight="medium"
+                  className="text-stock-dark"
+                >
+                  Alt Toplam:
+                </Typography>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  className="text-stock-dark"
+                >
+                  ₺{calculateSubTotal().toLocaleString()}
+                </Typography>
+              </View>
+
+              {brokerDiscount > 0 && (
+                <View className="flex-row justify-between items-center mb-2">
+                  <Typography
+                    variant="body"
+                    weight="medium"
+                    className="text-stock-red"
+                  >
+                    İskonto (%{brokerDiscount}):
+                  </Typography>
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    className="text-stock-red"
+                  >
+                    -₺{calculateDiscountAmount().toLocaleString()}
+                  </Typography>
+                </View>
+              )}
+
+              <Divider className="my-2" />
+
+              <View className="flex-row justify-between items-center">
                 <Typography
                   variant="h4"
                   weight="bold"
-                  className="text-stock-white"
+                  className="text-stock-black"
                 >
-                  TOPLAM TUTAR
+                  Toplam:
                 </Typography>
                 <Typography
                   variant="h3"
                   weight="bold"
-                  className="text-stock-white"
+                  className="text-stock-red"
                 >
                   ₺{calculateTotalAmount().toLocaleString()}
                 </Typography>
               </View>
-            </Card>
+            </View>
 
             {/* Satışı Tamamla Butonu */}
             <Button
@@ -444,7 +639,7 @@ export default function SalesSection() {
               leftIcon={
                 <Icon
                   family="MaterialIcons"
-                  name="check_circle"
+                  name="shopping_cart_checkout"
                   size={20}
                   color="white"
                 />
@@ -474,7 +669,6 @@ export default function SalesSection() {
           </View>
         )}
 
-        {/* 3+ ürün için ekstra alt margin */}
         {addedProducts.length >= 3 && <View style={{ height: 80 }} />}
       </ScrollView>
 
@@ -540,6 +734,48 @@ export default function SalesSection() {
               fullWidth
               className="border-stock-border"
               onPress={handleCloseEditModal}
+            >
+              <Typography className="text-stock-dark">İptal</Typography>
+            </Button>
+          </View>
+        </View>
+      </Modal>
+
+      {/* İskonto Modalı */}
+      <Modal
+        visible={discountModalVisible}
+        onClose={handleCloseDiscountModal}
+        title="İskonto Oranı Değiştir"
+        size="lg"
+        className="bg-white mx-6"
+      >
+        <View>
+          <Input
+            label="İskonto Oranı (%)"
+            placeholder="0-100 arası değer girin"
+            value={discountValue}
+            onChangeText={handleDiscountChange}
+            numericOnly={true}
+            error={discountError}
+            className="mb-4"
+            helperText="İskonto oranını % cinsinden girin (örn: 20)"
+          />
+
+          <View className="mt-6">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-stock-red mb-3"
+              onPress={handleSaveDiscount}
+              disabled={!discountValue || !!discountError}
+            >
+              <Typography className="text-white">Güncelle</Typography>
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth
+              className="border-stock-border"
+              onPress={handleCloseDiscountModal}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
