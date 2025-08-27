@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, ScrollView, Alert } from "react-native";
+import { View, ScrollView, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   Container,
@@ -12,13 +12,8 @@ import {
   Divider,
   Modal,
   Checkbox,
+  type SelectBoxOption,
 } from "@/src/components/ui";
-
-// Define SelectBoxOption interface
-interface SelectBoxOption {
-  label: string;
-  value: string;
-}
 import { useAppStore } from "@/src/stores/appStore";
 import {
   salesQuantitySchema,
@@ -389,7 +384,7 @@ export default function SalesSection() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Header - Aracı ismi ve bakiye */}
+        {/* Header - İsim ve Bakiye Altlı Üstlü */}
         <View className="mb-6 items-center">
           <Typography
             variant="h2"
@@ -407,53 +402,65 @@ export default function SalesSection() {
           </Typography>
         </View>
 
-        {/* İskonto ve Fatura Satırı */}
-        <View className="flex-row items-center justify-between mb-4">
-          {/* İskonto Durumu */}
-          <View className="flex-1 mr-3">
+        {/* İskonto ve Fatura Kartları - Yanyana Kırmızı */}
+        <View className="flex-row gap-3 mb-4">
+          {/* İskonto Kartı */}
+          <TouchableOpacity
+            className="flex-1"
+            onPress={handleDiscountPress}
+            activeOpacity={0.8}
+          >
             <Card
               variant="default"
-              padding="sm"
-              className="border border-stock-border"
+              padding="lg"
+              className="bg-stock-red border-0"
               radius="md"
             >
-              <View className="flex-row items-center justify-between">
+              <View
+                className="items-center justify-center"
+                style={{ minHeight: 20 }}
+              >
                 <Typography
                   variant="caption"
-                  weight="medium"
-                  className="text-stock-dark"
+                  weight="bold"
+                  className="text-stock-white text-center"
+                  numberOfLines={1}
                 >
-                  İskonto: %{brokerDiscount}
+                  İSKONTO: %{brokerDiscount}
                 </Typography>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-stock-red px-2 py-1"
-                  onPress={handleDiscountPress}
-                >
-                  <Typography className="text-stock-red text-xs">
-                    Değiştir
-                  </Typography>
-                </Button>
               </View>
             </Card>
-          </View>
+          </TouchableOpacity>
 
-          {/* Fatura Oluştur */}
+          {/* Fatura Kartı */}
           <View className="flex-1">
             <Card
               variant="default"
-              padding="sm"
-              className="border border-stock-border"
+              padding="lg"
+              className="bg-stock-red border-0"
               radius="md"
             >
-              <View className="items-center">
-                <Checkbox
-                  checked={createInvoice}
-                  onToggle={setCreateInvoice}
-                  label="Fatura oluştur"
-                  size="sm"
-                />
+              <View
+                className="items-center justify-center"
+                style={{ minHeight: 20 }}
+              >
+                <View className="flex-row items-center">
+                  <Checkbox
+                    checked={createInvoice}
+                    onToggle={setCreateInvoice}
+                    label=""
+                    size="md"
+                    containerClassName="mr-3"
+                  />
+                  <Typography
+                    variant="overline"
+                    weight="bold"
+                    className="text-stock-white text-center flex-1"
+                    numberOfLines={1}
+                  >
+                    FATURA OLUŞTUR
+                  </Typography>
+                </View>
               </View>
             </Card>
           </View>
@@ -638,8 +645,8 @@ export default function SalesSection() {
               onPress={handleCompleteSale}
               leftIcon={
                 <Icon
-                  family="MaterialIcons"
-                  name="shopping_cart_checkout"
+                  family="Ionicons"
+                  name="checkmark-circle"
                   size={20}
                   color="white"
                 />
