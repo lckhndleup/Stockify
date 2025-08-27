@@ -71,6 +71,13 @@ interface AppStore {
     quantity: number
   ) => { success: boolean; error?: string };
 
+  // Collection Actions
+  collectFromBroker: (
+    brokerId: string,
+    amount: number,
+    paymentType: string
+  ) => { success: boolean; error?: string };
+
   // Stock Actions
   updateProductStock: (
     productId: string,
@@ -344,6 +351,44 @@ const middleware = persist<AppStore>(
         product.stock - quantity,
         `${broker.name} ${broker.surname} aracısına verildi`
       );
+
+      return { success: true };
+    },
+
+    // Collection Actions
+    collectFromBroker: (brokerId, amount, paymentType) => {
+      const state = get();
+      const broker = state.brokers.find((b) => b.id === brokerId);
+
+      if (!broker) {
+        return { success: false, error: "Aracı bulunamadı." };
+      }
+
+      if (amount <= 0) {
+        return { success: false, error: "Geçersiz tahsilat tutarı." };
+      }
+
+      // Yeni bir tahsilat transaction'ı oluştur
+      const newTransaction = {
+        id: Date.now().toString(),
+        productId: "collection", // Özel bir ID kullanıyoruz
+        productName: `Tahsilat (${paymentType})`,
+        quantity: 1,
+        unitPrice: -amount, // Eksi olarak kaydet çünkü bu bir tahsilattır
+        totalAmount: -amount,
+        finalAmount: -amount,
+        discountRate: 0,
+        date: new Date().toISOString().split("T")[0],
+      };
+
+      // Broker'a transaction ekle
+      set((state) => ({
+        brokers: state.brokers.map((b) =>
+          b.id === brokerId
+            ? { ...b, transactions: [...b.transactions, newTransaction] }
+            : b
+        ),
+      }));
 
       return { success: true };
     },

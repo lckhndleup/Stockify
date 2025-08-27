@@ -406,9 +406,12 @@ export default function SalesSection() {
           <Typography
             variant="body"
             weight="semibold"
-            className="text-stock-red text-center mt-0"
+            className={`${
+              brokerDebt >= 0 ? "text-stock-red" : "text-stock-green"
+            } text-center mt-0`}
           >
-            Bakiye: ₺{brokerDebt.toLocaleString()}
+            Bakiye: {brokerDebt >= 0 ? "" : "-"}₺
+            {Math.abs(brokerDebt).toLocaleString()}
           </Typography>
         </View>
 

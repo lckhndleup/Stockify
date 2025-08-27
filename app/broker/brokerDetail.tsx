@@ -231,9 +231,12 @@ export default function BrokerDetailPage() {
           <Typography
             variant="body"
             weight="semibold"
-            className="text-stock-red text-center mt-0"
+            className={`${
+              totalDebt >= 0 ? "text-stock-red" : "text-stock-green"
+            } text-center mt-0`}
           >
-            Bakiye: ₺{totalDebt.toLocaleString()}
+            Bakiye: {totalDebt >= 0 ? "" : "-"}₺
+            {Math.abs(totalDebt).toLocaleString()}
           </Typography>
         </View>
 
