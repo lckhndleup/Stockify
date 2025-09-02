@@ -55,7 +55,11 @@ export default function RootLayout() {
   }, [isAuthenticated, pathname, isNavigationReady]);
 
   // Login sayfasında BottomNavigation gösterme
-  const shouldShowBottomNav = isAuthenticated && pathname !== "/login";
+  // Login sayfasında ve sections altında BottomNavigation gösterme
+  const shouldShowBottomNav =
+    isAuthenticated &&
+    pathname !== "/login" &&
+    !pathname.includes("/broker/sections/"); // Sections altındaki tüm sayfalar
 
   console.log("🎯 RootLayout render:", {
     pathname,
@@ -115,9 +119,37 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
-            name="brokerDetail"
+            name="broker/brokerDetail"
             options={{
               title: "Aracı Detayı",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/salesSection"
+            options={{
+              title: "Satış İşlemleri",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/collectionSection"
+            options={{
+              title: "Tahsilat İşlemleri",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/statementSection"
+            options={{
+              title: "Ekstreler",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/invoiceSection"
+            options={{
+              title: "Faturalar",
               headerShown: true,
             }}
           />

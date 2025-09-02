@@ -18,7 +18,9 @@ export interface Transaction {
   productName: string;
   quantity: number; // Adet cinsinden
   unitPrice: number; // Adet başına fiyat
-  totalAmount: number;
+  totalAmount: number; // İskonto öncesi tutar
+  finalAmount: number; // İskonto sonrası tutar
+  discountRate: number; // İskonto oranı
   date: string;
 }
 
@@ -28,6 +30,7 @@ export interface Broker {
   surname: string;
   transactions: Transaction[];
   hasReceipt: boolean;
+  discountRate: number; // İskonto oranı (0-100 arası)
 }
 
 export interface StockMovement {
@@ -68,6 +71,13 @@ interface AppStore {
     quantity: number
   ) => { success: boolean; error?: string };
 
+  // Collection Actions
+  collectFromBroker: (
+    brokerId: string,
+    amount: number,
+    paymentType: string
+  ) => { success: boolean; error?: string };
+
   // Stock Actions
   updateProductStock: (
     productId: string,
@@ -81,6 +91,10 @@ interface AppStore {
   getOutOfStockProducts: () => Product[];
   getTotalStockValue: () => number;
   getBrokerTotalDebt: (brokerId: string) => number;
+
+  // Discount Functions
+  updateBrokerDiscount: (brokerId: string, discountRate: number) => boolean;
+  getBrokerDiscount: (brokerId: string) => number;
 
   // Global Toast
   globalToast: {
@@ -142,6 +156,7 @@ const middleware = persist<AppStore>(
         surname: "Yılmaz",
         hasReceipt: true,
         transactions: [],
+        discountRate: 0,
       },
       {
         id: "2",
@@ -149,6 +164,7 @@ const middleware = persist<AppStore>(
         surname: "Kaya",
         hasReceipt: false,
         transactions: [],
+        discountRate: 0,
       },
     ],
 
@@ -266,6 +282,21 @@ const middleware = persist<AppStore>(
       return true;
     },
 
+    // Discount Functions
+    updateBrokerDiscount: (brokerId: string, discountRate: number) => {
+      set((state) => ({
+        brokers: state.brokers.map((b) =>
+          b.id === brokerId ? { ...b, discountRate } : b
+        ),
+      }));
+      return true;
+    },
+
+    getBrokerDiscount: (brokerId: string) => {
+      const broker = get().brokers.find((b) => b.id === brokerId);
+      return broker?.discountRate || 0;
+    },
+
     // Transaction Actions
     giveProductToBroker: (brokerId, productId, quantity) => {
       const state = get();
@@ -287,14 +318,21 @@ const middleware = persist<AppStore>(
         };
       }
 
-      // Transaction oluştur
+      // İskonto hesaplaması
+      const totalAmount = quantity * product.price;
+      const discountAmount = (totalAmount * broker.discountRate) / 100;
+      const finalAmount = totalAmount - discountAmount;
+
+      // Transaction oluştur - iskonto uygulanmış
       const newTransaction: Transaction = {
         id: Date.now().toString(),
         productId: product.id,
         productName: product.name,
         quantity: quantity,
         unitPrice: product.price,
-        totalAmount: quantity * product.price,
+        totalAmount: totalAmount, // İskonto öncesi
+        finalAmount: finalAmount, // İskonto sonrası - bu bakiyeye eklenir
+        discountRate: broker.discountRate,
         date: new Date().toISOString().split("T")[0],
       };
 
@@ -313,6 +351,44 @@ const middleware = persist<AppStore>(
         product.stock - quantity,
         `${broker.name} ${broker.surname} aracısına verildi`
       );
+
+      return { success: true };
+    },
+
+    // Collection Actions
+    collectFromBroker: (brokerId, amount, paymentType) => {
+      const state = get();
+      const broker = state.brokers.find((b) => b.id === brokerId);
+
+      if (!broker) {
+        return { success: false, error: "Aracı bulunamadı." };
+      }
+
+      if (amount <= 0) {
+        return { success: false, error: "Geçersiz tahsilat tutarı." };
+      }
+
+      // Yeni bir tahsilat transaction'ı oluştur
+      const newTransaction = {
+        id: Date.now().toString(),
+        productId: "collection", // Özel bir ID kullanıyoruz
+        productName: `Tahsilat (${paymentType})`,
+        quantity: 1,
+        unitPrice: -amount, // Eksi olarak kaydet çünkü bu bir tahsilattır
+        totalAmount: -amount,
+        finalAmount: -amount,
+        discountRate: 0,
+        date: new Date().toISOString().split("T")[0],
+      };
+
+      // Broker'a transaction ekle
+      set((state) => ({
+        brokers: state.brokers.map((b) =>
+          b.id === brokerId
+            ? { ...b, transactions: [...b.transactions, newTransaction] }
+            : b
+        ),
+      }));
 
       return { success: true };
     },
@@ -374,10 +450,14 @@ const middleware = persist<AppStore>(
       const broker = get().brokers.find((b) => b.id === brokerId);
       if (!broker) return 0;
 
-      return broker.transactions.reduce(
-        (total, transaction) => total + transaction.totalAmount,
-        0
-      );
+      return broker.transactions.reduce((total, transaction) => {
+        // Eğer finalAmount varsa onu kullan, yoksa eski sistem için totalAmount kullan
+        const amount =
+          transaction.finalAmount !== undefined
+            ? transaction.finalAmount
+            : transaction.totalAmount;
+        return total + amount;
+      }, 0);
     },
 
     // Global Toast State

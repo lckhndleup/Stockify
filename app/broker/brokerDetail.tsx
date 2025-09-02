@@ -178,10 +178,33 @@ export default function BrokerDetailPage() {
     );
   };
 
-  const showFeatureNotImplemented = () => {
-    Alert.alert("Bilgi", "Bu özellik henüz uygulanmadı");
+  const handleSalesPress = () => {
+    router.push({
+      pathname: "/broker/sections/salesSection",
+      params: { brokerId: broker.id },
+    });
   };
 
+  const handleCollectionPress = () => {
+    router.push({
+      pathname: "/broker/sections/collectionSection",
+      params: { brokerId: broker.id },
+    });
+  };
+
+  const handleStatementPress = () => {
+    router.push({
+      pathname: "/broker/sections/statementSection",
+      params: { brokerId: broker.id },
+    });
+  };
+
+  const handleInvoicePress = () => {
+    router.push({
+      pathname: "/broker/sections/invoiceSection",
+      params: { brokerId: broker.id },
+    });
+  };
   console.log("🎨 Rendering BrokerDetailPage with broker:", broker.name);
 
   return (
@@ -201,17 +224,19 @@ export default function BrokerDetailPage() {
             variant="h1"
             weight="bold"
             size="3xl"
-            className="text-stock-black text-center mb-2"
+            className="text-stock-black text-center mb-0"
           >
             {`${broker.name} ${broker.surname}`}
           </Typography>
-
           <Typography
             variant="body"
             weight="semibold"
-            className="text-stock-red text-center mt-2"
+            className={`${
+              totalDebt >= 0 ? "text-stock-red" : "text-stock-green"
+            } text-center mt-0`}
           >
-            Bakiye: ₺{totalDebt.toLocaleString()}
+            Bakiye: {totalDebt >= 0 ? "" : "-"}₺
+            {Math.abs(totalDebt).toLocaleString()}
           </Typography>
         </View>
 
@@ -222,13 +247,13 @@ export default function BrokerDetailPage() {
             variant="default"
             padding="none"
             pressable
-            onPress={showFeatureNotImplemented}
+            onPress={handleSalesPress}
             className="bg-stock-red border-0 px-4 py-4 mb-3"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialIcons"
                     name="sell"
@@ -236,16 +261,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    SATIŞ YAP
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  SATIŞ YAP
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
@@ -261,13 +284,13 @@ export default function BrokerDetailPage() {
             variant="default"
             padding="none"
             pressable
-            onPress={showFeatureNotImplemented}
+            onPress={handleCollectionPress}
             className="bg-stock-red border-0 px-4 py-4 mb-3"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialIcons"
                     name="payments"
@@ -275,16 +298,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    TAHSİLAT
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  TAHSİLAT
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
@@ -300,13 +321,13 @@ export default function BrokerDetailPage() {
             variant="default"
             padding="none"
             pressable
-            onPress={showFeatureNotImplemented}
+            onPress={handleStatementPress}
             className="bg-stock-red border-0 px-4 py-4 mb-3"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="file-document-outline"
@@ -314,16 +335,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    EKSTRELER
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  EKSTRELER
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
@@ -339,13 +358,13 @@ export default function BrokerDetailPage() {
             variant="default"
             padding="none"
             pressable
-            onPress={showFeatureNotImplemented}
+            onPress={handleInvoicePress}
             className="bg-stock-red border-0 px-4 py-4 mb-3"
             radius="md"
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
-                <View className="mr-4">
+                <View className="mr-3">
                   <Icon
                     family="MaterialCommunityIcons"
                     name="receipt"
@@ -353,16 +372,14 @@ export default function BrokerDetailPage() {
                     color="#FFFEFF"
                   />
                 </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    FATURALAR
-                  </Typography>
-                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  FATURALAR
+                </Typography>
               </View>
               <Icon
                 family="MaterialIcons"
