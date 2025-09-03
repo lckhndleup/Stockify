@@ -153,6 +153,13 @@ export default function RootLayout() {
               headerShown: true,
             }}
           />
+          <Stack.Screen
+            name="categories"
+            options={{
+              title: "Kategori Yönetimi",
+              headerShown: true,
+            }}
+          />
         </Stack>
 
         {/* BottomNavigation sadece login olmamış kullanıcılarda göster */}
