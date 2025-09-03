@@ -74,8 +74,11 @@ export default function ConfirmSales() {
           text: "İptal Et",
           style: "destructive",
           onPress: () => {
-            // Satış sayfasına geri dön ve state'i temizle
-            router.back();
+            // Aracı detay sayfasına git (satış tamamen iptal)
+            router.push({
+              pathname: "/broker/brokerDetail",
+              params: { brokerId: brokerId },
+            });
           },
         },
       ]

@@ -1,5 +1,5 @@
-import React from "react";
-import { ScrollView, View } from "react-native";
+import React, { useEffect } from "react";
+import { Alert, BackHandler, ScrollView, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   Container,
@@ -20,6 +20,31 @@ export default function ResultSales() {
   // Hooks
   const { brokers, getBrokerTotalDebt } = useAppStore();
 
+  // Android back button handling - completed process sayfasında ana sayfaya yönlendir
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        Alert.alert(
+          "Sayfadan Ayrıl",
+          "Ana sayfaya dönmek istediğinizden emin misiniz?",
+          [
+            { text: "Kalın", style: "cancel" },
+            {
+              text: "Ana Sayfa",
+              onPress: () => {
+                router.push("/");
+              },
+            },
+          ]
+        );
+        return true; // Geri gitmeyi engelle ve kontrollü yönlendirme yap
+      }
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);
   const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
@@ -38,7 +63,10 @@ export default function ResultSales() {
     router.push("/");
   };
 
+  // resultSales.tsx handleNewSale
   const handleNewSale = () => {
+    // Stack'i tamamen temizle ve SalesSection'a git
+    router.dismissAll(); // Tüm stack'i temizle
     router.push({
       pathname: "/broker/sections/salesSection",
       params: { brokerId: brokerId },

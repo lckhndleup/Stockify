@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { View, ScrollView, Alert, TouchableOpacity } from "react-native";
+import React, { useState, useMemo, useEffect } from "react";
+import { View, ScrollView, Alert, TouchableOpacity, Text } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   Container,
@@ -22,6 +22,7 @@ import {
   salesQuantitySchema,
   editQuantitySchema,
 } from "@/src/validations/salesValidation";
+import { useNavigation } from "@react-navigation/native";
 
 // Eklenen ürün tipi
 interface AddedProduct {
@@ -91,7 +92,46 @@ export default function SalesSection() {
   const activeProducts = getActiveProducts();
   const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
   const brokerDiscount = broker ? getBrokerDiscount(broker.id) : 0;
+  const navigation = useNavigation();
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert(
+              "Satışı İptal Et",
+              "Satış işlemini iptal edip aracı detayına dönmek istiyor musunuz?",
+              [
+                { text: "Devam Et", style: "cancel" },
+                {
+                  text: "İptal Et",
+                  style: "destructive",
+                  onPress: () => {
+                    router.replace({
+                      pathname: "/broker/brokerDetail",
+                      params: { brokerId: brokerId },
+                    });
+                  },
+                },
+              ]
+            );
+          }}
+          style={{ paddingLeft: 16 }}
+        >
+          <Text
+            style={{
+              color: "#E3001B",
+              fontSize: 16,
+              fontWeight: "600",
+            }}
+          >
+            İptal
+          </Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, brokerId]);
   // Kullanılabilir ürünler
   const availableProducts = useMemo(() => {
     const addedProductIds = addedProducts.map((p) => p.id);

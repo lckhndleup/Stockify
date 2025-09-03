@@ -130,6 +130,9 @@ export default function RootLayout() {
             options={{
               title: "Satış İşlemleri",
               headerShown: true,
+              headerBackVisible: false,
+              gestureEnabled: false,
+              headerLeft: () => null,
             }}
           />
           <Stack.Screen
@@ -165,6 +168,9 @@ export default function RootLayout() {
             options={{
               title: "Satış Onayı",
               headerShown: true,
+              headerBackVisible: false, // Geri butonu gizle
+              gestureEnabled: false, // iOS'ta swipe ile geri gitmeyi engelle
+              headerLeft: () => null, // Header sol tarafını tamamen temizle
             }}
           />
           <Stack.Screen
@@ -172,6 +178,9 @@ export default function RootLayout() {
             options={{
               title: "Satış Tamamlandı",
               headerShown: true,
+              headerBackVisible: false, // Geri butonu gizle
+              gestureEnabled: false, // iOS'ta swipe ile geri gitmeyi engelle
+              headerLeft: () => null, // Header sol tarafını tamamen temizle
             }}
           />
         </Stack>
