@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Alert, BackHandler, ScrollView, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -11,6 +11,10 @@ import {
 } from "@/src/components/ui";
 import { useAppStore } from "@/src/stores/appStore";
 
+import SuccessAnimation, {
+  SuccessAnimationRef,
+} from "@/src/components/svg/successAnimation"; // ref tipi de import
+
 export default function ResultSales() {
   // URL parametrelerinden sonuç bilgilerini al
   const params = useLocalSearchParams();
@@ -19,6 +23,7 @@ export default function ResultSales() {
 
   // Hooks
   const { brokers, getBrokerTotalDebt } = useAppStore();
+  const successAnimationRef = useRef<SuccessAnimationRef>(null);
 
   // Android back button handling - completed process sayfasında ana sayfaya yönlendir
   useEffect(() => {
@@ -53,21 +58,18 @@ export default function ResultSales() {
 
   // Buton handlers
   const handleGoToBrokerDetail = () => {
-    router.push({
+    router.replace({
       pathname: "/broker/brokerDetail",
       params: { brokerId: brokerId },
     });
   };
 
   const handleGoToHome = () => {
-    router.push("/");
+    router.replace("/");
   };
 
-  // resultSales.tsx handleNewSale
   const handleNewSale = () => {
-    // Stack'i tamamen temizle ve SalesSection'a git
-    router.dismissAll(); // Tüm stack'i temizle
-    router.push({
+    router.replace({
       pathname: "/broker/sections/salesSection",
       params: { brokerId: brokerId },
     });
@@ -90,14 +92,24 @@ export default function ResultSales() {
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Header - Başarı Durumu */}
         <View className="mb-6 items-center">
-          <View className="mb-4">
-            <Icon
-              family="MaterialIcons"
-              name={isSuccess ? "check-circle" : "error"}
-              size={64}
-              color={isSuccess ? "#10B981" : "#EF4444"}
-              containerClassName="items-center"
-            />
+          <View className="mb-4 items-center justify-center">
+            {isSuccess ? (
+              <SuccessAnimation
+                ref={successAnimationRef} // <-- Artık tanımlı
+                size={80}
+                autoPlay={true}
+                loop={false}
+                speed={1.2}
+              />
+            ) : (
+              <Icon
+                family="MaterialIcons"
+                name="error"
+                size={64}
+                color="#EF4444"
+                containerClassName="items-center"
+              />
+            )}
           </View>
 
           <Typography
