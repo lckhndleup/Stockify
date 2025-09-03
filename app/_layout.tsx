@@ -160,6 +160,20 @@ export default function RootLayout() {
               headerShown: true,
             }}
           />
+          <Stack.Screen
+            name="broker/sections/confirmSales"
+            options={{
+              title: "Satış Onayı",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/resultSales"
+            options={{
+              title: "Satış Tamamlandı",
+              headerShown: true,
+            }}
+          />
         </Stack>
 
         {/* BottomNavigation sadece login olmamış kullanıcılarda göster */}

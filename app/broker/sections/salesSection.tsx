@@ -308,74 +308,23 @@ export default function SalesSection() {
       return;
     }
 
-    const totalAmount = calculateTotalAmount(); // İskonto uygulanmış tutar
-    const subTotal = calculateSubTotal();
-    const discountAmount = calculateDiscountAmount();
-
-    let alertMessage = `${broker?.name} ${broker?.surname} aracısına satış yapılacaktır:\n\n`;
-    alertMessage += `Alt Toplam: ₺${subTotal.toLocaleString()}\n`;
-    if (brokerDiscount > 0) {
-      alertMessage += `İskonto (%${brokerDiscount}): -₺${discountAmount.toLocaleString()}\n`;
-    }
-    alertMessage += `Toplam: ₺${totalAmount.toLocaleString()}\n`;
-    alertMessage += `Fatura: ${
-      createInvoice ? "Oluşturulacak" : "Oluşturulmayacak"
-    }\n\n`;
-    alertMessage += `Bu tutar (₺${totalAmount.toLocaleString()}) aracının bakiyesine eklenecektir.\n\nOnaylıyor musunuz?`;
-
-    Alert.alert("Satışı Tamamla", alertMessage, [
-      { text: "İptal", style: "cancel" },
-      {
-        text: "Onayla",
-        onPress: () => {
-          // İskonto uygulanmış tutarla işlem yap
-          let allSuccess = true;
-          let totalProcessedAmount = 0;
-
-          for (const product of addedProducts) {
-            // Her ürün için proportional iskonto hesapla
-            const productSubTotal = product.totalPrice;
-            const productDiscountAmount =
-              (productSubTotal * brokerDiscount) / 100;
-            const productFinalAmount = productSubTotal - productDiscountAmount;
-
-            const result = giveProductToBroker(
-              brokerId as string,
-              product.id,
-              product.quantity
-            );
-
-            if (!result.success) {
-              const errorMessage = result.error || "Satış işlemi başarısız.";
-              showError(errorMessage);
-              Alert.alert("Hata", errorMessage);
-              allSuccess = false;
-              break;
-            }
-
-            totalProcessedAmount += productFinalAmount;
-          }
-
-          if (allSuccess) {
-            // Toast mesajını göster
-            showSuccess("Satış işlemi başarıyla tamamlandı!");
-
-            Alert.alert(
-              "Başarılı",
-              `Satış işlemi tamamlandı!\n\nİskonto (%${brokerDiscount}): -₺${discountAmount.toLocaleString()}\nAracının yeni bakiyesi: ₺${(
-                brokerDebt + totalAmount
-              ).toLocaleString()}`,
-              [
-                {
-                  text: "Tamam",
-                  onPress: () => router.back(),
-                },
-              ]
-            );
-          }
-        },
+    // Confirm sayfasına yönlendir - tüm işlem orada yapılacak
+    router.push({
+      pathname: "/broker/sections/confirmSales",
+      params: {
+        brokerId: brokerId,
+        salesData: JSON.stringify(
+          addedProducts.map((product) => ({
+            id: product.id,
+            name: product.name,
+            quantity: product.quantity,
+            unitPrice: product.unitPrice,
+            totalPrice: product.totalPrice,
+          }))
+        ),
+        createInvoice: createInvoice.toString(),
       },
-    ]);
+    });
   };
 
   if (!broker) {
