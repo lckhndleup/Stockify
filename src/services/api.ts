@@ -144,6 +144,32 @@ class ApiService {
     });
   }
 
+  // Category endpoints
+  async getCategories(): Promise<any[]> {
+    return this.request<any[]>("/category/all");
+  }
+
+  async saveCategory(category: {
+    name: string;
+    taxRate: number;
+  }): Promise<any> {
+    return this.request<any>("/category/save", {
+      method: "POST",
+      body: JSON.stringify(category),
+    });
+  }
+
+  async updateCategory(category: {
+    categoryId: number;
+    name: string;
+    taxRate: number;
+  }): Promise<any> {
+    return this.request<any>("/category/update", {
+      method: "PUT",
+      body: JSON.stringify(category),
+    });
+  }
+
   // Product endpoints (Swagger'dan sonra güncellenecek)
   async getProducts(): Promise<any[]> {
     return this.request<any[]>("/product/search");
