@@ -12,17 +12,19 @@ import {
   Modal,
   Input,
   Tab,
+  Loading,
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAppStore, Product, Category } from "@/src/stores/appStore";
+import { useActiveCategories } from "@/src/hooks/api/useCategories";
 import {
   categorySchema,
   productSchema,
   editCategorySchema,
 } from "@/src/validations/salesValidation";
 
-// Dropdown Component - DÜZELTILDI
+// Dropdown Component - UPDATED
 interface DropdownProps {
   label?: string;
   value?: string;
@@ -32,6 +34,8 @@ interface DropdownProps {
   className?: string;
   onAddCategory?: () => void;
   showAddButton?: boolean;
+  loading?: boolean;
+  error?: string;
 }
 
 function Dropdown({
@@ -43,9 +47,39 @@ function Dropdown({
   className = "",
   onAddCategory,
   showAddButton = false,
+  loading = false,
+  error,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
+
+  // Loading state
+  if (loading) {
+    return (
+      <View className={`w-full ${className}`}>
+        {label && (
+          <Typography
+            variant="caption"
+            weight="medium"
+            className="mb-2 text-stock-dark"
+          >
+            {label}
+          </Typography>
+        )}
+        <View className="flex-row items-center justify-between border border-stock-border rounded-lg px-4 py-3 bg-gray-100">
+          <Typography variant="body" className="text-stock-text flex-1">
+            Kategoriler yükleniyor...
+          </Typography>
+          <Loading size="small" />
+        </View>
+        {error && (
+          <Typography variant="caption" className="mt-1 text-stock-red">
+            {error}
+          </Typography>
+        )}
+      </View>
+    );
+  }
 
   return (
     <View className={`w-full ${className}`}>
@@ -63,7 +97,6 @@ function Dropdown({
         <TouchableOpacity
           className="flex-row items-center justify-between border border-stock-border rounded-lg px-4 py-3 bg-white"
           onPress={() => {
-            // DÜZELTME: Kategori yoksa ve add butonu varsa direkt kategori eklemeye yönlendir
             if (options.length === 0 && showAddButton && onAddCategory) {
               onAddCategory();
             } else {
@@ -76,7 +109,6 @@ function Dropdown({
             variant="body"
             className={selectedOption ? "text-stock-dark" : "text-stock-text"}
           >
-            {/* DÜZELTME: Kategori yoksa "Kategori Ekle" göster */}
             {options.length === 0 && showAddButton
               ? "Kategori Ekle"
               : selectedOption
@@ -86,7 +118,6 @@ function Dropdown({
           <Icon
             family="MaterialIcons"
             name={
-              // DÜZELTME: Kategori yoksa "add" ikonu göster
               options.length === 0 && showAddButton
                 ? "add"
                 : isOpen
@@ -100,14 +131,12 @@ function Dropdown({
           />
         </TouchableOpacity>
 
-        {/* DÜZELTME: Sadece kategori varken dropdown açılsın */}
         {isOpen && options.length > 0 && (
           <View className="absolute top-full left-0 right-0 mt-1 bg-white border border-stock-border rounded-lg shadow-lg z-50">
             <ScrollView
               showsVerticalScrollIndicator={false}
               style={{ maxHeight: 200 }}
             >
-              {/* Kategori ekleme butonu */}
               {showAddButton && onAddCategory && (
                 <>
                   <TouchableOpacity
@@ -172,6 +201,12 @@ function Dropdown({
           </View>
         )}
       </View>
+
+      {error && (
+        <Typography variant="caption" className="mt-1 text-stock-red">
+          {error}
+        </Typography>
+      )}
     </View>
   );
 }
@@ -207,10 +242,19 @@ export default function ProductsPage() {
     Record<string, string>
   >({});
 
-  // Global Store
+  // React Query Hook - BACKEND CATEGORIES
+  const {
+    data: backendCategories = [],
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+    error: categoriesErrorMessage,
+    refetch: refetchCategories,
+  } = useActiveCategories();
+
+  // Global Store - LOCAL PRODUCTS
   const {
     products,
-    categories,
+    categories, // Local categories (artık kullanılmıyor)
     addProduct,
     updateProduct,
     deleteProduct,
@@ -218,8 +262,8 @@ export default function ProductsPage() {
     addCategory,
     updateCategory,
     deleteCategory,
-    getActiveCategories,
-    getCategoryById,
+    getActiveCategories, // Local function (artık kullanılmıyor)
+    getCategoryById, // Local function (güncellendi)
     getProductsByCategoryId,
   } = useAppStore();
 
@@ -238,8 +282,30 @@ export default function ProductsPage() {
 
   // Product Actions
   const handleAddProduct = () => {
-    const activeCategories = getActiveCategories();
-    if (activeCategories.length === 0) {
+    // Kategoriler yükleniyor mu kontrol et
+    if (categoriesLoading) {
+      showError("Kategoriler yükleniyor, lütfen bekleyiniz.");
+      return;
+    }
+
+    // Kategori hatası var mı kontrol et
+    if (categoriesError) {
+      Alert.alert(
+        "Kategori Hatası",
+        "Kategoriler yüklenemedi. Kategori yönetimi sayfasına gitmek ister misiniz?",
+        [
+          { text: "İptal", style: "cancel" },
+          {
+            text: "Kategori Yönetimi",
+            onPress: () => router.push("/categories"),
+          },
+        ]
+      );
+      return;
+    }
+
+    // Kategori yoksa uyarı göster
+    if (backendCategories.length === 0) {
       Alert.alert(
         "Kategori Gerekli",
         "Ürün eklemek için önce kategori eklemelisiniz. Kategori ekleme sayfasına gitmek ister misiniz?",
@@ -253,6 +319,7 @@ export default function ProductsPage() {
       );
       return;
     }
+
     setIsProductModalVisible(true);
   };
 
@@ -285,6 +352,11 @@ export default function ProductsPage() {
     }
   };
 
+  // Backend categoriden kategori bulma - UPDATED
+  const getCategoryByIdFromAPI = (categoryId: string) => {
+    return backendCategories.find((cat) => cat.id === categoryId);
+  };
+
   const handleConfirmAddProduct = () => {
     if (!validateProductForm()) {
       showError("Lütfen form hatalarını düzeltin.");
@@ -293,7 +365,7 @@ export default function ProductsPage() {
 
     const stock = parseInt(productStock);
     const price = parseFloat(productPrice);
-    const category = getCategoryById(selectedCategoryId);
+    const category = getCategoryByIdFromAPI(selectedCategoryId);
 
     if (!category) {
       showError("Seçili kategori bulunamadı.");
@@ -346,7 +418,7 @@ export default function ProductsPage() {
 
     const stock = parseInt(productStock);
     const price = parseFloat(productPrice);
-    const category = getCategoryById(selectedCategoryId);
+    const category = getCategoryByIdFromAPI(selectedCategoryId);
 
     if (!category) {
       showError("Seçili kategori bulunamadı.");
@@ -413,7 +485,7 @@ export default function ProductsPage() {
     setValidationErrors({});
   };
 
-  // Category Actions - DÜZELTME: Categories sayfasına yönlendirme
+  // Category Actions - Categories sayfasına yönlendirme
   const handleCategoryManagement = () => {
     // Modal açıksa kapat
     if (isProductModalVisible) {
@@ -504,8 +576,8 @@ export default function ProductsPage() {
   };
 
   // Filtering and Data
-  const activeCategories = getActiveCategories();
-  const categoryOptions = activeCategories.map((category) => ({
+  // Backend kategorilerden seçenekler oluştur - UPDATED
+  const categoryOptions = backendCategories.map((category) => ({
     label: `${category.name} (KDV: %${category.taxRate})`,
     value: category.id,
   }));
@@ -518,6 +590,46 @@ export default function ProductsPage() {
       activeTab === "active" ? product.isActive : !product.isActive;
     return matchesSearch && matchesTab;
   });
+
+  // Error state için kategori yüklenirken
+  if (
+    categoriesError &&
+    !backendCategories.length &&
+    (isProductModalVisible || isEditProductModalVisible)
+  ) {
+    // Modal açıkken kategori hatası varsa modal'ı kapat ve hata göster
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <Toast
+          visible={toast.visible}
+          message={toast.message}
+          type={toast.type}
+          onHide={hideToast}
+        />
+        <View className="items-center justify-center py-12">
+          <Icon
+            family="MaterialIcons"
+            name="error-outline"
+            size={64}
+            color="#EF4444"
+            containerClassName="mb-4"
+          />
+          <Typography variant="body" className="text-red-600 text-center mb-4">
+            Kategoriler yüklenirken hata oluştu
+          </Typography>
+          <Typography
+            variant="caption"
+            className="text-gray-500 text-center mb-4"
+          >
+            {categoriesErrorMessage?.message || "Bilinmeyen hata"}
+          </Typography>
+          <Button variant="primary" onPress={() => refetchCategories()}>
+            Tekrar Dene
+          </Button>
+        </View>
+      </Container>
+    );
+  }
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
@@ -561,7 +673,8 @@ export default function ProductsPage() {
         {/* Ürün Listesi */}
         <View className="mt-3">
           {filteredProducts.map((product) => {
-            const category = getCategoryById(product.categoryId);
+            // Backend kategoriden kategori bilgisi al - UPDATED
+            const category = getCategoryByIdFromAPI(product.categoryId);
             return (
               <Card
                 key={product.id}
@@ -673,12 +786,12 @@ export default function ProductsPage() {
         className="bg-white mx-6"
       >
         <View>
-          {/* Kategori Seçimi - DÜZELTME: handleCategoryManagement kullan */}
+          {/* Kategori Seçimi - UPDATED */}
           <Dropdown
             label="Kategori *"
             value={selectedCategoryId}
             placeholder={
-              activeCategories.length === 0
+              backendCategories.length === 0
                 ? "Kategori Ekle"
                 : "Kategori seçiniz..."
             }
@@ -686,6 +799,8 @@ export default function ProductsPage() {
             onSelect={setSelectedCategoryId}
             onAddCategory={handleCategoryManagement}
             showAddButton={true}
+            loading={categoriesLoading}
+            error={categoriesError ? "Kategoriler yüklenemedi" : undefined}
             className="mb-4"
           />
           {validationErrors.categoryId && (
@@ -760,7 +875,7 @@ export default function ProductsPage() {
         className="bg-white mx-6"
       >
         <View>
-          {/* Kategori Seçimi - DÜZELTME: handleCategoryManagement kullan */}
+          {/* Kategori Seçimi - UPDATED */}
           <Dropdown
             label="Kategori *"
             value={selectedCategoryId}
@@ -769,6 +884,8 @@ export default function ProductsPage() {
             onSelect={setSelectedCategoryId}
             onAddCategory={handleCategoryManagement}
             showAddButton={true}
+            loading={categoriesLoading}
+            error={categoriesError ? "Kategoriler yüklenemedi" : undefined}
             className="mb-4"
           />
           {validationErrors.categoryId && (
@@ -834,7 +951,7 @@ export default function ProductsPage() {
         </View>
       </Modal>
 
-      {/* Kategori Ekleme Modal'ı - YedEK olarak kalabilir */}
+      {/* Kategori Ekleme Modal'ı - Yedek olarak kalabilir */}
       <Modal
         visible={isCategoryModalVisible}
         onClose={handleCategoryModalClose}

@@ -1,7 +1,7 @@
+// src/components/common/Providers.tsx
 import React from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
-import FontProvider from "./FontProvider";
+import QueryProvider from "@/src/providers/QueryProvider";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -9,8 +9,8 @@ interface ProvidersProps {
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <FontProvider>
-      <SafeAreaProvider>{children}</SafeAreaProvider>
-    </FontProvider>
+    <SafeAreaProvider>
+      <QueryProvider>{children}</QueryProvider>
+    </SafeAreaProvider>
   );
 }
