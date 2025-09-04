@@ -55,7 +55,11 @@ export default function RootLayout() {
   }, [isAuthenticated, pathname, isNavigationReady]);
 
   // Login sayfasında BottomNavigation gösterme
-  const shouldShowBottomNav = isAuthenticated && pathname !== "/login";
+  // Login sayfasında ve sections altında BottomNavigation gösterme
+  const shouldShowBottomNav =
+    isAuthenticated &&
+    pathname !== "/login" &&
+    !pathname.includes("/broker/sections/"); // Sections altındaki tüm sayfalar
 
   console.log("🎯 RootLayout render:", {
     pathname,
@@ -112,6 +116,71 @@ export default function RootLayout() {
             options={{
               title: "Stok Takip",
               headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/brokerDetail"
+            options={{
+              title: "Aracı Detayı",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/salesSection"
+            options={{
+              title: "Satış İşlemleri",
+              headerShown: true,
+              headerBackVisible: false,
+              gestureEnabled: false,
+              headerLeft: () => null,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/collectionSection"
+            options={{
+              title: "Tahsilat İşlemleri",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/statementSection"
+            options={{
+              title: "Ekstreler",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/invoiceSection"
+            options={{
+              title: "Faturalar",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="categories"
+            options={{
+              title: "Kategori Yönetimi",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/confirmSales"
+            options={{
+              title: "Satış Onayı",
+              headerShown: true,
+              headerBackVisible: false, // Geri butonu gizle
+              gestureEnabled: false, // iOS'ta swipe ile geri gitmeyi engelle
+              headerLeft: () => null, // Header sol tarafını tamamen temizle
+            }}
+          />
+          <Stack.Screen
+            name="broker/sections/resultSales"
+            options={{
+              title: "Satış Tamamlandı",
+              headerShown: true,
+              headerBackVisible: false, // Geri butonu gizle
+              gestureEnabled: false, // iOS'ta swipe ile geri gitmeyi engelle
+              headerLeft: () => null, // Header sol tarafını tamamen temizle
             }}
           />
         </Stack>

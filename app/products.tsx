@@ -13,8 +13,16 @@ import {
   Input,
   Tab,
 } from "@/src/components/ui";
+import Toast from "@/src/components/ui/toast";
+import { useToast } from "@/src/hooks/useToast";
+import { useAppStore, Product, Category } from "@/src/stores/appStore";
+import {
+  categorySchema,
+  productSchema,
+  editCategorySchema,
+} from "@/src/validations/salesValidation";
 
-// Dropdown Component - Tüm alan tıklanabilir
+// Dropdown Component - DÜZELTILDI
 interface DropdownProps {
   label?: string;
   value?: string;
@@ -22,6 +30,8 @@ interface DropdownProps {
   options: { label: string; value: string }[];
   onSelect: (value: string) => void;
   className?: string;
+  onAddCategory?: () => void;
+  showAddButton?: boolean;
 }
 
 function Dropdown({
@@ -31,6 +41,8 @@ function Dropdown({
   options,
   onSelect,
   className = "",
+  onAddCategory,
+  showAddButton = false,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selectedOption = options.find((opt) => opt.value === value);
@@ -50,40 +62,113 @@ function Dropdown({
       <View className="relative">
         <TouchableOpacity
           className="flex-row items-center justify-between border border-stock-border rounded-lg px-4 py-3 bg-white"
-          onPress={() => setIsOpen(!isOpen)}
+          onPress={() => {
+            // DÜZELTME: Kategori yoksa ve add butonu varsa direkt kategori eklemeye yönlendir
+            if (options.length === 0 && showAddButton && onAddCategory) {
+              onAddCategory();
+            } else {
+              setIsOpen(!isOpen);
+            }
+          }}
           activeOpacity={0.8}
         >
           <Typography
             variant="body"
             className={selectedOption ? "text-stock-dark" : "text-stock-text"}
           >
-            {selectedOption ? selectedOption.label : placeholder}
+            {/* DÜZELTME: Kategori yoksa "Kategori Ekle" göster */}
+            {options.length === 0 && showAddButton
+              ? "Kategori Ekle"
+              : selectedOption
+              ? selectedOption.label
+              : placeholder}
           </Typography>
           <Icon
             family="MaterialIcons"
-            name={isOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+            name={
+              // DÜZELTME: Kategori yoksa "add" ikonu göster
+              options.length === 0 && showAddButton
+                ? "add"
+                : isOpen
+                ? "keyboard-arrow-up"
+                : "keyboard-arrow-down"
+            }
             size={20}
-            color="#6D706F"
+            color={
+              options.length === 0 && showAddButton ? "#E3001B" : "#6D706F"
+            }
           />
         </TouchableOpacity>
 
-        {isOpen && (
+        {/* DÜZELTME: Sadece kategori varken dropdown açılsın */}
+        {isOpen && options.length > 0 && (
           <View className="absolute top-full left-0 right-0 mt-1 bg-white border border-stock-border rounded-lg shadow-lg z-50">
-            {options.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                className="px-4 py-3 border-b border-stock-border last:border-b-0"
-                onPress={() => {
-                  onSelect(option.value);
-                  setIsOpen(false);
-                }}
-                activeOpacity={0.8}
-              >
-                <Typography variant="body" className="text-stock-dark">
-                  {option.label}
-                </Typography>
-              </TouchableOpacity>
-            ))}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={{ maxHeight: 200 }}
+            >
+              {/* Kategori ekleme butonu */}
+              {showAddButton && onAddCategory && (
+                <>
+                  <TouchableOpacity
+                    className="px-4 py-3 border-b border-stock-border bg-stock-gray"
+                    onPress={() => {
+                      setIsOpen(false);
+                      onAddCategory();
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View className="flex-row items-center">
+                      <Icon
+                        family="MaterialIcons"
+                        name="add"
+                        size={18}
+                        color="#E3001B"
+                        containerClassName="mr-2"
+                      />
+                      <Typography
+                        variant="body"
+                        className="text-stock-red"
+                        weight="semibold"
+                      >
+                        Kategori Yönetimi
+                      </Typography>
+                    </View>
+                  </TouchableOpacity>
+                  {options.length > 0 && (
+                    <View className="h-1 bg-stock-border" />
+                  )}
+                </>
+              )}
+
+              {options.map((option, index) => (
+                <TouchableOpacity
+                  key={option.value}
+                  className={`px-4 py-3 ${
+                    index !== options.length - 1
+                      ? "border-b border-stock-border"
+                      : ""
+                  } ${value === option.value ? "bg-stock-gray" : "bg-white"}`}
+                  onPress={() => {
+                    onSelect(option.value);
+                    setIsOpen(false);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Typography
+                    variant="body"
+                    className={
+                      value === option.value
+                        ? "text-stock-red"
+                        : "text-stock-dark"
+                    }
+                    weight={value === option.value ? "semibold" : "normal"}
+                  >
+                    {option.label}
+                  </Typography>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         )}
       </View>
@@ -91,70 +176,55 @@ function Dropdown({
   );
 }
 
-// Kategoriler
-const CATEGORIES = [
-  { label: "Kuruyemiş", value: "kuruyemis" },
-  { label: "Çerez", value: "cerez" },
-  { label: "Baharat", value: "baharat" },
-  { label: "Kuru Meyve", value: "kuru_meyve" },
-];
-
-// Ürün interface'i - Adet bazına güncellendi
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  stock: number; // Artık adet cinsinden
-  price: number; // Artık adet başına fiyat
-  isActive: boolean; // Aktif/Pasif durumu
-}
-
 export default function ProductsPage() {
   const [searchText, setSearchText] = useState("");
-  const [activeTab, setActiveTab] = useState("active"); // Tab state
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [activeTab, setActiveTab] = useState("active");
+
+  // Product Modal States
+  const [isProductModalVisible, setIsProductModalVisible] = useState(false);
+  const [isEditProductModalVisible, setIsEditProductModalVisible] =
+    useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Category Modal States
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+  const [isEditCategoryModalVisible, setIsEditCategoryModalVisible] =
+    useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Product Form States
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [productName, setProductName] = useState("");
   const [productStock, setProductStock] = useState("");
   const [productPrice, setProductPrice] = useState("");
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Mock ürünler listesi - Adet bazında güncellendi
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "1",
-      name: "Antep Fıstığı Paketi (200g)",
-      category: "kuruyemis",
-      stock: 45, // 45 adet paket
-      price: 85, // 85 TL per paket
-      isActive: true,
-    },
-    {
-      id: "2",
-      name: "Ceviz İçi Paketi (250g)",
-      category: "kuruyemis",
-      stock: 23, // 23 adet paket
-      price: 32, // 32 TL per paket
-      isActive: true,
-    },
-    {
-      id: "3",
-      name: "Badem Paketi (300g)",
-      category: "kuruyemis",
-      stock: 78, // 78 adet paket
-      price: 45, // 45 TL per paket
-      isActive: true,
-    },
-    {
-      id: "4",
-      name: "Kaju Paketi (150g)",
-      category: "kuruyemis",
-      stock: 12, // 12 adet paket
-      price: 65, // 65 TL per paket
-      isActive: true,
-    },
-  ]);
+  // Category Form States
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryTaxRate, setCategoryTaxRate] = useState("");
+
+  // Validation Error States
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+
+  // Global Store
+  const {
+    products,
+    categories,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    getActiveProducts,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    getActiveCategories,
+    getCategoryById,
+    getProductsByCategoryId,
+  } = useAppStore();
+
+  // Toast
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Tab tanımları
   const tabs = [
@@ -164,59 +234,94 @@ export default function ProductsPage() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    console.log("Ürün arama:", text);
   };
 
+  // Product Actions
   const handleAddProduct = () => {
-    setIsModalVisible(true);
+    const activeCategories = getActiveCategories();
+    if (activeCategories.length === 0) {
+      Alert.alert(
+        "Kategori Gerekli",
+        "Ürün eklemek için önce kategori eklemelisiniz. Kategori ekleme sayfasına gitmek ister misiniz?",
+        [
+          { text: "İptal", style: "cancel" },
+          {
+            text: "Kategori Yönetimi",
+            onPress: () => router.push("/categories"),
+          },
+        ]
+      );
+      return;
+    }
+    setIsProductModalVisible(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalVisible(false);
-    setSelectedCategory("");
+  const handleProductModalClose = () => {
+    setIsProductModalVisible(false);
+    setSelectedCategoryId("");
     setProductName("");
     setProductStock("");
     setProductPrice("");
+    setValidationErrors({});
   };
 
-  const handleConfirmAdd = () => {
-    if (!selectedCategory || !productName.trim()) {
-      Alert.alert("Hata", "Lütfen kategori seçin ve ürün adını girin.");
+  const validateProductForm = () => {
+    try {
+      productSchema.parse({
+        name: productName,
+        categoryId: selectedCategoryId,
+        stock: productStock,
+        price: productPrice,
+      });
+      setValidationErrors({});
+      return true;
+    } catch (error: any) {
+      const errors: Record<string, string> = {};
+      error.errors?.forEach((err: any) => {
+        errors[err.path[0]] = err.message;
+      });
+      setValidationErrors(errors);
+      return false;
+    }
+  };
+
+  const handleConfirmAddProduct = () => {
+    if (!validateProductForm()) {
+      showError("Lütfen form hatalarını düzeltin.");
       return;
     }
 
-    const stock = productStock ? parseInt(productStock) : 0;
-    const price = productPrice ? parseFloat(productPrice) : 0;
+    const stock = parseInt(productStock);
+    const price = parseFloat(productPrice);
+    const category = getCategoryById(selectedCategoryId);
+
+    if (!category) {
+      showError("Seçili kategori bulunamadı.");
+      return;
+    }
 
     Alert.alert(
       "Ürün Ekle",
-      `"${productName}" ürününü eklemek istediğinizden emin misiniz?\n\nStok: ${stock} adet\nFiyat: ₺${price}/adet`,
+      `"${productName}" ürününü eklemek istediğinizden emin misiniz?\n\nKategori: ${category.name}\nStok: ${stock} adet\nFiyat: ₺${price}/adet`,
       [
-        {
-          text: "İptal",
-          style: "cancel",
-        },
+        { text: "İptal", style: "cancel" },
         {
           text: "Ekle",
           style: "default",
           onPress: () => {
-            // Yeni ürün oluştur
-            const newProduct: Product = {
-              id: Date.now().toString(),
-              name: productName,
-              category: selectedCategory,
-              stock: stock,
-              price: price,
-              isActive: true, // Yeni ürünler varsayılan olarak aktif
-            };
+            try {
+              addProduct({
+                name: productName,
+                categoryId: selectedCategoryId,
+                stock: stock,
+                price: price,
+              });
 
-            // Listeye en başa ekle
-            setProducts((prev) => [newProduct, ...prev]);
-
-            // Modal'ı kapat ve formu temizle
-            handleModalClose();
-
-            Alert.alert("Başarılı", "Ürün başarıyla eklendi!");
+              handleProductModalClose();
+              showSuccess("Ürün başarıyla eklendi!");
+            } catch (error) {
+              showError("Ürün eklenirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -225,53 +330,51 @@ export default function ProductsPage() {
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
-    setSelectedCategory(product.category);
+    setSelectedCategoryId(product.categoryId);
     setProductName(product.name);
     setProductStock(product.stock.toString());
     setProductPrice(product.price.toString());
-    setIsEditModalVisible(true);
+    setValidationErrors({});
+    setIsEditProductModalVisible(true);
   };
 
   const handleUpdateProduct = () => {
-    if (!selectedCategory || !productName.trim() || !editingProduct) {
-      Alert.alert("Hata", "Lütfen tüm alanları doldurun.");
+    if (!validateProductForm() || !editingProduct) {
+      showError("Lütfen form hatalarını düzeltin.");
       return;
     }
 
-    const stock = productStock ? parseInt(productStock) : 0;
-    const price = productPrice ? parseFloat(productPrice) : 0;
+    const stock = parseInt(productStock);
+    const price = parseFloat(productPrice);
+    const category = getCategoryById(selectedCategoryId);
+
+    if (!category) {
+      showError("Seçili kategori bulunamadı.");
+      return;
+    }
 
     Alert.alert(
       "Ürün Güncelle",
-      `"${productName}" ürününü güncellemek istediğinizden emin misiniz?\n\nYeni Bilgiler:\nStok: ${stock} adet\nFiyat: ₺${price}/adet`,
+      `"${productName}" ürününü güncellemek istediğinizden emin misiniz?\n\nKategori: ${category.name}\nStok: ${stock} adet\nFiyat: ₺${price}/adet`,
       [
-        {
-          text: "İptal",
-          style: "cancel",
-        },
+        { text: "İptal", style: "cancel" },
         {
           text: "Güncelle",
           style: "default",
           onPress: () => {
-            // Ürünü güncelle
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === editingProduct.id
-                  ? {
-                      ...p,
-                      name: productName,
-                      category: selectedCategory,
-                      stock: stock,
-                      price: price,
-                    }
-                  : p
-              )
-            );
+            try {
+              updateProduct(editingProduct.id, {
+                name: productName,
+                categoryId: selectedCategoryId,
+                stock: stock,
+                price: price,
+              });
 
-            // Modal'ı kapat ve formu temizle
-            handleEditModalClose();
-
-            Alert.alert("Başarılı", "Ürün başarıyla güncellendi!");
+              handleEditProductModalClose();
+              showSuccess("Ürün başarıyla güncellendi!");
+            } catch (error) {
+              showError("Ürün güncellenirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -283,37 +386,130 @@ export default function ProductsPage() {
       "Ürün Sil",
       `"${product.name}" ürününü silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`,
       [
-        {
-          text: "İptal",
-          style: "cancel",
-        },
+        { text: "İptal", style: "cancel" },
         {
           text: "Sil",
           style: "destructive",
           onPress: () => {
-            // Ürünü pasif yap
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === product.id ? { ...p, isActive: false } : p
-              )
-            );
-            Alert.alert("Başarılı", "Ürün silindi!");
+            try {
+              deleteProduct(product.id);
+              showSuccess("Ürün başarıyla silindi!");
+            } catch (error) {
+              showError("Ürün silinirken bir hata oluştu.");
+            }
           },
         },
       ]
     );
   };
 
-  const handleEditModalClose = () => {
-    setIsEditModalVisible(false);
+  const handleEditProductModalClose = () => {
+    setIsEditProductModalVisible(false);
     setEditingProduct(null);
-    setSelectedCategory("");
+    setSelectedCategoryId("");
     setProductName("");
     setProductStock("");
     setProductPrice("");
+    setValidationErrors({});
   };
 
-  // Arama ve tab filtreleme
+  // Category Actions - DÜZELTME: Categories sayfasına yönlendirme
+  const handleCategoryManagement = () => {
+    // Modal açıksa kapat
+    if (isProductModalVisible) {
+      setIsProductModalVisible(false);
+      setSelectedCategoryId("");
+      setProductName("");
+      setProductStock("");
+      setProductPrice("");
+      setValidationErrors({});
+    }
+    if (isEditProductModalVisible) {
+      setIsEditProductModalVisible(false);
+      setEditingProduct(null);
+      setSelectedCategoryId("");
+      setProductName("");
+      setProductStock("");
+      setProductPrice("");
+      setValidationErrors({});
+    }
+
+    // Categories sayfasına yönlendir
+    setTimeout(() => {
+      router.push("/categories");
+    }, 100);
+  };
+
+  const handleAddCategory = () => {
+    setIsCategoryModalVisible(true);
+  };
+
+  const handleCategoryModalClose = () => {
+    setIsCategoryModalVisible(false);
+    setCategoryName("");
+    setCategoryTaxRate("");
+    setValidationErrors({});
+  };
+
+  const validateCategoryForm = () => {
+    try {
+      categorySchema.parse({
+        name: categoryName,
+        taxRate: categoryTaxRate,
+      });
+      setValidationErrors({});
+      return true;
+    } catch (error: any) {
+      const errors: Record<string, string> = {};
+      error.errors?.forEach((err: any) => {
+        errors[err.path[0]] = err.message;
+      });
+      setValidationErrors(errors);
+      return false;
+    }
+  };
+
+  const handleConfirmAddCategory = () => {
+    if (!validateCategoryForm()) {
+      showError("Lütfen form hatalarını düzeltin.");
+      return;
+    }
+
+    const taxRate = parseFloat(categoryTaxRate);
+
+    Alert.alert(
+      "Kategori Ekle",
+      `"${categoryName}" kategorisini eklemek istediğinizden emin misiniz?\n\nKDV Oranı: %${taxRate}`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Ekle",
+          style: "default",
+          onPress: () => {
+            try {
+              addCategory({
+                name: categoryName,
+                taxRate: taxRate,
+              });
+
+              handleCategoryModalClose();
+              showSuccess("Kategori başarıyla eklendi!");
+            } catch (error) {
+              showError("Kategori eklenirken bir hata oluştu.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Filtering and Data
+  const activeCategories = getActiveCategories();
+  const categoryOptions = activeCategories.map((category) => ({
+    label: `${category.name} (KDV: %${category.taxRate})`,
+    value: category.id,
+  }));
+
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
@@ -325,6 +521,14 @@ export default function ProductsPage() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
+      {/* Toast Notification */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search ve Add Butonu */}
         <View className="flex-row items-center mb-3">
@@ -356,61 +560,85 @@ export default function ProductsPage() {
 
         {/* Ürün Listesi */}
         <View className="mt-3">
-          {filteredProducts.map((product) => (
-            <Card
-              key={product.id}
-              variant="default"
-              padding="sm"
-              className={`border border-stock-border mb-2 ${
-                !product.isActive ? "opacity-60" : ""
-              }`}
-              radius="md"
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    align="left"
-                    className="text-stock-dark"
-                  >
-                    {product.name}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-text mt-1"
-                  >
-                    Stok: {product.stock} adet • Fiyat: ₺{product.price}/adet
-                  </Typography>
-                </View>
-
-                {/* Sadece aktif ürünlerde edit/delete göster */}
-                {product.isActive && (
-                  <View className="flex-row items-center">
-                    <Icon
-                      family="MaterialIcons"
-                      name="edit"
-                      size={18}
-                      color="#67686A"
-                      pressable
-                      onPress={() => handleEditProduct(product)}
-                      containerClassName="mr-2"
-                    />
-                    <Icon
-                      family="MaterialIcons"
-                      name="delete"
-                      size={18}
-                      color="#E3001B"
-                      pressable
-                      onPress={() => handleDeleteProduct(product)}
-                    />
+          {filteredProducts.map((product) => {
+            const category = getCategoryById(product.categoryId);
+            return (
+              <Card
+                key={product.id}
+                variant="default"
+                padding="sm"
+                className={`border border-stock-border mb-2 ${
+                  !product.isActive ? "opacity-60" : ""
+                }`}
+                radius="md"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Typography
+                      variant="body"
+                      weight="semibold"
+                      align="left"
+                      className="text-stock-dark"
+                    >
+                      {product.name}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      size="sm"
+                      className="text-stock-text mt-1"
+                    >
+                      Kategori: {category?.name || "Kategori bulunamadı"} •
+                      Stok: {product.stock} adet • Fiyat: ₺{product.price}/adet
+                    </Typography>
                   </View>
-                )}
-              </View>
-            </Card>
-          ))}
+
+                  {/* Sadece aktif ürünlerde edit/delete göster */}
+                  {product.isActive && (
+                    <View className="flex-row items-center">
+                      <Icon
+                        family="MaterialIcons"
+                        name="edit"
+                        size={18}
+                        color="#67686A"
+                        pressable
+                        onPress={() => handleEditProduct(product)}
+                        containerClassName="mr-2"
+                      />
+                      <Icon
+                        family="MaterialIcons"
+                        name="delete"
+                        size={18}
+                        color="#E3001B"
+                        pressable
+                        onPress={() => handleDeleteProduct(product)}
+                      />
+                    </View>
+                  )}
+                </View>
+              </Card>
+            );
+          })}
         </View>
+
+        {/* Empty State */}
+        {filteredProducts.length === 0 && (
+          <View className="items-center justify-center py-12">
+            <Icon
+              family="MaterialCommunityIcons"
+              name="package-variant"
+              size={64}
+              color="#ECECEC"
+              containerClassName="mb-4"
+            />
+            <Typography variant="body" className="text-stock-text text-center">
+              {searchText.trim()
+                ? "Arama kriterinize uygun ürün bulunamadı."
+                : activeTab === "active"
+                ? "Henüz aktif ürün eklenmemiş."
+                : "Pasif ürün bulunamadı."}
+            </Typography>
+          </View>
+        )}
 
         {/* Yeni Ürün Ekle Butonu - Sadece Aktif Tab'da */}
         {activeTab === "active" && (
@@ -438,52 +666,66 @@ export default function ProductsPage() {
 
       {/* Ürün Ekleme Modal'ı */}
       <Modal
-        visible={isModalVisible}
-        onClose={handleModalClose}
+        visible={isProductModalVisible}
+        onClose={handleProductModalClose}
         title="Yeni Ürün Ekle"
         size="lg"
         className="bg-white mx-6"
       >
         <View>
-          {/* Kategori Seçimi */}
+          {/* Kategori Seçimi - DÜZELTME: handleCategoryManagement kullan */}
           <Dropdown
-            label="Kategori"
-            value={selectedCategory}
-            placeholder="Kategori seçiniz..."
-            options={CATEGORIES}
-            onSelect={setSelectedCategory}
+            label="Kategori *"
+            value={selectedCategoryId}
+            placeholder={
+              activeCategories.length === 0
+                ? "Kategori Ekle"
+                : "Kategori seçiniz..."
+            }
+            options={categoryOptions}
+            onSelect={setSelectedCategoryId}
+            onAddCategory={handleCategoryManagement}
+            showAddButton={true}
             className="mb-4"
           />
+          {validationErrors.categoryId && (
+            <Typography variant="caption" className="text-stock-red mt-1 mb-3">
+              {validationErrors.categoryId}
+            </Typography>
+          )}
 
           {/* Ürün Adı */}
           <Input
-            label="Ürün Adı"
+            label="Ürün Adı *"
             value={productName}
             onChangeText={setProductName}
-            placeholder="Ürün adını girin... (örn: Antep Fıstığı Paketi 200g)"
+            placeholder="Ürün adını girin..."
             variant="outlined"
+            error={validationErrors.name}
             className="mb-4"
           />
 
           {/* Stok Adedi */}
           <Input
-            label="Stok Adedi"
+            label="Stok Adedi *"
             value={productStock}
             onChangeText={setProductStock}
             placeholder="Kaç adet var?"
             variant="outlined"
             keyboardType="numeric"
+            error={validationErrors.stock}
             className="mb-4"
           />
 
           {/* Adet Fiyatı */}
           <Input
-            label="Adet Fiyatı (₺)"
+            label="Adet Fiyatı (₺) *"
             value={productPrice}
             onChangeText={setProductPrice}
             placeholder="Bir adet kaç TL?"
             variant="outlined"
             keyboardType="numeric"
+            error={validationErrors.price}
             className="mb-4"
           />
 
@@ -493,7 +735,7 @@ export default function ProductsPage() {
               variant="primary"
               fullWidth
               className="bg-stock-red mb-3"
-              onPress={handleConfirmAdd}
+              onPress={handleConfirmAddProduct}
             >
               <Typography className="text-white">Ekle</Typography>
             </Button>
@@ -501,7 +743,7 @@ export default function ProductsPage() {
               variant="outline"
               fullWidth
               className="border-stock-border"
-              onPress={handleModalClose}
+              onPress={handleProductModalClose}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
@@ -511,52 +753,62 @@ export default function ProductsPage() {
 
       {/* Ürün Düzenleme Modal'ı */}
       <Modal
-        visible={isEditModalVisible}
-        onClose={handleEditModalClose}
+        visible={isEditProductModalVisible}
+        onClose={handleEditProductModalClose}
         title="Ürün Düzenle"
         size="lg"
         className="bg-white mx-6"
       >
         <View>
-          {/* Kategori Seçimi */}
+          {/* Kategori Seçimi - DÜZELTME: handleCategoryManagement kullan */}
           <Dropdown
-            label="Kategori"
-            value={selectedCategory}
+            label="Kategori *"
+            value={selectedCategoryId}
             placeholder="Kategori seçiniz..."
-            options={CATEGORIES}
-            onSelect={setSelectedCategory}
+            options={categoryOptions}
+            onSelect={setSelectedCategoryId}
+            onAddCategory={handleCategoryManagement}
+            showAddButton={true}
             className="mb-4"
           />
+          {validationErrors.categoryId && (
+            <Typography variant="caption" className="text-stock-red mt-1 mb-3">
+              {validationErrors.categoryId}
+            </Typography>
+          )}
 
           {/* Ürün Adı */}
           <Input
-            label="Ürün Adı"
+            label="Ürün Adı *"
             value={productName}
             onChangeText={setProductName}
             placeholder="Ürün adını girin..."
             variant="outlined"
+            error={validationErrors.name}
             className="mb-4"
           />
 
           {/* Stok Adedi */}
           <Input
-            label="Stok Adedi"
+            label="Stok Adedi *"
             value={productStock}
             onChangeText={setProductStock}
             placeholder="Kaç adet var?"
             variant="outlined"
             keyboardType="numeric"
+            error={validationErrors.stock}
             className="mb-4"
           />
 
           {/* Adet Fiyatı */}
           <Input
-            label="Adet Fiyatı (₺)"
+            label="Adet Fiyatı (₺) *"
             value={productPrice}
             onChangeText={setProductPrice}
             placeholder="Bir adet kaç TL?"
             variant="outlined"
             keyboardType="numeric"
+            error={validationErrors.price}
             className="mb-4"
           />
 
@@ -574,7 +826,59 @@ export default function ProductsPage() {
               variant="outline"
               fullWidth
               className="border-stock-border"
-              onPress={handleEditModalClose}
+              onPress={handleEditProductModalClose}
+            >
+              <Typography className="text-stock-dark">İptal</Typography>
+            </Button>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Kategori Ekleme Modal'ı - YedEK olarak kalabilir */}
+      <Modal
+        visible={isCategoryModalVisible}
+        onClose={handleCategoryModalClose}
+        title="Yeni Kategori Ekle"
+        size="lg"
+        className="bg-white mx-6"
+      >
+        <View>
+          <Input
+            label="Kategori Adı *"
+            value={categoryName}
+            onChangeText={setCategoryName}
+            placeholder="Kategori adını girin..."
+            variant="outlined"
+            error={validationErrors.name}
+            className="mb-4"
+          />
+
+          <Input
+            label="KDV Oranı (%) *"
+            value={categoryTaxRate}
+            onChangeText={setCategoryTaxRate}
+            placeholder="0-100 arası değer (örn: 18)"
+            variant="outlined"
+            keyboardType="numeric"
+            error={validationErrors.taxRate}
+            helperText="KDV oranını yüzde cinsinden girin"
+            className="mb-4"
+          />
+
+          <View className="mt-6">
+            <Button
+              variant="primary"
+              fullWidth
+              className="bg-stock-red mb-3"
+              onPress={handleConfirmAddCategory}
+            >
+              <Typography className="text-white">Ekle</Typography>
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth
+              className="border-stock-border"
+              onPress={handleCategoryModalClose}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>

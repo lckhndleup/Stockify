@@ -13,176 +13,31 @@ import {
   Tab,
   BottomSheet,
 } from "@/src/components/ui";
-
-// Dropdown Component
-interface DropdownProps {
-  label?: string;
-  value?: string;
-  placeholder?: string;
-  options: { label: string; value: string }[];
-  onSelect: (value: string) => void;
-  className?: string;
-}
-
-function Dropdown({
-  label,
-  value,
-  placeholder = "Seçiniz...",
-  options,
-  onSelect,
-  className = "",
-}: DropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const selectedOption = options.find((opt) => opt.value === value);
-
-  return (
-    <View className={`w-full ${className}`}>
-      {label && (
-        <Typography
-          variant="caption"
-          weight="medium"
-          className="mb-2 text-stock-dark"
-        >
-          {label}
-        </Typography>
-      )}
-
-      <View className="relative">
-        <TouchableOpacity
-          className="flex-row items-center justify-between border border-stock-border rounded-lg px-4 py-3 bg-white"
-          onPress={() => setIsOpen(!isOpen)}
-          activeOpacity={0.8}
-        >
-          <Typography
-            variant="body"
-            className={selectedOption ? "text-stock-dark" : "text-stock-text"}
-          >
-            {selectedOption ? selectedOption.label : placeholder}
-          </Typography>
-          <Icon
-            family="MaterialIcons"
-            name={isOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"}
-            size={20}
-            color="#6D706F"
-          />
-        </TouchableOpacity>
-
-        {isOpen && (
-          <View className="absolute top-full left-0 right-0 mt-1 bg-white border border-stock-border rounded-lg shadow-lg z-50">
-            {options.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                className="px-4 py-3 border-b border-stock-border last:border-b-0"
-                onPress={() => {
-                  onSelect(option.value);
-                  setIsOpen(false);
-                }}
-                activeOpacity={0.8}
-              >
-                <Typography variant="body" className="text-stock-dark">
-                  {option.label}
-                </Typography>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
-
-// Veri yapıları - Adet bazına güncellendi
-interface StockProduct {
-  id: string;
-  name: string;
-  category: string;
-  stock: number; // Adet cinsinden
-  price: number; // Adet başına fiyat
-  criticalLevel: number; // Kritik stok seviyesi (adet)
-  isActive: boolean;
-}
-
-interface StockMovement {
-  id: string;
-  productId: string;
-  productName: string;
-  type: "in" | "out"; // giriş veya çıkış
-  quantity: number; // Adet cinsinden
-  reason: string; // "ürün eklendi", "aracıya verildi", "stok güncellendi"
-  date: string;
-}
+import Toast from "@/src/components/ui/toast";
+import { useToast } from "@/src/hooks/useToast";
+import { useAppStore, Product } from "@/src/stores/appStore";
 
 export default function StockPage() {
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [isUpdateBottomSheetVisible, setIsUpdateBottomSheetVisible] =
     useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<StockProduct | null>(
-    null
-  );
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [updateQuantity, setUpdateQuantity] = useState("");
   const [updateReason, setUpdateReason] = useState("");
 
-  // Mock data - Adet bazında güncellendi
-  const [products, setProducts] = useState<StockProduct[]>([
-    {
-      id: "1",
-      name: "Antep Fıstığı Paketi (200g)",
-      category: "Kuruyemiş",
-      stock: 45, // 45 adet paket
-      price: 85, // 85 TL per paket
-      criticalLevel: 10, // 10 adet altında kritik
-      isActive: true,
-    },
-    {
-      id: "2",
-      name: "Ceviz İçi Paketi (250g)",
-      category: "Kuruyemiş",
-      stock: 8, // Kritik seviyede
-      price: 32,
-      criticalLevel: 10,
-      isActive: true,
-    },
-    {
-      id: "3",
-      name: "Badem Paketi (300g)",
-      category: "Kuruyemiş",
-      stock: 78,
-      price: 45,
-      criticalLevel: 15,
-      isActive: true,
-    },
-    {
-      id: "4",
-      name: "Kaju Paketi (150g)",
-      category: "Kuruyemiş",
-      stock: 5, // Kritik seviyede
-      price: 65,
-      criticalLevel: 10,
-      isActive: true,
-    },
-    {
-      id: "5",
-      name: "Fındık İçi Paketi (200g)",
-      category: "Kuruyemiş",
-      stock: 0, // Stokta yok
-      price: 38,
-      criticalLevel: 12,
-      isActive: true,
-    },
-  ]);
+  // Global Store
+  const {
+    getActiveProducts,
+    getCriticalProducts,
+    getOutOfStockProducts,
+    getTotalStockValue,
+    updateProductStock,
+    stockMovements,
+  } = useAppStore();
 
-  const [stockMovements, setStockMovements] = useState<StockMovement[]>([
-    {
-      id: "1",
-      productId: "2",
-      productName: "Ceviz İçi Paketi (250g)",
-      type: "out",
-      quantity: 15, // 15 adet
-      reason: "Ahmet Yılmaz aracısına verildi",
-      date: "2024-08-19",
-    },
-  ]);
+  // Toast
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Tab tanımları
   const tabs = [
@@ -191,24 +46,16 @@ export default function StockPage() {
     { id: "outofstock", label: "Tükenenler" },
   ];
 
-  // Product options for dropdown
-  const productOptions = products
-    .filter((p) => p.isActive)
-    .map((product) => ({
-      label: `${product.name} (Mevcut: ${product.stock} adet)`,
-      value: product.id,
-    }));
-
   // Helper functions
-  const isCriticalStock = (product: StockProduct) => {
-    return product.stock > 0 && product.stock <= product.criticalLevel;
+  const isCriticalStock = (product: Product) => {
+    return product.stock > 0 && product.stock <= 50; // Kritik seviye 50
   };
 
-  const isOutOfStock = (product: StockProduct) => {
+  const isOutOfStock = (product: Product) => {
     return product.stock === 0;
   };
 
-  const getStockStatus = (product: StockProduct) => {
+  const getStockStatus = (product: Product) => {
     if (isOutOfStock(product)) {
       return {
         status: "Tükendi",
@@ -230,26 +77,11 @@ export default function StockPage() {
     }
   };
 
-  const calculateTotalStockValue = () => {
-    return products.reduce(
-      (total, product) => total + product.stock * product.price,
-      0
-    );
-  };
-
-  const getCriticalProductsCount = () => {
-    return products.filter(isCriticalStock).length;
-  };
-
-  const getOutOfStockCount = () => {
-    return products.filter(isOutOfStock).length;
-  };
-
   const handleSearch = (text: string) => {
     setSearchText(text);
   };
 
-  const handleUpdateStock = (product: StockProduct) => {
+  const handleUpdateStock = (product: Product) => {
     setSelectedProduct(product);
     setUpdateQuantity(product.stock.toString());
     setUpdateReason("");
@@ -258,7 +90,7 @@ export default function StockPage() {
 
   const handleSaveStockUpdate = () => {
     if (!selectedProduct || !updateQuantity.trim()) {
-      Alert.alert("Hata", "Lütfen geçerli bir adet girin.");
+      showError("Lütfen geçerli bir adet girin.");
       return;
     }
 
@@ -266,7 +98,12 @@ export default function StockPage() {
     const oldStock = selectedProduct.stock;
 
     if (newStock < 0) {
-      Alert.alert("Hata", "Stok adedi 0'dan küçük olamaz.");
+      showError("Stok adedi 0'dan küçük olamaz.");
+      return;
+    }
+
+    if (isNaN(newStock)) {
+      showError("Lütfen geçerli bir sayı girin.");
       return;
     }
 
@@ -278,27 +115,15 @@ export default function StockPage() {
         {
           text: "Güncelle",
           onPress: () => {
-            // Stok güncelleme
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === selectedProduct.id ? { ...p, stock: newStock } : p
-              )
-            );
+            try {
+              const reason = updateReason || "Manuel stok güncellemesi";
+              updateProductStock(selectedProduct.id, newStock, reason);
 
-            // Stok hareketi kaydet
-            const movement: StockMovement = {
-              id: Date.now().toString(),
-              productId: selectedProduct.id,
-              productName: selectedProduct.name,
-              type: newStock > oldStock ? "in" : "out",
-              quantity: Math.abs(newStock - oldStock),
-              reason: updateReason || "Manuel stok güncellemesi",
-              date: new Date().toISOString().split("T")[0],
-            };
-
-            setStockMovements((prev) => [movement, ...prev]);
-            handleCloseUpdateBottomSheet();
-            Alert.alert("Başarılı", "Stok güncellendi!");
+              handleCloseUpdateBottomSheet();
+              showSuccess("Stok başarıyla güncellendi!");
+            } catch (error) {
+              showError("Stok güncellenirken bir hata oluştu.");
+            }
           },
         },
       ]
@@ -313,31 +138,43 @@ export default function StockPage() {
   };
 
   // Filtering
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name
-      .toLowerCase()
-      .includes(searchText.toLowerCase());
+  const getFilteredProducts = () => {
+    const activeProducts = getActiveProducts();
 
-    let matchesTab = true;
+    let filteredByTab: Product[] = [];
+
     switch (activeTab) {
       case "all":
-        matchesTab = product.isActive;
+        filteredByTab = activeProducts;
         break;
       case "critical":
-        matchesTab = product.isActive && isCriticalStock(product);
+        filteredByTab = getCriticalProducts();
         break;
       case "outofstock":
-        matchesTab = product.isActive && isOutOfStock(product);
+        filteredByTab = getOutOfStockProducts();
         break;
       default:
-        matchesTab = true;
+        filteredByTab = activeProducts;
     }
 
-    return matchesSearch && matchesTab;
-  });
+    // Search filter
+    return filteredByTab.filter((product) =>
+      product.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+  };
+
+  const filteredProducts = getFilteredProducts();
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
+      {/* Toast Notification */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search Bar */}
         <SearchBar
@@ -369,7 +206,7 @@ export default function StockPage() {
                 weight="bold"
                 className="text-blue-800"
               >
-                ₺{calculateTotalStockValue().toLocaleString()}
+                ₺{getTotalStockValue().toLocaleString()}
               </Typography>
             </View>
           </Card>
@@ -395,7 +232,7 @@ export default function StockPage() {
                 weight="bold"
                 className="text-yellow-800"
               >
-                {getCriticalProductsCount()} Ürün
+                {getCriticalProducts().length} Ürün
               </Typography>
             </View>
           </Card>
@@ -421,7 +258,7 @@ export default function StockPage() {
                 weight="bold"
                 className="text-red-800"
               >
-                {getOutOfStockCount()} Ürün
+                {getOutOfStockProducts().length} Ürün
               </Typography>
             </View>
           </Card>
@@ -504,7 +341,7 @@ export default function StockPage() {
                           size="xs"
                           className="text-stock-text"
                         >
-                          Kritik Seviye: {product.criticalLevel} adet
+                          Kritik Seviye: 50 adet
                         </Typography>
                       </View>
 
@@ -591,7 +428,7 @@ export default function StockPage() {
                   Mevcut Stok: {selectedProduct.stock} adet
                 </Typography>
                 <Typography variant="caption" className="text-stock-text">
-                  Kritik Seviye: {selectedProduct.criticalLevel} adet
+                  Kritik Seviye: 50 adet
                 </Typography>
               </View>
 
@@ -614,7 +451,7 @@ export default function StockPage() {
                 className="mb-3"
               />
 
-              {updateQuantity && (
+              {updateQuantity && !isNaN(parseInt(updateQuantity)) && (
                 <View className="bg-blue-50 p-4 rounded-lg mb-4">
                   <Typography
                     variant="caption"
