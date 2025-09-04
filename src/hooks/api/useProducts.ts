@@ -1,4 +1,5 @@
-// src/hooks/api/useProducts.ts - Updated: Stock/Price removed
+// src/hooks/api/useProducts.ts - Pasif ürünler hook'u eklendi
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
@@ -58,6 +59,20 @@ export const useActiveProducts = (options?: { enabled?: boolean }) => {
   });
 };
 
+// YENİ: Pasif ürünleri getir (UI için adapter ile)
+export const usePassiveProducts = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: queryKeys.products.list({ status: "PASSIVE" }),
+    queryFn: async () => {
+      console.log("🛍️ Fetching passive products...");
+      const products = await apiService.getProducts({ status: "PASSIVE" });
+      console.log("✅ Passive products fetched:", products);
+      return adaptProductsForUI(products);
+    },
+    ...options,
+  });
+};
+
 // Ürün detayı getir
 export const useProductDetail = (
   productId: string,
@@ -74,18 +89,24 @@ export const useProductDetail = (
   });
 };
 
-// Ürün arama
+// Ürün arama - YENİ: status parametresi eklendi
 export const useSearchProducts = (
   searchText: string,
+  status: "ACTIVE" | "PASSIVE" = "ACTIVE",
   options?: { enabled?: boolean }
 ) => {
   return useQuery({
-    queryKey: queryKeys.products.search(searchText),
+    queryKey: queryKeys.products.search(`${searchText}-${status}`),
     queryFn: async () => {
-      console.log("🛍️ Searching products with text:", searchText);
+      console.log(
+        "🛍️ Searching products with text:",
+        searchText,
+        "status:",
+        status
+      );
       const products = await apiService.getProducts({
         productText: searchText,
-        status: "ACTIVE",
+        status: status,
       });
       return adaptProductsForUI(products);
     },
@@ -119,7 +140,7 @@ export const useCreateProduct = () => {
       console.log("🎉 Success data:", data);
       console.log("🎉 Variables used:", variables);
 
-      // Cache'i invalidate et
+      // Cache'i invalidate et - hem aktif hem pasif ürünler
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.all,
         exact: false,
@@ -174,7 +195,7 @@ export const useUpdateProduct = () => {
       return result;
     },
     onSuccess: (data, variables) => {
-      // Tüm product query'lerini invalidate et
+      // Tüm product query'lerini invalidate et - hem aktif hem pasif
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       // Güncellenmiş ürünün detay cache'ini de temizle
       queryClient.invalidateQueries({
@@ -196,11 +217,11 @@ export const useDeleteProduct = () => {
     mutationFn: async (productId: string | number) => {
       console.log("🗑️ Deleting product:", productId);
       const result = await apiService.deleteProduct(productId);
-      console.log("✅ Product deleted:", result);
+      console.log("✅ Product deleted (status set to PASSIVE):", result);
       return result;
     },
     onSuccess: (data, productId) => {
-      // Tüm product query'lerini invalidate et
+      // Tüm product query'lerini invalidate et - hem aktif hem pasif
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       // Silinmiş ürünün detay cache'ini de temizle
       queryClient.removeQueries({

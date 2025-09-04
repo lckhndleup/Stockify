@@ -19,9 +19,10 @@ import { useToast } from "@/src/hooks/useToast";
 import { useAppStore, Product, Category } from "@/src/stores/appStore";
 import { useActiveCategories } from "@/src/hooks/api/useCategories";
 
-// Backend hooks
+// Backend hooks - UPDATED: usePassiveProducts eklendi
 import {
   useActiveProducts,
+  usePassiveProducts, // YENİ EKLENEN
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
@@ -31,7 +32,6 @@ import { ProductFormData, ProductUpdateData } from "@/src/types/product";
 
 import {
   categorySchema,
-  // productSchema, // Bu schema güncellenmeli - stock/price kaldırılmalı
   editCategorySchema,
 } from "@/src/validations/salesValidation";
 
@@ -255,10 +255,9 @@ export default function ProductsPage() {
     useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  // Product Form States - UPDATED: sadece kategori ve ürün adı
+  // Product Form States - sadece kategori ve ürün adı
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [productName, setProductName] = useState("");
-  // REMOVED: productStock ve productPrice state'leri kaldırıldı
 
   // Category Form States
   const [categoryName, setCategoryName] = useState("");
@@ -279,21 +278,33 @@ export default function ProductsPage() {
     refetch: refetchCategories,
   } = useActiveCategories();
 
-  // React Query Hook - BACKEND PRODUCTS
+  // React Query Hook - BACKEND PRODUCTS - UPDATED: aktif ve pasif ayrı hook'lar
   const {
-    data: backendProducts = [],
-    isLoading: productsLoading,
-    isError: productsError,
-    error: productsErrorMessage,
-    refetch: refetchProducts,
+    data: backendActiveProducts = [],
+    isLoading: activeProductsLoading,
+    isError: activeProductsError,
+    error: activeProductsErrorMessage,
+    refetch: refetchActiveProducts,
   } = useActiveProducts();
 
-  // Search Products - sadece arama yapıldığında
+  const {
+    data: backendPassiveProducts = [],
+    isLoading: passiveProductsLoading,
+    isError: passiveProductsError,
+    error: passiveProductsErrorMessage,
+    refetch: refetchPassiveProducts,
+  } = usePassiveProducts();
+
+  // Search Products - UPDATED: status parametresi eklendi
   const {
     data: searchResults = [],
     isLoading: searchLoading,
     refetch: refetchSearch,
-  } = useSearchProducts(searchText, { enabled: false });
+  } = useSearchProducts(
+    searchText,
+    activeTab === "active" ? "ACTIVE" : "PASSIVE",
+    { enabled: false }
+  );
 
   // Backend Mutations
   const createProductMutation = useCreateProduct();
@@ -328,7 +339,7 @@ export default function ProductsPage() {
   const handleSearch = (text: string) => {
     setSearchText(text);
 
-    // Arama yapıldığında backend'den ara
+    // Arama yapıldığında backend'den ara - UPDATED: aktif tab'a göre status değişir
     if (text.trim().length > 0) {
       refetchSearch();
     }
@@ -381,7 +392,6 @@ export default function ProductsPage() {
     setIsProductModalVisible(false);
     setSelectedCategoryId("");
     setProductName("");
-    // REMOVED: productStock ve productPrice reset'leri kaldırıldı
     setValidationErrors({});
   };
 
@@ -391,7 +401,7 @@ export default function ProductsPage() {
   };
 
   const handleConfirmAddProduct = async () => {
-    // UPDATED: Sadece kategori ve ürün adı validation'ı
+    // Sadece kategori ve ürün adı validation'ı
     const validation = validateProductForm(selectedCategoryId, productName);
     setValidationErrors(validation.errors);
 
@@ -409,7 +419,7 @@ export default function ProductsPage() {
 
     Alert.alert(
       "Ürün Ekle",
-      `"${productName}" ürününü eklemek istediğinizden emin misiniz?\n\nKategori: ${category.name}`, // UPDATED: stock/price bilgileri kaldırıldı
+      `"${productName}" ürününü eklemek istediğinizden emin misiniz?\n\nKategori: ${category.name}`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -417,7 +427,7 @@ export default function ProductsPage() {
           style: "default",
           onPress: async () => {
             try {
-              // Backend'e gönder - UPDATED: sadece categoryId ve name
+              // Backend'e gönder - sadece categoryId ve name
               const productFormData: ProductFormData = {
                 categoryId: Number(selectedCategoryId),
                 name: productName.trim(),
@@ -433,8 +443,8 @@ export default function ProductsPage() {
                 handleProductModalClose();
                 showSuccess("Ürün başarıyla eklendi!");
 
-                // Verileri yenile
-                refetchProducts();
+                // Aktif ürünleri yenile
+                refetchActiveProducts();
               } else {
                 throw new Error("Backend'den geçersiz yanıt alındı");
               }
@@ -452,7 +462,6 @@ export default function ProductsPage() {
     setEditingProduct(product);
     setSelectedCategoryId(product.categoryId);
     setProductName(product.name);
-    // REMOVED: productStock ve productPrice set'leri kaldırıldı
     setValidationErrors({});
     setIsEditProductModalVisible(true);
   };
@@ -463,7 +472,7 @@ export default function ProductsPage() {
       return;
     }
 
-    // UPDATED: Sadece kategori ve ürün adı validation'ı
+    // Sadece kategori ve ürün adı validation'ı
     const validation = validateProductForm(selectedCategoryId, productName);
     setValidationErrors(validation.errors);
 
@@ -481,7 +490,7 @@ export default function ProductsPage() {
 
     Alert.alert(
       "Ürün Güncelle",
-      `"${productName}" ürününü güncellemek istediğinizden emin misiniz?\n\nKategori: ${category.name}`, // UPDATED: stock/price bilgileri kaldırıldı
+      `"${productName}" ürününü güncellemek istediğinizden emin misiniz?\n\nKategori: ${category.name}`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -489,7 +498,7 @@ export default function ProductsPage() {
           style: "default",
           onPress: async () => {
             try {
-              // Backend'e gönder - UPDATED: sadece categoryId ve name
+              // Backend'e gönder - sadece categoryId ve name
               const productUpdateData: ProductUpdateData = {
                 productId: Number(editingProduct.id),
                 categoryId: Number(selectedCategoryId),
@@ -503,8 +512,12 @@ export default function ProductsPage() {
               handleEditProductModalClose();
               showSuccess("Ürün başarıyla güncellendi!");
 
-              // Verileri yenile
-              refetchProducts();
+              // Tab'a göre ilgili ürünleri yenile
+              if (activeTab === "active") {
+                refetchActiveProducts();
+              } else {
+                refetchPassiveProducts();
+              }
             } catch (error) {
               console.error("❌ Product update error:", error);
               showError("Ürün güncellenirken bir hata oluştu!");
@@ -518,7 +531,7 @@ export default function ProductsPage() {
   const handleDeleteProduct = (product: Product) => {
     Alert.alert(
       "Ürün Sil",
-      `"${product.name}" ürününü silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`,
+      `"${product.name}" ürününü silmek istediğinizden emin misiniz?\n\nBu işlem ürünü pasif duruma getirecektir.`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -528,13 +541,14 @@ export default function ProductsPage() {
             try {
               console.log("🗑️ Deleting product from backend:", product.id);
 
-              // Backend'den sil
+              // Backend'den sil (status PASSIVE yapılır)
               await deleteProductMutation.mutateAsync(Number(product.id));
 
               showSuccess("Ürün başarıyla silindi!");
 
-              // Verileri yenile
-              refetchProducts();
+              // Her iki listeyi de yenile (aktif listeden çıkar, pasif listeye girer)
+              refetchActiveProducts();
+              refetchPassiveProducts();
             } catch (error) {
               console.error("❌ Product delete error:", error);
               showError("Ürün silinirken bir hata oluştu!");
@@ -550,7 +564,6 @@ export default function ProductsPage() {
     setEditingProduct(null);
     setSelectedCategoryId("");
     setProductName("");
-    // REMOVED: productStock ve productPrice reset'leri kaldırıldı
     setValidationErrors({});
   };
 
@@ -640,37 +653,42 @@ export default function ProductsPage() {
     );
   };
 
-  // Filtering and Data - BACKEND ENTEGRELİ HALE GETİRİLDİ
-  // Backend kategorilerden seçenekler oluştur
+  // Filtering and Data - UPDATED: aktif/pasif tab'a göre farklı data source
   const categoryOptions = backendCategories.map((category) => ({
     label: `${category.name} (KDV: %${category.taxRate})`,
     value: category.id,
   }));
 
-  // PRODUCTS DATA SOURCE - BACKEND'DEN ALIYOR
+  // PRODUCTS DATA SOURCE - UPDATED: Tab'a göre farklı backend data
   const getFilteredProducts = () => {
-    let sourceProducts = backendProducts;
+    let sourceProducts = [];
+
+    // Tab'a göre veri kaynağını belirle
+    if (activeTab === "active") {
+      sourceProducts = backendActiveProducts;
+    } else {
+      sourceProducts = backendPassiveProducts;
+    }
 
     // Arama sonuçları varsa onları kullan
     if (searchText.trim().length > 0 && searchResults.length > 0) {
       sourceProducts = searchResults;
     }
 
-    // Tab'a göre filtrele ve search'e göre filtrele
-    return sourceProducts.filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(searchText.toLowerCase());
-      const matchesTab =
-        activeTab === "active" ? product.isActive : !product.isActive;
-      return matchesSearch && matchesTab;
-    });
+    // Search'e göre filtrele
+    return sourceProducts.filter((product) =>
+      product.name.toLowerCase().includes(searchText.toLowerCase())
+    );
   };
 
   const filteredProducts = getFilteredProducts();
 
-  // Loading state
-  if (productsLoading && categoriesLoading) {
+  // Loading state - UPDATED: tab'a göre loading
+  const isLoading =
+    categoriesLoading ||
+    (activeTab === "active" ? activeProductsLoading : passiveProductsLoading);
+
+  if (isLoading) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="flex-1 justify-center items-center">
@@ -687,7 +705,6 @@ export default function ProductsPage() {
     !backendCategories.length &&
     (isProductModalVisible || isEditProductModalVisible)
   ) {
-    // Modal açıkken kategori hatası varsa modal'ı kapat ve hata göster
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <Toast
@@ -739,15 +756,18 @@ export default function ProductsPage() {
             onSearch={handleSearch}
             className="flex-1 mr-3"
           />
-          <Icon
-            family="MaterialIcons"
-            name="add"
-            size={28}
-            color="#E3001B"
-            pressable
-            onPress={handleAddProduct}
-            containerClassName="bg-gray-100 px-4 py-3 rounded-lg"
-          />
+          {/* Sadece aktif tab'da add butonu göster */}
+          {activeTab === "active" && (
+            <Icon
+              family="MaterialIcons"
+              name="add"
+              size={28}
+              color="#E3001B"
+              pressable
+              onPress={handleAddProduct}
+              containerClassName="bg-gray-100 px-4 py-3 rounded-lg"
+            />
+          )}
         </View>
 
         {/* Tab'lar */}
@@ -765,13 +785,6 @@ export default function ProductsPage() {
           <View className="items-center py-8">
             <Loading size="large" />
             <Typography className="mt-4 text-gray-600">Aranıyor...</Typography>
-          </View>
-        ) : productsLoading ? (
-          <View className="items-center py-8">
-            <Loading size="large" />
-            <Typography className="mt-4 text-gray-600">
-              Ürünler yükleniyor...
-            </Typography>
           </View>
         ) : (
           <View className="mt-3">
@@ -804,12 +817,20 @@ export default function ProductsPage() {
                         className="text-stock-text mt-1"
                       >
                         Kategori: {category?.name || "Kategori bulunamadı"}
-                        {/* REMOVED: Stok ve Fiyat bilgileri kaldırıldı */}
+                        {/* Pasif ürünlerde durum bilgisi ekleyelim */}
+                        {activeTab === "passive" && (
+                          <Typography
+                            variant="caption"
+                            className="text-red-600 ml-2"
+                          >
+                            • Pasif
+                          </Typography>
+                        )}
                       </Typography>
                     </View>
 
                     {/* Sadece aktif ürünlerde edit/delete göster */}
-                    {product.isActive && (
+                    {activeTab === "active" && (
                       <View className="flex-row items-center">
                         <Icon
                           family="MaterialIcons"
@@ -838,29 +859,24 @@ export default function ProductsPage() {
         )}
 
         {/* Empty State */}
-        {!productsLoading &&
-          !searchLoading &&
-          filteredProducts.length === 0 && (
-            <View className="items-center justify-center py-12">
-              <Icon
-                family="MaterialCommunityIcons"
-                name="package-variant"
-                size={64}
-                color="#ECECEC"
-                containerClassName="mb-4"
-              />
-              <Typography
-                variant="body"
-                className="text-stock-text text-center"
-              >
-                {searchText.trim()
-                  ? "Arama kriterinize uygun ürün bulunamadı."
-                  : activeTab === "active"
-                  ? "Henüz aktif ürün eklenmemiş."
-                  : "Pasif ürün bulunamadı."}
-              </Typography>
-            </View>
-          )}
+        {filteredProducts.length === 0 && (
+          <View className="items-center justify-center py-12">
+            <Icon
+              family="MaterialCommunityIcons"
+              name="package-variant"
+              size={64}
+              color="#ECECEC"
+              containerClassName="mb-4"
+            />
+            <Typography variant="body" className="text-stock-text text-center">
+              {searchText.trim()
+                ? "Arama kriterinize uygun ürün bulunamadı."
+                : activeTab === "active"
+                ? "Henüz aktif ürün eklenmemiş."
+                : "Pasif ürün bulunamadı."}
+            </Typography>
+          </View>
+        )}
 
         {/* Yeni Ürün Ekle Butonu - Sadece Aktif Tab'da */}
         {activeTab === "active" && (
@@ -887,7 +903,7 @@ export default function ProductsPage() {
         )}
       </ScrollView>
 
-      {/* Ürün Ekleme Modal'ı - UPDATED: Sadece kategori ve ürün adı */}
+      {/* Ürün Ekleme Modal'ı - Sadece kategori ve ürün adı */}
       <Modal
         visible={isProductModalVisible}
         onClose={handleProductModalClose}
@@ -929,8 +945,6 @@ export default function ProductsPage() {
             className="mb-4"
           />
 
-          {/* REMOVED: Stok Adedi ve Adet Fiyatı input'ları kaldırıldı */}
-
           {/* Butonlar */}
           <View className="mt-6">
             <Button
@@ -954,7 +968,7 @@ export default function ProductsPage() {
         </View>
       </Modal>
 
-      {/* Ürün Düzenleme Modal'ı - UPDATED: Sadece kategori ve ürün adı */}
+      {/* Ürün Düzenleme Modal'ı - Sadece kategori ve ürün adı */}
       <Modal
         visible={isEditProductModalVisible}
         onClose={handleEditProductModalClose}
@@ -991,8 +1005,6 @@ export default function ProductsPage() {
             error={validationErrors.name}
             className="mb-4"
           />
-
-          {/* REMOVED: Stok Adedi ve Adet Fiyatı input'ları kaldırıldı */}
 
           {/* Butonlar */}
           <View className="mt-6">
