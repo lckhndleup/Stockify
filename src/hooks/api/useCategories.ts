@@ -1,7 +1,7 @@
 // src/hooks/api/useCategories.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
-import { queryKeys } from "./QueryKeys";
+import { queryKeys } from "./queryKeys";
 
 // Types
 export interface Category {
@@ -67,17 +67,63 @@ export const useCreateCategory = () => {
   return useMutation({
     mutationFn: async (categoryData: CategoryFormData) => {
       console.log("➕ Creating category:", categoryData);
-      const result = await apiService.saveCategory(categoryData);
-      console.log("✅ Category created:", result);
-      return result;
+
+      try {
+        const result = await apiService.saveCategory(categoryData);
+        console.log("✅ Category created - RAW RESPONSE:", result);
+        console.log("✅ Response type:", typeof result);
+        console.log("✅ Response keys:", result ? Object.keys(result) : "null");
+
+        return result;
+      } catch (error) {
+        console.log("❌ API Error in mutation:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
-      // Tüm category query'lerini invalidate et
-      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
-      console.log("🔄 Categories cache invalidated");
+    onSuccess: (data, variables) => {
+      console.log("🎉 Mutation onSuccess called");
+      console.log("🎉 Success data:", data);
+      console.log("🎉 Variables used:", variables);
+
+      // Cache'i invalidate et - daha aggressive
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.categories.all,
+        exact: false, // Tüm category query'leri invalidate et
+      });
+      console.log("🔄 Categories cache invalidated (aggressive)");
+
+      // Biraz bekle ve sonra refetch yap
+      setTimeout(() => {
+        queryClient.refetchQueries({
+          queryKey: queryKeys.categories.all,
+          exact: false,
+        });
+        console.log("🔄 Categories force refetched (delayed)");
+      }, 500);
     },
-    onError: (error: ApiError) => {
-      console.log("❌ Create category error:", error);
+    onError: (error: ApiError, variables) => {
+      console.log("❌ Mutation onError called");
+      console.log("❌ Error details:", error);
+      console.log("❌ Variables used:", variables);
+    },
+    onSettled: (data, error, variables) => {
+      console.log("⚡ Mutation onSettled called");
+      console.log("⚡ Final data:", data);
+      console.log("⚡ Final error:", error);
+
+      // Her durumda cache'i temizle
+      if (data && !error) {
+        console.log("🧹 Cleaning all related caches...");
+        queryClient.removeQueries({
+          queryKey: queryKeys.categories.all,
+          exact: false,
+        });
+        // Hemen yeniden fetch yap
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.categories.all,
+          queryFn: () => apiService.getCategories(),
+        });
+      }
     },
   });
 };

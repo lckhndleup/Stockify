@@ -84,8 +84,35 @@ class ApiService {
         });
       }
 
-      // Response'u JSON olarak parse et
-      const data = await response.json();
+      // Response'u text olarak al
+      const responseText = await response.text();
+      console.log("📄 Raw response text:", responseText);
+
+      // Response boşsa ve status başarılıysa success objesi döndür
+      if (!responseText && response.ok) {
+        console.log("✅ Empty successful response, returning success");
+        return { success: true, message: "İşlem başarılı" } as T;
+      }
+
+      // Response varsa JSON parse et
+      let data;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.log("❌ JSON Parse Error:", parseError);
+        console.log("📄 Failed to parse text:", responseText);
+
+        if (response.ok) {
+          // Parse edilemedi ama status başarılı - muhtemelen boş response
+          return { success: true, message: "İşlem başarılı" } as T;
+        } else {
+          // Parse edilemedi ve status başarısız
+          throw {
+            message: "Sunucu yanıtı işlenemedi",
+            status: response.status,
+          } as ApiError;
+        }
+      }
 
       if (isDebugMode) {
         console.log("📦 Response data:", data);
@@ -153,10 +180,26 @@ class ApiService {
     name: string;
     taxRate: number;
   }): Promise<any> {
-    return this.request<any>("/category/save", {
-      method: "POST",
-      body: JSON.stringify(category),
-    });
+    console.log("🏷️ API: Saving category with data:", category);
+
+    try {
+      const result = await this.request<any>("/category/save", {
+        method: "POST",
+        body: JSON.stringify(category),
+      });
+
+      console.log("🏷️ API: Category save result:", result);
+      console.log("🏷️ API: Result type:", typeof result);
+      console.log(
+        "🏷️ API: Result keys:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🏷️ API: Category save error:", error);
+      throw error;
+    }
   }
 
   async updateCategory(category: {
@@ -168,6 +211,14 @@ class ApiService {
       method: "PUT",
       body: JSON.stringify(category),
     });
+  }
+
+  // NOT: Category soft delete - Backend'de endpoint yok, sadece mobil tarafta
+  // Bu fonksiyon kullanılmayacak, local Zustand store'da soft delete yapacağız
+  async softDeleteCategory(categoryId: string): Promise<any> {
+    console.log("🗑️ Soft delete category (local only):", categoryId);
+    // Bu sadece placeholder, gerçek silme local store'da olacak
+    return Promise.resolve({ success: true, message: "Local soft delete" });
   }
 
   // Product endpoints (Swagger'dan sonra güncellenecek)
