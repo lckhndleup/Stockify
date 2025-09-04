@@ -1,4 +1,4 @@
-// src/services/api.ts
+// src/services/api.ts - Sadece minimal güncelleme
 const API_BASE_URL = "http://localhost:8080";
 
 // API Response types
@@ -144,7 +144,7 @@ class ApiService {
     });
   }
 
-  // Product endpoints (gelecekte kullanmak için)
+  // Product endpoints (Swagger'dan sonra güncellenecek)
   async getProducts(): Promise<any[]> {
     return this.request<any[]>("/product/search");
   }
