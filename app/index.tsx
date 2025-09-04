@@ -13,12 +13,14 @@ import {
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
+import { useAppStore } from "@/src/stores/appStore"; // Bu satır zaten var
 import DebugPanel from "@/src/components/ui/debugPanel";
 
 export default function HomePage() {
   const { t } = useTranslation();
   const [searchText, setSearchText] = useState("");
   const { user, logout } = useAuthStore();
+  const { resetStore } = useAppStore(); // Reset fonksiyonu ekle
   const { toast, hideToast } = useToast();
 
   const handleSearch = (text: string) => {
@@ -41,6 +43,25 @@ export default function HomePage() {
           onPress: () => {
             logout();
             router.replace("/login");
+          },
+        },
+      ]
+    );
+  };
+
+  // YENİ: Geçici reset fonksiyonu - eski verileri temizlemek için
+  const handleResetStore = () => {
+    Alert.alert(
+      "Verileri Sıfırla",
+      "Tüm kategori, ürün ve aracı verilerini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.",
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Sıfırla",
+          style: "destructive",
+          onPress: () => {
+            resetStore();
+            Alert.alert("Başarılı", "Tüm veriler sıfırlandı.");
           },
         },
       ]
@@ -73,7 +94,7 @@ export default function HomePage() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header with User Info and Logout */}
+        {/* Header with User Info and Logout - DEĞİŞTİ */}
         <View className="flex-row items-start justify-between mb-4 mt-1">
           <View className="flex-1">
             <Typography
@@ -91,16 +112,30 @@ export default function HomePage() {
             )}
           </View>
 
-          {/* Logout Button - Küçültüldü */}
-          <Icon
-            family="MaterialIcons"
-            name="logout"
-            size={20}
-            color="#E3001B"
-            pressable
-            onPress={handleLogout}
-            containerClassName="p-1 mt-1"
-          />
+          {/* Logout ve Reset Butonları - YENİ */}
+          <View className="flex-row items-center">
+            {/* Reset Button - Geçici */}
+            <Icon
+              family="MaterialIcons"
+              name="refresh"
+              size={18}
+              color="#E3001B"
+              pressable
+              onPress={handleResetStore}
+              containerClassName="p-1 mt-1 mr-2"
+            />
+
+            {/* Logout Button */}
+            <Icon
+              family="MaterialIcons"
+              name="logout"
+              size={20}
+              color="#E3001B"
+              pressable
+              onPress={handleLogout}
+              containerClassName="p-1 mt-1"
+            />
+          </View>
         </View>
 
         {/* Debug Panel */}

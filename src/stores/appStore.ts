@@ -3,10 +3,17 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 // Veri yapıları
+export interface Category {
+  id: string;
+  name: string;
+  taxRate: number; // KDV oranı (0-100 arası)
+  isActive: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
-  category: string;
+  categoryId: string; // category string yerine categoryId
   stock: number; // Adet cinsinden
   price: number; // Adet başına fiyat
   isActive: boolean;
@@ -45,9 +52,17 @@ export interface StockMovement {
 
 interface AppStore {
   // State
+  categories: Category[];
   products: Product[];
   brokers: Broker[];
   stockMovements: StockMovement[];
+
+  // Category Actions
+  addCategory: (category: Omit<Category, "id" | "isActive">) => string;
+  updateCategory: (id: string, category: Partial<Category>) => boolean;
+  deleteCategory: (id: string) => boolean;
+  getActiveCategories: () => Category[];
+  getCategoryById: (id: string) => Category | undefined;
 
   // Product Actions
   addProduct: (product: Omit<Product, "id" | "isActive">) => string;
@@ -55,6 +70,7 @@ interface AppStore {
   deleteProduct: (id: string) => boolean;
   getActiveProducts: () => Product[];
   getProductById: (id: string) => Product | undefined;
+  getProductsByCategoryId: (categoryId: string) => Product[];
 
   // Broker Actions
   addBroker: (
@@ -107,68 +123,70 @@ interface AppStore {
     type?: "success" | "error" | "warning" | "info"
   ) => void;
   hideGlobalToast: () => void;
+
+  // System Actions
+  resetStore: () => void;
 }
 
 const CRITICAL_LEVEL = 50; // Kritik seviye 50 adet
 
 const middleware = persist<AppStore>(
   (set, get) => ({
-    // Initial State
-    products: [
-      {
-        id: "1",
-        name: "Antep Fıstığı Paketi (200g)",
-        category: "kuruyemis",
-        stock: 45, // Kritik seviyede
-        price: 85,
-        isActive: true,
-      },
-      {
-        id: "2",
-        name: "Ceviz İçi Paketi (250g)",
-        category: "kuruyemis",
-        stock: 23, // Kritik seviyede
-        price: 32,
-        isActive: true,
-      },
-      {
-        id: "3",
-        name: "Badem Paketi (300g)",
-        category: "kuruyemis",
-        stock: 78, // Normal seviye
-        price: 45,
-        isActive: true,
-      },
-      {
-        id: "4",
-        name: "Kaju Paketi (150g)",
-        category: "kuruyemis",
-        stock: 12, // Kritik seviyede
-        price: 65,
-        isActive: true,
-      },
-    ],
-
-    brokers: [
-      {
-        id: "1",
-        name: "Ahmet",
-        surname: "Yılmaz",
-        hasReceipt: true,
-        transactions: [],
-        discountRate: 0,
-      },
-      {
-        id: "2",
-        name: "Mehmet",
-        surname: "Kaya",
-        hasReceipt: false,
-        transactions: [],
-        discountRate: 0,
-      },
-    ],
-
+    // Initial State - BOŞ BAŞLANGIC
+    categories: [],
+    products: [],
+    brokers: [],
     stockMovements: [],
+
+    // Category Actions
+    addCategory: (categoryData) => {
+      const newCategory: Category = {
+        id: Date.now().toString(),
+        ...categoryData,
+        isActive: true,
+      };
+
+      set((state) => ({
+        categories: [newCategory, ...state.categories],
+      }));
+
+      return newCategory.id;
+    },
+
+    updateCategory: (id, updates) => {
+      set((state) => ({
+        categories: state.categories.map((c) =>
+          c.id === id ? { ...c, ...updates } : c
+        ),
+      }));
+      return true;
+    },
+
+    deleteCategory: (id) => {
+      // Kategoriye ait ürün var mı kontrol et
+      const categoryProducts = get().products.filter(
+        (p) => p.categoryId === id && p.isActive
+      );
+
+      if (categoryProducts.length > 0) {
+        return false; // Kategoriye ait aktif ürün varsa silinmesin
+      }
+
+      set((state) => ({
+        categories: state.categories.map((c) =>
+          c.id === id ? { ...c, isActive: false } : c
+        ),
+      }));
+      return true;
+    },
+
+    getActiveCategories: () => {
+      return get().categories.filter((c) => c.isActive);
+    },
+
+    getCategoryById: (id) => {
+      return get().categories.find((c) => c.id === id);
+    },
 
     // Product Actions
     addProduct: (productData) => {
@@ -239,6 +257,12 @@ const middleware = persist<AppStore>(
 
     getProductById: (id) => {
       return get().products.find((p) => p.id === id);
+    },
+
+    getProductsByCategoryId: (categoryId) => {
+      return get().products.filter(
+        (p) => p.categoryId === categoryId && p.isActive
+      );
     },
 
     // Broker Actions
@@ -479,6 +503,21 @@ const middleware = persist<AppStore>(
 
     hideGlobalToast: () => {
       set({
+        globalToast: {
+          visible: false,
+          message: "",
+          type: "info",
+        },
+      });
+    },
+
+    // System Actions
+    resetStore: () => {
+      set({
+        categories: [],
+        products: [],
+        brokers: [],
+        stockMovements: [],
         globalToast: {
           visible: false,
           message: "",
