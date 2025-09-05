@@ -213,12 +213,20 @@ class ApiService {
     });
   }
 
-  // NOT: Category soft delete - Backend'de endpoint yok, sadece mobil tarafta
-  // Bu fonksiyon kullanılmayacak, local Zustand store'da soft delete yapacağız
-  async softDeleteCategory(categoryId: string): Promise<any> {
-    console.log("🗑️ Soft delete category (local only):", categoryId);
-    // Bu sadece placeholder, gerçek silme local store'da olacak
-    return Promise.resolve({ success: true, message: "Local soft delete" });
+  async deleteCategory(id: string | number): Promise<any> {
+    try {
+      console.log("🗑️ API: Deleting category ID:", id);
+
+      const result = await this.request<any>(`/category/delete/${id}`, {
+        method: "DELETE",
+      });
+
+      console.log("✅ API: Category deleted:", result);
+      return result;
+    } catch (error) {
+      console.log("🗑️ API: Category delete error:", error);
+      throw error;
+    }
   }
 
   // Product endpoints - Backend swagger'a göre güncellenmiş
