@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView, View, Alert } from "react-native";
-import { router } from "expo-router";
+import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
 
 import {
   Container,
@@ -15,152 +14,112 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
+
+// Backend hooks - DELETE HOOK EKLENDİ
 import {
   useActiveCategories,
   useCreateCategory,
   useUpdateCategory,
-  CategoryFormData,
-  adaptCategoryForUI,
+  useDeleteCategory, // YENİ EKLENEN
 } from "@/src/hooks/api/useCategories";
-import {
-  categorySchema,
-  editCategorySchema,
-} from "@/src/validations/salesValidation";
+import { CategoryFormData, CategoryUpdateData } from "@/src/types/category";
+
+import { categorySchema } from "@/src/validations/salesValidation";
+
+// Basit validation - kategori adı ve vergi oranı için
+const validateCategoryForm = (name: string, taxRate: string) => {
+  const errors: Record<string, string> = {};
+
+  if (!name.trim()) {
+    errors.name = "Kategori adı zorunludur";
+  } else if (name.trim().length < 2) {
+    errors.name = "Kategori adı en az 2 karakter olmalıdır";
+  }
+
+  if (!taxRate.trim()) {
+    errors.taxRate = "KDV oranı zorunludur";
+  } else if (
+    isNaN(Number(taxRate)) ||
+    Number(taxRate) < 0 ||
+    Number(taxRate) > 100
+  ) {
+    errors.taxRate = "KDV oranı 0-100 arası olmalıdır";
+  }
+
+  return { isValid: Object.keys(errors).length === 0, errors };
+};
+
+// Types
+interface Category {
+  id: string;
+  name: string;
+  taxRate: number;
+  createdDate: string;
+  isActive: boolean;
+}
 
 export default function CategoriesPage() {
   const [searchText, setSearchText] = useState("");
 
-  // Modal states
+  // Category Modal States
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [isEditCategoryModalVisible, setIsEditCategoryModalVisible] =
     useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  // Form states
+  // Category Form States
   const [categoryName, setCategoryName] = useState("");
   const [categoryTaxRate, setCategoryTaxRate] = useState("");
-  const [editingCategory, setEditingCategory] = useState<any | null>(null);
 
   // Validation Error States
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
 
-  // React Query Hooks
+  // BACKEND HOOKS
+  // React Query Hook - BACKEND CATEGORIES
   const {
-    data: categories = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
+    data: backendCategories = [],
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+    error: categoriesErrorMessage,
+    refetch: refetchCategories,
   } = useActiveCategories();
 
+  // Backend Mutations
   const createCategoryMutation = useCreateCategory();
   const updateCategoryMutation = useUpdateCategory();
+  const deleteCategoryMutation = useDeleteCategory(); // YENİ EKLENEN
 
   // Toast
   const { toast, showSuccess, showError, hideToast } = useToast();
-
-  // Loading ve error states
-  if (isLoading) {
-    return (
-      <Container className="bg-white" padding="sm" safeTop={false}>
-        <Loading size="large" text="Kategoriler yükleniyor..." overlay />
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container className="bg-white" padding="sm" safeTop={false}>
-        <View className="items-center justify-center py-12">
-          <Icon
-            family="MaterialIcons"
-            name="error-outline"
-            size={64}
-            color="#EF4444"
-            containerClassName="mb-4"
-          />
-          <Typography variant="body" className="text-red-600 text-center mb-4">
-            Kategoriler yüklenirken hata oluştu
-          </Typography>
-          <Typography
-            variant="caption"
-            className="text-gray-500 text-center mb-4"
-          >
-            {error?.message || "Bilinmeyen hata"}
-          </Typography>
-          <Button variant="primary" onPress={() => refetch()}>
-            Tekrar Dene
-          </Button>
-        </View>
-      </Container>
-    );
-  }
 
   const handleSearch = (text: string) => {
     setSearchText(text);
   };
 
+  // Category Actions
   const handleAddCategory = () => {
+    resetForm();
     setIsCategoryModalVisible(true);
   };
 
-  const handleEditCategory = (category: any) => {
-    setEditingCategory(category);
-    setCategoryName(category.name);
-    setCategoryTaxRate(category.taxRate.toString());
+  const resetForm = () => {
+    setCategoryName("");
+    setCategoryTaxRate("");
     setValidationErrors({});
-    setIsEditCategoryModalVisible(true);
   };
 
-  const handleDeleteCategory = (category: any) => {
-    // Backend'de delete endpoint'i yok gibi görünüyor
-    // Şimdilik disable edelim
-    Alert.alert(
-      "Silme İşlemi",
-      "Kategori silme işlemi henüz backend'de desteklenmiyor.",
-      [{ text: "Tamam", style: "default" }]
-    );
+  const handleCategoryModalClose = () => {
+    setIsCategoryModalVisible(false);
+    resetForm();
   };
 
-  const validateCategoryForm = () => {
-    try {
-      categorySchema.parse({
-        name: categoryName,
-        taxRate: categoryTaxRate,
-      });
-      setValidationErrors({});
-      return true;
-    } catch (error: any) {
-      const errors: Record<string, string> = {};
-      error.errors?.forEach((err: any) => {
-        errors[err.path[0]] = err.message;
-      });
-      setValidationErrors(errors);
-      return false;
-    }
-  };
+  const handleConfirmAddCategory = async () => {
+    const validation = validateCategoryForm(categoryName, categoryTaxRate);
+    setValidationErrors(validation.errors);
 
-  const validateEditCategoryForm = () => {
-    try {
-      editCategorySchema.parse({
-        name: categoryName,
-        taxRate: categoryTaxRate,
-      });
-      setValidationErrors({});
-      return true;
-    } catch (error: any) {
-      const errors: Record<string, string> = {};
-      error.errors?.forEach((err: any) => {
-        errors[err.path[0]] = err.message;
-      });
-      setValidationErrors(errors);
-      return false;
-    }
-  };
-
-  const handleSaveCategory = () => {
-    if (!validateCategoryForm()) {
+    if (!validation.isValid) {
       showError("Lütfen form hatalarını düzeltin.");
       return;
     }
@@ -174,32 +133,64 @@ export default function CategoriesPage() {
         { text: "İptal", style: "cancel" },
         {
           text: "Ekle",
-          onPress: () => {
-            const categoryData: CategoryFormData = {
-              name: categoryName,
-              taxRate: taxRate,
-            };
+          style: "default",
+          onPress: async () => {
+            try {
+              // Backend'e gönder
+              const categoryFormData: CategoryFormData = {
+                name: categoryName.trim(),
+                taxRate: taxRate,
+              };
 
-            createCategoryMutation.mutate(categoryData, {
-              onSuccess: () => {
-                handleCloseCategoryModal();
+              console.log("💾 Saving category to backend:", categoryFormData);
+
+              const backendResult = await createCategoryMutation.mutateAsync(
+                categoryFormData
+              );
+
+              if (backendResult) {
+                handleCategoryModalClose();
                 showSuccess("Kategori başarıyla eklendi!");
-              },
-              onError: (error) => {
-                console.log("Create category error:", error);
-                showError(
-                  error.message || "Kategori eklenirken bir hata oluştu."
-                );
-              },
-            });
+
+                // Kategorileri yenile
+                refetchCategories();
+              } else {
+                throw new Error("Backend'den geçersiz yanıt alındı");
+              }
+            } catch (error) {
+              console.error("❌ Category save error:", error);
+              showError("Kategori eklenirken bir hata oluştu!");
+            }
           },
         },
       ]
     );
   };
 
-  const handleUpdateCategory = () => {
-    if (!validateEditCategoryForm() || !editingCategory) {
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setCategoryName(category.name);
+    setCategoryTaxRate(category.taxRate.toString());
+    setValidationErrors({});
+    setIsEditCategoryModalVisible(true);
+  };
+
+  const handleEditCategoryModalClose = () => {
+    setIsEditCategoryModalVisible(false);
+    setEditingCategory(null);
+    resetForm();
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory) {
+      showError("Düzenlenecek kategori bulunamadı.");
+      return;
+    }
+
+    const validation = validateCategoryForm(categoryName, categoryTaxRate);
+    setValidationErrors(validation.errors);
+
+    if (!validation.isValid) {
       showError("Lütfen form hatalarını düzeltin.");
       return;
     }
@@ -208,55 +199,119 @@ export default function CategoriesPage() {
 
     Alert.alert(
       "Kategori Güncelle",
-      `"${categoryName}" olarak güncellemek istediğinizden emin misiniz?\n\nKDV Oranı: %${taxRate}`,
+      `"${categoryName}" kategorisini güncellemek istediğinizden emin misiniz?\n\nKDV Oranı: %${taxRate}`,
       [
         { text: "İptal", style: "cancel" },
         {
           text: "Güncelle",
-          onPress: () => {
-            const categoryData = {
-              categoryId: parseInt(editingCategory.id), // string'den number'a çevir
-              name: categoryName,
-              taxRate: taxRate,
-            };
+          style: "default",
+          onPress: async () => {
+            try {
+              // Backend'e gönder
+              const categoryUpdateData: CategoryUpdateData = {
+                categoryId: Number(editingCategory.id),
+                name: categoryName.trim(),
+                taxRate: taxRate,
+              };
 
-            updateCategoryMutation.mutate(categoryData, {
-              onSuccess: () => {
-                handleCloseEditCategoryModal();
-                showSuccess("Kategori başarıyla güncellendi!");
-              },
-              onError: (error) => {
-                console.log("Update category error:", error);
-                showError(
-                  error.message || "Kategori güncellenirken bir hata oluştu."
-                );
-              },
-            });
+              console.log(
+                "✏️ Updating category in backend:",
+                categoryUpdateData
+              );
+
+              await updateCategoryMutation.mutateAsync(categoryUpdateData);
+
+              handleEditCategoryModalClose();
+              showSuccess("Kategori başarıyla güncellendi!");
+
+              // Kategorileri yenile
+              refetchCategories();
+            } catch (error) {
+              console.error("❌ Category update error:", error);
+              showError("Kategori güncellenirken bir hata oluştu!");
+            }
           },
         },
       ]
     );
   };
 
-  const handleCloseCategoryModal = () => {
-    setIsCategoryModalVisible(false);
-    setCategoryName("");
-    setCategoryTaxRate("");
-    setValidationErrors({});
-  };
+  // YENİ EKLENEN: Category Delete Function
+  const handleDeleteCategory = (category: Category) => {
+    Alert.alert(
+      "Kategori Sil",
+      `"${category.name}" kategorisini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              console.log("🗑️ Deleting category from backend:", category.id);
 
-  const handleCloseEditCategoryModal = () => {
-    setIsEditCategoryModalVisible(false);
-    setEditingCategory(null);
-    setCategoryName("");
-    setCategoryTaxRate("");
-    setValidationErrors({});
+              await deleteCategoryMutation.mutateAsync(Number(category.id));
+
+              showSuccess("Kategori başarıyla silindi!");
+
+              // Kategorileri yenile
+              refetchCategories();
+            } catch (error) {
+              console.error("❌ Category delete error:", error);
+              showError("Kategori silinirken bir hata oluştu!");
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Filtering
-  const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const getFilteredCategories = () => {
+    return backendCategories.filter((category) =>
+      category.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+  };
+
+  const filteredCategories = getFilteredCategories();
+
+  // Loading state
+  if (categoriesLoading) {
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <View className="flex-1 justify-center items-center">
+          <Loading size="large" />
+          <Typography className="mt-4 text-gray-600">Yükleniyor...</Typography>
+        </View>
+      </Container>
+    );
+  }
+
+  // Error state
+  if (categoriesError) {
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <View className="flex-1 justify-center items-center p-4">
+          <Typography className="text-red-600 text-center mb-4">
+            Veriler yüklenirken bir hata oluştu
+          </Typography>
+          <Typography
+            variant="caption"
+            className="text-gray-500 text-center mb-4"
+          >
+            {categoriesErrorMessage?.message || "Bilinmeyen hata"}
+          </Typography>
+          <Button
+            onPress={() => refetchCategories()}
+            variant="primary"
+            size="md"
+          >
+            Yeniden Dene
+          </Button>
+        </View>
+      </Container>
+    );
+  }
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
@@ -269,77 +324,86 @@ export default function CategoriesPage() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Search Bar */}
-        <SearchBar
-          placeholder="Kategori ara..."
-          onSearch={handleSearch}
-          className="mb-4"
-        />
+        {/* Search ve Add Butonu */}
+        <View className="flex-row items-center mb-3">
+          <SearchBar
+            placeholder="Kategori ara..."
+            onSearch={handleSearch}
+            className="flex-1 mr-3"
+          />
+          <Icon
+            family="MaterialIcons"
+            name="add"
+            size={28}
+            color="#E3001B"
+            pressable
+            onPress={handleAddCategory}
+            containerClassName="bg-gray-100 px-4 py-3 rounded-lg"
+          />
+        </View>
 
         {/* Kategori Listesi */}
         <View className="mt-3">
-          {filteredCategories.map((category) => {
-            return (
-              <Card
-                key={category.id}
-                variant="default"
-                padding="sm"
-                className="border border-stock-border mb-3"
-                radius="md"
-              >
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
-                    <Typography
-                      variant="body"
-                      weight="semibold"
-                      align="left"
-                      className="text-stock-dark"
-                    >
-                      {category.name}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      size="sm"
-                      className="text-stock-text mt-1"
-                    >
-                      KDV Oranı: %{category.taxRate} • Oluşturma:{" "}
-                      {new Date(category.createdDate).toLocaleDateString(
-                        "tr-TR"
-                      )}
-                    </Typography>
-                  </View>
-
-                  <View className="flex-row items-center">
-                    <Icon
-                      family="MaterialIcons"
-                      name="edit"
-                      size={18}
-                      color="#67686A"
-                      pressable
-                      onPress={() => handleEditCategory(category)}
-                      containerClassName="mr-2"
-                    />
-                    <Icon
-                      family="MaterialIcons"
-                      name="delete"
-                      size={18}
-                      color="#CCCCCC" // Deaktif renk
-                      pressable
-                      onPress={() => handleDeleteCategory(category)}
-                    />
-                  </View>
+          {filteredCategories.map((category) => (
+            <Card
+              key={category.id}
+              variant="default"
+              padding="sm"
+              className="border border-stock-border mb-2"
+              radius="md"
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Typography
+                    variant="body"
+                    weight="semibold"
+                    align="left"
+                    className="text-stock-dark"
+                  >
+                    {category.name}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    size="sm"
+                    className="text-stock-text mt-1"
+                  >
+                    KDV Oranı: %{category.taxRate}
+                  </Typography>
                 </View>
-              </Card>
-            );
-          })}
+
+                <View className="flex-row items-center">
+                  {/* Edit Icon */}
+                  <Icon
+                    family="MaterialIcons"
+                    name="edit"
+                    size={18}
+                    color="#67686A"
+                    pressable
+                    onPress={() => handleEditCategory(category)}
+                    containerClassName="mr-2"
+                  />
+
+                  {/* Delete Icon - YENİ EKLENEN */}
+                  <Icon
+                    family="MaterialIcons"
+                    name="delete"
+                    size={18}
+                    color="#E3001B" // stock-red color
+                    pressable
+                    onPress={() => handleDeleteCategory(category)}
+                  />
+                </View>
+              </View>
+            </Card>
+          ))}
         </View>
 
-        {/* Boş durum */}
-        {filteredCategories.length === 0 && !isLoading && (
+        {/* Empty State */}
+        {filteredCategories.length === 0 && (
           <View className="items-center justify-center py-12">
             <Icon
-              family="MaterialCommunityIcons"
-              name="shape-outline"
+              family="MaterialIcons"
+              name="category"
               size={64}
               color="#ECECEC"
               containerClassName="mb-4"
@@ -353,7 +417,7 @@ export default function CategoriesPage() {
         )}
 
         {/* Yeni Kategori Ekle Butonu */}
-        <View className="mt-6 mb-6">
+        <View className="mt-4 mb-6">
           <Button
             variant="primary"
             size="lg"
@@ -362,7 +426,7 @@ export default function CategoriesPage() {
             onPress={handleAddCategory}
             loading={createCategoryMutation.isPending}
             leftIcon={
-              <Icon family="MaterialIcons" name="add" size={18} color="white" />
+              <Icon family="MaterialIcons" name="add" size={20} color="white" />
             }
           >
             Yeni Kategori Ekle
@@ -373,12 +437,13 @@ export default function CategoriesPage() {
       {/* Kategori Ekleme Modal'ı */}
       <Modal
         visible={isCategoryModalVisible}
-        onClose={handleCloseCategoryModal}
+        onClose={handleCategoryModalClose}
         title="Yeni Kategori Ekle"
         size="lg"
         className="bg-white mx-6"
       >
         <View>
+          {/* Kategori Adı */}
           <Input
             label="Kategori Adı *"
             value={categoryName}
@@ -389,24 +454,26 @@ export default function CategoriesPage() {
             className="mb-4"
           />
 
+          {/* KDV Oranı */}
           <Input
             label="KDV Oranı (%) *"
             value={categoryTaxRate}
             onChangeText={setCategoryTaxRate}
             placeholder="0-100 arası değer (örn: 18)"
             variant="outlined"
-            numericOnly={true}
+            keyboardType="numeric"
             error={validationErrors.taxRate}
             helperText="KDV oranını yüzde cinsinden girin"
             className="mb-4"
           />
 
+          {/* Butonlar */}
           <View className="mt-6">
             <Button
               variant="primary"
               fullWidth
               className="bg-stock-red mb-3"
-              onPress={handleSaveCategory}
+              onPress={handleConfirmAddCategory}
               loading={createCategoryMutation.isPending}
             >
               <Typography className="text-white">Ekle</Typography>
@@ -415,7 +482,7 @@ export default function CategoriesPage() {
               variant="outline"
               fullWidth
               className="border-stock-border"
-              onPress={handleCloseCategoryModal}
+              onPress={handleCategoryModalClose}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
@@ -426,12 +493,13 @@ export default function CategoriesPage() {
       {/* Kategori Düzenleme Modal'ı */}
       <Modal
         visible={isEditCategoryModalVisible}
-        onClose={handleCloseEditCategoryModal}
+        onClose={handleEditCategoryModalClose}
         title="Kategori Düzenle"
         size="lg"
         className="bg-white mx-6"
       >
         <View>
+          {/* Kategori Adı */}
           <Input
             label="Kategori Adı *"
             value={categoryName}
@@ -442,18 +510,20 @@ export default function CategoriesPage() {
             className="mb-4"
           />
 
+          {/* KDV Oranı */}
           <Input
             label="KDV Oranı (%) *"
             value={categoryTaxRate}
             onChangeText={setCategoryTaxRate}
             placeholder="0-100 arası değer (örn: 18)"
             variant="outlined"
-            numericOnly={true}
+            keyboardType="numeric"
             error={validationErrors.taxRate}
             helperText="KDV oranını yüzde cinsinden girin"
             className="mb-4"
           />
 
+          {/* Butonlar */}
           <View className="mt-6">
             <Button
               variant="primary"
@@ -468,7 +538,7 @@ export default function CategoriesPage() {
               variant="outline"
               fullWidth
               className="border-stock-border"
-              onPress={handleCloseEditCategoryModal}
+              onPress={handleEditCategoryModalClose}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
