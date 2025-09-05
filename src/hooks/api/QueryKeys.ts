@@ -59,7 +59,19 @@ export const queryKeys = {
     report: (type: string, period?: string) =>
       [...queryKeys.stock.reports(), type, period] as const,
   },
-
+  // Inventory related
+  inventory: {
+    all: ["inventory"] as const,
+    lists: () => [...queryKeys.inventory.all, "list"] as const,
+    list: (filters?: any) => [...queryKeys.inventory.lists(), filters] as const,
+    details: () => [...queryKeys.inventory.all, "detail"] as const,
+    detail: (id: string | number) =>
+      [...queryKeys.inventory.details(), id] as const,
+    critical: () => [...queryKeys.inventory.all, "critical"] as const,
+    outOfStock: () => [...queryKeys.inventory.all, "outOfStock"] as const,
+    available: () => [...queryKeys.inventory.all, "available"] as const,
+    updates: () => [...queryKeys.inventory.all, "update"] as const,
+  },
   // Transaction related
   transactions: {
     all: ["transactions"] as const,
