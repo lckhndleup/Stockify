@@ -221,33 +221,128 @@ class ApiService {
     return Promise.resolve({ success: true, message: "Local soft delete" });
   }
 
-  // Product endpoints (Swagger'dan sonra güncellenecek)
-  async getProducts(): Promise<any[]> {
-    return this.request<any[]>("/product/search");
+  // Product endpoints - Backend swagger'a göre güncellenmiş
+  async getProducts(params?: {
+    productText?: string;
+    status?: "ACTIVE" | "PASSIVE";
+  }): Promise<any[]> {
+    try {
+      console.log("🛍️ API: Fetching products with params:", params);
+
+      const queryParams = new URLSearchParams();
+      if (params?.productText) {
+        queryParams.append("productText", params.productText);
+      }
+      if (params?.status) {
+        queryParams.append("status", params.status);
+      }
+
+      const queryString = queryParams.toString();
+      const url = `/product/all${queryString ? `?${queryString}` : ""}`;
+
+      const result = await this.request<any[]>(url, {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Products fetched - Count:",
+        Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0
+          ? Object.keys(result[0])
+          : "empty"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🛍️ API: Product fetch error:", error);
+      throw error;
+    }
   }
 
-  async getProductDetail(id: string): Promise<any> {
-    return this.request<any>(`/product/detail/${id}`);
+  async getProductDetail(id: string | number): Promise<any> {
+    try {
+      console.log("🛍️ API: Fetching product detail for ID:", id);
+
+      const result = await this.request<any>(`/product/detail/${id}`, {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Product detail fetched:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🛍️ API: Product detail fetch error:", error);
+      throw error;
+    }
   }
 
-  async saveProduct(product: any): Promise<any> {
-    return this.request<any>("/product/save", {
-      method: "POST",
-      body: JSON.stringify(product),
-    });
+  async saveProduct(product: {
+    categoryId: number;
+    name: string;
+  }): Promise<any> {
+    try {
+      console.log("🛍️ API: Saving product:", product);
+
+      const result = await this.request<any>("/product/save", {
+        method: "POST",
+        body: JSON.stringify(product),
+      });
+
+      console.log(
+        "✅ API: Product saved:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🛍️ API: Product save error:", error);
+      throw error;
+    }
   }
 
-  async updateProduct(product: any): Promise<any> {
-    return this.request<any>("/product/update", {
-      method: "PUT",
-      body: JSON.stringify(product),
-    });
+  async updateProduct(product: {
+    productId: number;
+    categoryId: number;
+    name: string;
+  }): Promise<any> {
+    try {
+      console.log("🛍️ API: Updating product:", product);
+
+      const result = await this.request<any>("/product/update", {
+        method: "PUT",
+        body: JSON.stringify(product),
+      });
+
+      console.log(
+        "✅ API: Product updated:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🛍️ API: Product update error:", error);
+      throw error;
+    }
   }
 
-  async deleteProduct(id: string): Promise<void> {
-    return this.request<void>(`/product/delete/${id}`, {
-      method: "DELETE",
-    });
+  async deleteProduct(id: string | number): Promise<any> {
+    try {
+      console.log("🛍️ API: Deleting product ID:", id);
+
+      const result = await this.request<any>(`/product/delete/${id}`, {
+        method: "DELETE",
+      });
+
+      console.log("✅ API: Product deleted:", result);
+      return result;
+    } catch (error) {
+      console.log("🛍️ API: Product delete error:", error);
+      throw error;
+    }
   }
 }
 
