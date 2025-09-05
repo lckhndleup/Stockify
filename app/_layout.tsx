@@ -174,6 +174,13 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
+            name="stockDetail"
+            options={{
+              title: "Stok Detayı",
+              headerShown: true,
+            }}
+          />
+          <Stack.Screen
             name="broker/sections/resultSales"
             options={{
               title: "Satış Tamamlandı",
