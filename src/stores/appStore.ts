@@ -1,91 +1,99 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// src/stores/appStore.ts - Simplified: Hybrid product management removed
+import React from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Veri yapıları
+// Basic types
 export interface Category {
   id: string;
   name: string;
-  taxRate: number; // KDV oranı (0-100 arası)
+  taxRate: number;
   isActive: boolean;
 }
 
 export interface Product {
   id: string;
   name: string;
-  categoryId: string; // category string yerine categoryId
-  stock: number; // Adet cinsinden
-  price: number; // Adet başına fiyat
+  categoryId: string;
+  stock: number;
+  price: number;
   isActive: boolean;
-}
-
-export interface Transaction {
-  id: string;
-  productId: string;
-  productName: string;
-  quantity: number; // Adet cinsinden
-  unitPrice: number; // Adet başına fiyat
-  totalAmount: number; // İskonto öncesi tutar
-  finalAmount: number; // İskonto sonrası tutar
-  discountRate: number; // İskonto oranı
-  date: string;
 }
 
 export interface Broker {
   id: string;
   name: string;
-  surname: string;
-  transactions: Transaction[];
-  hasReceipt: boolean;
-  discountRate: number; // İskonto oranı (0-100 arası)
+  email: string;
+  phone: string;
+  address: string;
+  discountRate: number;
+  isActive: boolean;
 }
 
 export interface StockMovement {
   id: string;
   productId: string;
   productName: string;
-  type: "in" | "out"; // giriş veya çıkış
-  quantity: number; // Adet cinsinden
+  type: "in" | "out";
+  quantity: number;
   reason: string;
   date: string;
 }
 
+export interface Transaction {
+  id: string;
+  brokerId: string;
+  brokerName: string;
+  type: "sale" | "collection";
+  amount: number;
+  date: string;
+  description: string;
+  products?: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+}
+
+// Store interface - SIMPLIFIED: Local product data management removed
 interface AppStore {
-  // State
+  // Basic State
   categories: Category[];
-  products: Product[];
+  products: Product[]; // Bu deprecated olacak ama geriye uyumluluk için kalsın
   brokers: Broker[];
   stockMovements: StockMovement[];
 
   // Category Actions
-  addCategory: (category: Omit<Category, "id" | "isActive">) => string;
-  updateCategory: (id: string, category: Partial<Category>) => boolean;
+  addCategory: (categoryData: Omit<Category, "id" | "isActive">) => string;
+  updateCategory: (
+    id: string,
+    updates: Partial<Omit<Category, "id">>
+  ) => boolean;
   deleteCategory: (id: string) => boolean;
   getActiveCategories: () => Category[];
   getCategoryById: (id: string) => Category | undefined;
 
-  // Product Actions
-  addProduct: (product: Omit<Product, "id" | "isActive">) => string;
-  updateProduct: (id: string, product: Partial<Product>) => boolean;
+  // OLD Product Actions - Backward compatibility için geçici olarak kalsın
+  addProduct: (productData: Omit<Product, "id" | "isActive">) => string;
+  updateProduct: (id: string, updates: Partial<Omit<Product, "id">>) => boolean;
   deleteProduct: (id: string) => boolean;
   getActiveProducts: () => Product[];
-  getProductById: (id: string) => Product | undefined;
   getProductsByCategoryId: (categoryId: string) => Product[];
 
   // Broker Actions
-  addBroker: (
-    broker: Omit<Broker, "id" | "transactions" | "hasReceipt">
-  ) => string;
-  updateBroker: (id: string, broker: Partial<Broker>) => boolean;
+  addBroker: (brokerData: Omit<Broker, "id" | "isActive">) => string;
+  updateBroker: (id: string, updates: Partial<Omit<Broker, "id">>) => boolean;
   deleteBroker: (id: string) => boolean;
-  toggleBrokerReceipt: (id: string) => boolean;
+  getActiveBrokers: () => Broker[];
+  getBrokerById: (id: string) => Broker | undefined;
 
   // Transaction Actions
-  giveProductToBroker: (
-    brokerId: string,
-    productId: string,
-    quantity: number
-  ) => { success: boolean; error?: string };
+  addTransaction: (transactionData: Omit<Transaction, "id">) => {
+    success: boolean;
+    error?: string;
+  };
 
   // Collection Actions
   collectFromBroker: (
@@ -132,11 +140,18 @@ const CRITICAL_LEVEL = 50; // Kritik seviye 50 adet
 
 const middleware = persist<AppStore>(
   (set, get) => ({
-    // Initial State - BOŞ BAŞLANGIC
+    // Initial State
     categories: [],
     products: [],
     brokers: [],
     stockMovements: [],
+
+    // Global Toast
+    globalToast: {
+      visible: false,
+      message: "",
+      type: "info",
+    },
 
     // Category Actions
     addCategory: (categoryData) => {
@@ -188,11 +203,13 @@ const middleware = persist<AppStore>(
       return get().categories.find((c) => c.id === id);
     },
 
-    // Product Actions
+    // OLD Product Actions - Backward compatibility (stock/price default 0)
     addProduct: (productData) => {
       const newProduct: Product = {
         id: Date.now().toString(),
         ...productData,
+        stock: productData.stock || 0, // Default 0
+        price: productData.price || 0, // Default 0
         isActive: true,
       };
 
@@ -200,15 +217,17 @@ const middleware = persist<AppStore>(
         products: [newProduct, ...state.products],
       }));
 
-      // Stok hareketi ekle
-      get().addStockMovement({
-        productId: newProduct.id,
-        productName: newProduct.name,
-        type: "in",
-        quantity: productData.stock,
-        reason: "Yeni ürün eklendi",
-        date: new Date().toISOString().split("T")[0],
-      });
+      // Stok hareketi ekle (sadece stock > 0 ise)
+      if (newProduct.stock > 0) {
+        get().addStockMovement({
+          productId: newProduct.id,
+          productName: newProduct.name,
+          type: "in",
+          quantity: newProduct.stock,
+          reason: "Yeni ürün eklendi",
+          date: new Date().toISOString().split("T")[0],
+        });
+      }
 
       return newProduct.id;
     },
@@ -219,7 +238,7 @@ const middleware = persist<AppStore>(
       if (!product) return false;
 
       const oldStock = product.stock;
-      const newStock = updates.stock;
+      const newStock = updates.stock ?? product.stock;
 
       set((state) => ({
         products: state.products.map((p) =>
@@ -228,7 +247,7 @@ const middleware = persist<AppStore>(
       }));
 
       // Stok değişikliği varsa hareket ekle
-      if (newStock !== undefined && newStock !== oldStock) {
+      if (newStock !== oldStock && newStock !== undefined) {
         get().addStockMovement({
           productId: id,
           productName: updates.name || product.name,
@@ -255,10 +274,6 @@ const middleware = persist<AppStore>(
       return get().products.filter((p) => p.isActive);
     },
 
-    getProductById: (id) => {
-      return get().products.find((p) => p.id === id);
-    },
-
     getProductsByCategoryId: (categoryId) => {
       return get().products.filter(
         (p) => p.categoryId === categoryId && p.isActive
@@ -270,8 +285,7 @@ const middleware = persist<AppStore>(
       const newBroker: Broker = {
         id: Date.now().toString(),
         ...brokerData,
-        transactions: [],
-        hasReceipt: false,
+        isActive: true,
       };
 
       set((state) => ({
@@ -292,139 +306,87 @@ const middleware = persist<AppStore>(
 
     deleteBroker: (id) => {
       set((state) => ({
-        brokers: state.brokers.filter((b) => b.id !== id),
-      }));
-      return true;
-    },
-
-    toggleBrokerReceipt: (id) => {
-      set((state) => ({
         brokers: state.brokers.map((b) =>
-          b.id === id ? { ...b, hasReceipt: !b.hasReceipt } : b
+          b.id === id ? { ...b, isActive: false } : b
         ),
       }));
       return true;
     },
 
-    // Discount Functions
-    updateBrokerDiscount: (brokerId: string, discountRate: number) => {
-      set((state) => ({
-        brokers: state.brokers.map((b) =>
-          b.id === brokerId ? { ...b, discountRate } : b
-        ),
-      }));
-      return true;
+    getActiveBrokers: () => {
+      return get().brokers.filter((b) => b.isActive);
     },
 
-    getBrokerDiscount: (brokerId: string) => {
-      const broker = get().brokers.find((b) => b.id === brokerId);
-      return broker?.discountRate || 0;
+    getBrokerById: (id) => {
+      return get().brokers.find((b) => b.id === id);
     },
 
     // Transaction Actions
-    giveProductToBroker: (brokerId, productId, quantity) => {
-      const state = get();
-      const product = state.products.find((p) => p.id === productId);
-      const broker = state.brokers.find((b) => b.id === brokerId);
-
-      if (!product || !broker) {
-        return { success: false, error: "Ürün veya aracı bulunamadı." };
-      }
-
-      if (!product.isActive) {
-        return { success: false, error: "Bu ürün aktif değil." };
-      }
-
-      if (product.stock < quantity) {
-        return {
-          success: false,
-          error: `Yetersiz stok! Mevcut stok: ${product.stock} adet, talep edilen: ${quantity} adet.`,
-        };
-      }
-
-      // İskonto hesaplaması
-      const totalAmount = quantity * product.price;
-      const discountAmount = (totalAmount * broker.discountRate) / 100;
-      const finalAmount = totalAmount - discountAmount;
-
-      // Transaction oluştur - iskonto uygulanmış
+    addTransaction: (transactionData) => {
       const newTransaction: Transaction = {
         id: Date.now().toString(),
-        productId: product.id,
-        productName: product.name,
-        quantity: quantity,
-        unitPrice: product.price,
-        totalAmount: totalAmount, // İskonto öncesi
-        finalAmount: finalAmount, // İskonto sonrası - bu bakiyeye eklenir
-        discountRate: broker.discountRate,
-        date: new Date().toISOString().split("T")[0],
+        ...transactionData,
       };
 
-      // Broker'a transaction ekle
-      set((state) => ({
-        brokers: state.brokers.map((b) =>
-          b.id === brokerId
-            ? { ...b, transactions: [...b.transactions, newTransaction] }
-            : b
-        ),
-      }));
+      // Stok kontrolü (satış işlemi için)
+      if (transactionData.type === "sale" && transactionData.products) {
+        for (const item of transactionData.products) {
+          const product = get().products.find((p) => p.id === item.id);
+          if (!product || product.stock < item.quantity) {
+            return {
+              success: false,
+              error: `${item.name} için yeterli stok yok!`,
+            };
+          }
+        }
 
-      // Stoktan düş
-      get().updateProductStock(
-        productId,
-        product.stock - quantity,
-        `${broker.name} ${broker.surname} aracısına verildi`
-      );
+        // Stokları düş
+        transactionData.products.forEach((item) => {
+          const product = get().products.find((p) => p.id === item.id);
+          if (product) {
+            get().updateProductStock(
+              item.id,
+              product.stock - item.quantity,
+              `Satış: ${newTransaction.id}`
+            );
+          }
+        });
+      }
+
+      // Transaction ekle (şimdilik basit - gerçek projede transactions array'i olacak)
+      console.log("Transaction added:", newTransaction);
 
       return { success: true };
     },
 
     // Collection Actions
     collectFromBroker: (brokerId, amount, paymentType) => {
-      const state = get();
-      const broker = state.brokers.find((b) => b.id === brokerId);
-
+      const broker = get().getBrokerById(brokerId);
       if (!broker) {
-        return { success: false, error: "Aracı bulunamadı." };
+        return { success: false, error: "Bayi bulunamadı!" };
       }
 
-      if (amount <= 0) {
-        return { success: false, error: "Geçersiz tahsilat tutarı." };
-      }
-
-      // Yeni bir tahsilat transaction'ı oluştur
-      const newTransaction = {
-        id: Date.now().toString(),
-        productId: "collection", // Özel bir ID kullanıyoruz
-        productName: `Tahsilat (${paymentType})`,
-        quantity: 1,
-        unitPrice: -amount, // Eksi olarak kaydet çünkü bu bir tahsilattır
-        totalAmount: -amount,
-        finalAmount: -amount,
-        discountRate: 0,
+      // Tahsilat transaction'ı ekle
+      const collectionResult = get().addTransaction({
+        brokerId,
+        brokerName: broker.name,
+        type: "collection",
+        amount,
         date: new Date().toISOString().split("T")[0],
-      };
+        description: `Tahsilat - ${paymentType}`,
+      });
 
-      // Broker'a transaction ekle
-      set((state) => ({
-        brokers: state.brokers.map((b) =>
-          b.id === brokerId
-            ? { ...b, transactions: [...b.transactions, newTransaction] }
-            : b
-        ),
-      }));
-
-      return { success: true };
+      return collectionResult;
     },
 
     // Stock Actions
     updateProductStock: (productId, newStock, reason = "Manuel güncelleme") => {
-      const state = get();
-      const product = state.products.find((p) => p.id === productId);
+      const product = get().products.find((p) => p.id === productId);
       if (!product) return false;
 
       const oldStock = product.stock;
 
+      // Stok güncelle
       set((state) => ({
         products: state.products.map((p) =>
           p.id === productId ? { ...p, stock: newStock } : p
@@ -432,24 +394,28 @@ const middleware = persist<AppStore>(
       }));
 
       // Stok hareketi ekle
-      get().addStockMovement({
-        productId: productId,
-        productName: product.name,
-        type: newStock > oldStock ? "in" : "out",
-        quantity: Math.abs(newStock - oldStock),
-        reason: reason,
-        date: new Date().toISOString().split("T")[0],
-      });
+      if (newStock !== oldStock) {
+        get().addStockMovement({
+          productId,
+          productName: product.name,
+          type: newStock > oldStock ? "in" : "out",
+          quantity: Math.abs(newStock - oldStock),
+          reason,
+          date: new Date().toISOString().split("T")[0],
+        });
+      }
 
       return true;
     },
 
     addStockMovement: (movement) => {
+      const newMovement: StockMovement = {
+        id: Date.now().toString(),
+        ...movement,
+      };
+
       set((state) => ({
-        stockMovements: [
-          { ...movement, id: Date.now().toString() },
-          ...state.stockMovements,
-        ],
+        stockMovements: [newMovement, ...state.stockMovements],
       }));
     },
 
@@ -466,32 +432,28 @@ const middleware = persist<AppStore>(
 
     getTotalStockValue: () => {
       return get()
-        .products.filter((p) => p.isActive)
+        .getActiveProducts()
         .reduce((total, product) => total + product.stock * product.price, 0);
     },
 
     getBrokerTotalDebt: (brokerId) => {
-      const broker = get().brokers.find((b) => b.id === brokerId);
-      if (!broker) return 0;
-
-      return broker.transactions.reduce((total, transaction) => {
-        // Eğer finalAmount varsa onu kullan, yoksa eski sistem için totalAmount kullan
-        const amount =
-          transaction.finalAmount !== undefined
-            ? transaction.finalAmount
-            : transaction.totalAmount;
-        return total + amount;
-      }, 0);
+      // Şimdilik basit implementasyon
+      // Gerçek projede transaction'ları hesaplayacak
+      return 0;
     },
 
-    // Global Toast State
-    globalToast: {
-      visible: false,
-      message: "",
-      type: "info",
+    // Discount Functions
+    updateBrokerDiscount: (brokerId, discountRate) => {
+      return get().updateBroker(brokerId, { discountRate });
     },
 
-    showGlobalToast: (message: string, type = "info") => {
+    getBrokerDiscount: (brokerId) => {
+      const broker = get().getBrokerById(brokerId);
+      return broker?.discountRate || 0;
+    },
+
+    // Global Toast
+    showGlobalToast: (message, type = "info") => {
       set({
         globalToast: {
           visible: true,
@@ -499,6 +461,11 @@ const middleware = persist<AppStore>(
           type,
         },
       });
+
+      // Auto hide after 3 seconds
+      setTimeout(() => {
+        get().hideGlobalToast();
+      }, 3000);
     },
 
     hideGlobalToast: () => {
@@ -524,12 +491,26 @@ const middleware = persist<AppStore>(
           type: "info",
         },
       });
+      console.log("🔄 Store completely reset");
     },
   }),
   {
-    name: "stockify-app-store",
+    name: "stock-app-storage",
     storage: createJSONStorage(() => AsyncStorage),
+    version: 3, // Version increased for schema change
+    migrate: (persistedState: any, version: number) => {
+      if (version < 3) {
+        // Remove localProductsData if exists
+        delete persistedState.localProductsData;
+        console.log(
+          "🔄 Migrated store to version 3 - removed localProductsData"
+        );
+      }
+      return persistedState;
+    },
   }
 );
 
 export const useAppStore = create<AppStore>()(middleware);
+
+export default useAppStore;

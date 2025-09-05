@@ -177,3 +177,29 @@ export const useCategoryById = (
     enabled: !!categoryId && (options?.enabled ?? true),
   });
 };
+
+// Kategori silme mutation - YENİ EKLENEN
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (categoryId: string | number) => {
+      console.log("🗑️ Deleting category:", categoryId);
+      const result = await apiService.deleteCategory(categoryId);
+      console.log("✅ Category deleted:", result);
+      return result;
+    },
+    onSuccess: (data, categoryId) => {
+      // Tüm category query'lerini invalidate et
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      // Silinmiş kategorinin detay cache'ini de temizle
+      queryClient.removeQueries({
+        queryKey: queryKeys.categories.detail(categoryId.toString()),
+      });
+      console.log("🔄 Categories cache invalidated after deletion");
+    },
+    onError: (error: ApiError) => {
+      console.log("❌ Delete category error:", error);
+    },
+  });
+};
