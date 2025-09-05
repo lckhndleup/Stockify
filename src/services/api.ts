@@ -352,6 +352,124 @@ class ApiService {
       throw error;
     }
   }
+  // Inventory endpoints
+  async getInventoryAll(): Promise<any[]> {
+    try {
+      console.log("📦 API: Fetching all inventory...");
+
+      const result = await this.request<any[]>("/inventory/all", {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Inventory fetched - Count:",
+        Array.isArray(result) ? result.length : "not array"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("📦 API: Inventory fetch error:", error);
+      throw error;
+    }
+  }
+
+  async getInventoryDetail(id: string | number): Promise<any> {
+    try {
+      console.log("📦 API: Fetching inventory detail for ID:", id);
+
+      const result = await this.request<any>(`/inventory/detail/${id}`, {
+        method: "GET",
+      });
+
+      console.log("✅ API: Inventory detail fetched:", result);
+      return result;
+    } catch (error) {
+      console.log("📦 API: Inventory detail fetch error:", error);
+      throw error;
+    }
+  }
+
+  async updateInventory(inventoryData: {
+    inventoryId: number;
+    price: number;
+    productCount: number;
+    criticalProductCount: number;
+  }): Promise<any> {
+    try {
+      console.log("📦 API: Updating inventory:", inventoryData);
+
+      const result = await this.request<any>("/inventory/update", {
+        method: "PUT",
+        body: JSON.stringify(inventoryData),
+      });
+
+      console.log("✅ API: Inventory updated:", result);
+      return result;
+    } catch (error) {
+      console.log("📦 API: Inventory update error:", error);
+      throw error;
+    }
+  }
+
+  async getInventoryCritical(): Promise<any[]> {
+    try {
+      console.log("📦 API: Fetching critical inventory...");
+
+      const result = await this.request<any[]>("/inventory/critical", {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Critical inventory fetched - Count:",
+        Array.isArray(result) ? result.length : "not array"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("📦 API: Critical inventory fetch error:", error);
+      throw error;
+    }
+  }
+
+  async getInventoryOutOf(): Promise<any[]> {
+    try {
+      console.log("📦 API: Fetching out of stock inventory...");
+
+      const result = await this.request<any[]>("/inventory/outOf", {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Out of stock inventory fetched - Count:",
+        Array.isArray(result) ? result.length : "not array"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("📦 API: Out of stock inventory fetch error:", error);
+      throw error;
+    }
+  }
+
+  async getInventoryAvailable(): Promise<any[]> {
+    try {
+      console.log("📦 API: Fetching available inventory...");
+
+      const result = await this.request<any[]>("/inventory/available", {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Available inventory fetched - Count:",
+        Array.isArray(result) ? result.length : "not array"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("📦 API: Available inventory fetch error:", error);
+      throw error;
+    }
+  }
 }
 
 // Singleton instance
