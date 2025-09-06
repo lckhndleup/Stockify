@@ -1,3 +1,5 @@
+// app/broker/brokerDetail.tsx - TAM ÇALIŞAN KOD
+
 import React, { useState, useEffect } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
@@ -17,21 +19,23 @@ import {
 import { useToast } from "@/src/hooks/useToast";
 import { useAppStore } from "@/src/stores/appStore";
 
-// Backend hooks - YENİ EKLENEN
+// Backend hooks
 import {
   useActiveBrokers,
   useUpdateBroker,
   useDeleteBroker,
+  useUpdateBrokerDiscountRate,
 } from "@/src/hooks/api/useBrokers";
 import { validateBrokerForm } from "@/src/validations/brokerValidation";
 
 export default function BrokerDetailPage() {
   console.log("🔍 BrokerDetailPage render started");
 
-  // HOOKS - HER ZAMAN AYNI SIRADA ÇAĞRILMALI
+  // ✅ HOOKS - DOĞRU SIRADA ÇAĞRILMALI
   const { brokerId } = useLocalSearchParams();
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
-  // BACKEND HOOKS - YENİ EKLENEN
+  // ✅ BACKEND HOOKS - DOĞRU SIRADA
   const {
     data: backendBrokers = [],
     isLoading: brokersLoading,
@@ -40,8 +44,9 @@ export default function BrokerDetailPage() {
 
   const updateBrokerMutation = useUpdateBroker();
   const deleteBrokerMutation = useDeleteBroker();
+  const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
 
-  // LOCAL STORE - Geriye uyumluluk için korundu
+  // ✅ LOCAL STORE
   const {
     brokers: localBrokers,
     deleteBroker: localDeleteBroker,
@@ -50,15 +55,12 @@ export default function BrokerDetailPage() {
     showGlobalToast,
   } = useAppStore();
 
-  const { toast, showSuccess, showError, hideToast } = useToast();
-
-  // STATE'LER - HER ZAMAN AYNI SIRADA
+  // ✅ STATE'LER - HOOKS'LARDAN SONRA
   const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] =
     useState(false);
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
-
-  // Validation Error States - YENİ EKLENEN
+  const [brokerDiscount, setBrokerDiscount] = useState("");
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -76,7 +78,7 @@ export default function BrokerDetailPage() {
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);
 
-  // Balance hesaplama - backend'de balance var, local'de totalDebt hesapla
+  // Balance hesaplama
   const totalDebt = broker
     ? "balance" in broker
       ? (broker as any).balance
@@ -92,7 +94,7 @@ export default function BrokerDetailPage() {
     isBackendBroker: !brokersError,
   });
 
-  // EFFECT'LER - STATE'LERDEN SONRA
+  // ✅ EFFECT'LER - STATE'LERDEN SONRA
   useEffect(() => {
     console.log("🔄 useEffect - Broker check:", {
       broker: !!broker,
@@ -111,15 +113,17 @@ export default function BrokerDetailPage() {
       broker: !!broker,
       name: broker?.name,
       surname: broker?.surname,
+      discountRate: broker?.discountRate,
     });
 
     if (broker) {
       setBrokerName(broker.name);
       setBrokerSurname(broker.surname);
+      setBrokerDiscount(broker.discountRate?.toString() || "0");
     }
   }, [broker]);
 
-  // ERKEN RETURN - TÜM HOOKS'LARDAN SONRA
+  // ✅ ERKEN RETURN - TÜM HOOKS'LARDAN SONRA
   if (brokersLoading) {
     console.log("⚠️ Early return - brokers loading");
     return (
@@ -149,8 +153,13 @@ export default function BrokerDetailPage() {
 
   console.log("✅ Continuing with broker found:", broker.name);
 
+  // ✅ HANDLER FUNCTIONS
   const handleEditBroker = () => {
     console.log("✏️ Edit broker triggered");
+    setBrokerName(broker.name);
+    setBrokerSurname(broker.surname);
+    setBrokerDiscount(broker.discountRate?.toString() || "0");
+    setValidationErrors({});
     setIsEditBrokerModalVisible(true);
   };
 
@@ -159,25 +168,49 @@ export default function BrokerDetailPage() {
     setIsEditBrokerModalVisible(false);
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
+    setBrokerDiscount(broker.discountRate?.toString() || "0");
     setValidationErrors({});
   };
 
-  // BACKEND ENTEGRELİ BROKER GÜNCELLEME
+  // ✅ AKILLI UPDATE HANDLER
   const handleUpdateBroker = async () => {
-    console.log("💾 Update broker:", { brokerName, brokerSurname });
+    console.log("💾 Update broker:", {
+      brokerName,
+      brokerSurname,
+      brokerDiscount,
+    });
 
     // Form validation
-    const validation = validateBrokerForm(brokerName, brokerSurname, "0");
+    const validation = validateBrokerForm(
+      brokerName,
+      brokerSurname,
+      brokerDiscount || "0"
+    );
     setValidationErrors(validation.errors);
 
-    if (!brokerName.trim() || !brokerSurname.trim()) {
-      showError("Lütfen ad ve soyad alanlarını doldurun.");
+    if (!validation.isValid) {
+      showError("Lütfen form hatalarını düzeltin.");
+      return;
+    }
+
+    const discountRate = brokerDiscount ? parseFloat(brokerDiscount) : 0;
+
+    // Hangi alanlar değişmiş?
+    const isNameChanged =
+      brokerName.trim() !== broker.name ||
+      brokerSurname.trim() !== broker.surname;
+    const isDiscountChanged = discountRate !== (broker.discountRate || 0);
+
+    if (!isNameChanged && !isDiscountChanged) {
+      showError("Hiçbir değişiklik yapılmadı.");
       return;
     }
 
     Alert.alert(
       "Aracı Güncelle",
-      `"${brokerName} ${brokerSurname}" olarak güncellemek istediğinizden emin misiniz?`,
+      `"${brokerName} ${brokerSurname}" olarak güncellemek istediğinizden emin misiniz?${
+        discountRate > 0 ? `\n\nİskonto Oranı: %${discountRate}` : ""
+      }`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -185,38 +218,66 @@ export default function BrokerDetailPage() {
           onPress: async () => {
             try {
               if (!brokersError) {
-                // Backend güncelleme
-                console.log("🔄 Updating broker via backend");
-                await updateBrokerMutation.mutateAsync({
-                  brokerId: broker.id,
-                  brokerData: {
-                    firstName: brokerName.trim(),
-                    lastName: brokerSurname.trim(),
-                    discountRate: broker.discountRate || 0,
-                  },
-                });
-                console.log("✅ Broker updated via backend");
+                // ✅ AKILLI ENDPOINT SEÇİMİ
+                if (!isNameChanged && isDiscountChanged) {
+                  // Sadece discount rate değişmişse özel endpoint kullan
+                  console.log(
+                    "💰 Only discount rate changed, using discount endpoint"
+                  );
+                  await updateDiscountRateMutation.mutateAsync({
+                    brokerId: broker.id,
+                    discountRate: discountRate,
+                  });
+                  console.log("✅ Discount rate updated via backend");
+                } else {
+                  // İsim de değişmişse normal update endpoint
+                  console.log("🔄 Name changed, using full update endpoint");
+                  await updateBrokerMutation.mutateAsync({
+                    brokerId: broker.id,
+                    brokerData: {
+                      firstName: brokerName.trim(),
+                      lastName: brokerSurname.trim(),
+                      discountRate: discountRate,
+                    },
+                  });
+                  console.log("✅ Broker updated via backend");
+                }
+
+                handleCloseEditBrokerModal();
+                showSuccess("Aracı başarıyla güncellendi!");
               } else {
                 // Local fallback
                 console.log("🔄 Updating broker via local store");
                 localUpdateBroker(broker.id, {
                   name: brokerName,
                   surname: brokerSurname,
+                  discountRate: discountRate,
                 });
                 console.log("✅ Broker updated via local store");
+                handleCloseEditBrokerModal();
+                showSuccess("Aracı başarıyla güncellendi!");
               }
-
-              handleCloseEditBrokerModal();
-              showSuccess("Aracı başarıyla güncellendi!");
-            } catch (error) {
+            } catch (error: any) {
               console.error("❌ Update broker error:", error);
 
-              // Backend başarısız olursa local'e fall back
+              // Özel hata handling
+              if (
+                error?.message?.includes("Broker Name Already Used") ||
+                error?.message?.includes("Already Used")
+              ) {
+                showError(
+                  "Bu isimde başka bir aracı zaten mevcut. Lütfen farklı bir isim kullanın."
+                );
+                return;
+              }
+
+              // Diğer hatalar için local fallback
               try {
                 console.log("🔄 Falling back to local store for update...");
                 localUpdateBroker(broker.id, {
                   name: brokerName,
                   surname: brokerSurname,
+                  discountRate: discountRate,
                 });
                 handleCloseEditBrokerModal();
                 showSuccess("Aracı başarıyla güncellendi! (Local)");
@@ -234,7 +295,7 @@ export default function BrokerDetailPage() {
     );
   };
 
-  // BACKEND ENTEGRELİ BROKER SİLME
+  // Delete handler
   const handleDeleteBroker = () => {
     console.log("🗑️ Delete broker triggered:", broker.name);
 
@@ -251,12 +312,10 @@ export default function BrokerDetailPage() {
               const brokerName = `${broker.name} ${broker.surname}`;
 
               if (!brokersError) {
-                // Backend silme
                 console.log("🗑️ Step 1: Delete broker via backend");
                 await deleteBrokerMutation.mutateAsync(broker.id);
                 console.log("✅ Broker deleted via backend");
               } else {
-                // Local fallback
                 console.log("🗑️ Step 1: Delete broker via local store");
                 localDeleteBroker(broker.id);
                 console.log("✅ Broker deleted via local store");
@@ -272,7 +331,6 @@ export default function BrokerDetailPage() {
             } catch (error) {
               console.error("❌ Delete broker error:", error);
 
-              // Backend başarısız olursa local'e fall back
               try {
                 console.log("🔄 Falling back to local store for delete...");
                 const brokerName = `${broker.name} ${broker.surname}`;
@@ -299,6 +357,7 @@ export default function BrokerDetailPage() {
     );
   };
 
+  // Navigation handlers
   const handleSalesPress = () => {
     router.push({
       pathname: "/broker/sections/salesSection",
@@ -339,7 +398,7 @@ export default function BrokerDetailPage() {
         onHide={hideToast}
       />
 
-      {/* Backend Error Bilgilendirme - YENİ EKLENEN (Opsiyonel) */}
+      {/* Backend Error Bilgilendirme */}
       {brokersError && (
         <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
           <Typography variant="body" className="text-yellow-800 text-center">
@@ -366,14 +425,13 @@ export default function BrokerDetailPage() {
               totalDebt >= 0 ? "text-stock-red" : "text-stock-green"
             } text-center mt-0`}
           >
-            Bakiye: {totalDebt >= 0 ? "" : "-"}₺
+            Bakiye: {totalDebt >= 0 ? "" : "+"}₺
             {Math.abs(totalDebt).toLocaleString()}
           </Typography>
         </View>
 
-        {/* İşlem Kartları */}
-        <View>
-          {/* Satış Yap Kartı */}
+        <View className="space-y-3">
+          {/* Satış Kartı */}
           <Card
             variant="default"
             padding="none"
@@ -386,8 +444,8 @@ export default function BrokerDetailPage() {
               <View className="flex-row items-center flex-1">
                 <View className="mr-3">
                   <Icon
-                    family="MaterialIcons"
-                    name="sell"
+                    family="MaterialCommunityIcons"
+                    name="trending-up"
                     size={22}
                     color="#FFFEFF"
                   />
@@ -398,7 +456,7 @@ export default function BrokerDetailPage() {
                   size="lg"
                   className="text-stock-white flex-1"
                 >
-                  SATIŞ YAP
+                  SATIŞ
                 </Typography>
               </View>
               <Icon
@@ -423,8 +481,8 @@ export default function BrokerDetailPage() {
               <View className="flex-row items-center flex-1">
                 <View className="mr-3">
                   <Icon
-                    family="MaterialIcons"
-                    name="payments"
+                    family="MaterialCommunityIcons"
+                    name="cash-multiple"
                     size={22}
                     color="#FFFEFF"
                   />
@@ -601,7 +659,7 @@ export default function BrokerDetailPage() {
         </View>
       </ScrollView>
 
-      {/* Aracı Düzenleme Modal'ı */}
+      {/* Edit Modal */}
       <Modal
         visible={isEditBrokerModalVisible}
         onClose={handleCloseEditBrokerModal}
@@ -630,16 +688,32 @@ export default function BrokerDetailPage() {
             error={validationErrors.lastName}
           />
 
+          <Input
+            label="İskonto Oranı (%)"
+            value={brokerDiscount}
+            onChangeText={setBrokerDiscount}
+            placeholder="0-100 arası değer"
+            variant="outlined"
+            numericOnly={true}
+            className="mb-4"
+            error={validationErrors.discountRate}
+            helperText="İskonto oranını % cinsinden girin (örn: 20)"
+          />
+
           <View className="mt-6">
             <Button
               variant="primary"
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleUpdateBroker}
-              disabled={updateBrokerMutation.isPending}
+              disabled={
+                updateBrokerMutation.isPending ||
+                updateDiscountRateMutation.isPending
+              }
             >
               <Typography className="text-white">
-                {updateBrokerMutation.isPending
+                {updateBrokerMutation.isPending ||
+                updateDiscountRateMutation.isPending
                   ? "Güncelleniyor..."
                   : "Güncelle"}
               </Typography>
@@ -649,7 +723,10 @@ export default function BrokerDetailPage() {
               fullWidth
               className="border-stock-border"
               onPress={handleCloseEditBrokerModal}
-              disabled={updateBrokerMutation.isPending}
+              disabled={
+                updateBrokerMutation.isPending ||
+                updateDiscountRateMutation.isPending
+              }
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
