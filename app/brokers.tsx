@@ -1,3 +1,5 @@
+// app/brokers.tsx - DOĞRU IMPORTS VE YAPIYA UYGUN KOD
+
 import React, { useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { router } from "expo-router";
@@ -17,8 +19,12 @@ import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAppStore, Broker } from "@/src/stores/appStore";
 
-// Backend hooks - YENİ EKLENEN
-import { useActiveBrokers, useCreateBroker } from "@/src/hooks/api/useBrokers";
+// Backend hooks - ✅ EKLENEN: useUpdateBroker hook'u da import edildi
+import {
+  useActiveBrokers,
+  useCreateBroker,
+  useUpdateBroker,
+} from "@/src/hooks/api/useBrokers";
 import { BrokerFormData } from "@/src/types/broker";
 import { validateBrokerForm } from "@/src/validations/brokerValidation";
 
@@ -41,7 +47,7 @@ export default function BrokersPage() {
     Record<string, string>
   >({});
 
-  // BACKEND HOOKS - YENİ EKLENEN
+  // BACKEND HOOKS - MEVCUT YAPIYA UYGUN
   const {
     data: backendBrokers = [],
     isLoading: brokersLoading,
@@ -50,8 +56,9 @@ export default function BrokersPage() {
   } = useActiveBrokers();
 
   const createBrokerMutation = useCreateBroker();
+  const updateBrokerMutation = useUpdateBroker(); // ✅ EKLENEN: Update mutation
 
-  // LOCAL STORE - Geriye uyumluluk için korundu
+  // LOCAL STORE - MEVCUT YAPIYA UYGUN
   const {
     brokers: localBrokers, // Local store'dan brokers (geçici)
     addBroker,
@@ -72,6 +79,10 @@ export default function BrokersPage() {
   };
 
   const handleAddBroker = () => {
+    setBrokerName("");
+    setBrokerSurname("");
+    setBrokerDiscount("");
+    setValidationErrors({});
     setIsBrokerModalVisible(true);
   };
 
@@ -80,6 +91,7 @@ export default function BrokersPage() {
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
     setBrokerDiscount(broker.discountRate.toString());
+    setValidationErrors({});
     setIsEditBrokerModalVisible(true);
   };
 
@@ -161,7 +173,8 @@ export default function BrokersPage() {
     );
   };
 
-  const handleEditSaveBroker = () => {
+  // ✅ DÜZELTME: Backend entegrasyonu eklendi
+  const handleEditSaveBroker = async () => {
     if (!editingBroker) return;
 
     // Form validation
@@ -188,18 +201,53 @@ export default function BrokersPage() {
         { text: "İptal", style: "cancel" },
         {
           text: "Güncelle",
-          onPress: () => {
+          onPress: async () => {
             try {
-              // Şimdilik local store kullan - sonra backend entegre edilecek
-              updateBroker(editingBroker.id, {
-                name: brokerName,
-                surname: brokerSurname,
-                discountRate: discountRate,
-              });
+              if (!brokersError) {
+                // ✅ EKLENEN: Backend güncelleme
+                console.log("🔄 Updating broker via backend");
+                await updateBrokerMutation.mutateAsync({
+                  brokerId: editingBroker.id,
+                  brokerData: {
+                    firstName: brokerName.trim(),
+                    lastName: brokerSurname.trim(),
+                    discountRate: discountRate,
+                  },
+                });
+                console.log("✅ Broker updated via backend");
+              } else {
+                // Local fallback
+                console.log("🔄 Updating broker via local store");
+                updateBroker(editingBroker.id, {
+                  name: brokerName,
+                  surname: brokerSurname,
+                  discountRate: discountRate,
+                });
+                console.log("✅ Broker updated via local store");
+              }
+
               handleCloseEditBrokerModal();
               showSuccess("Aracı başarıyla güncellendi!");
             } catch (error) {
-              showError("Aracı güncellenirken bir hata oluştu.");
+              console.error("❌ Update broker error:", error);
+
+              // Backend başarısız olursa local'e fall back
+              try {
+                console.log("🔄 Falling back to local store for update...");
+                updateBroker(editingBroker.id, {
+                  name: brokerName,
+                  surname: brokerSurname,
+                  discountRate: discountRate,
+                });
+                handleCloseEditBrokerModal();
+                showSuccess("Aracı başarıyla güncellendi! (Local)");
+              } catch (localError) {
+                console.error(
+                  "❌ Local broker update also failed:",
+                  localError
+                );
+                showError("Aracı güncellenirken bir hata oluştu.");
+              }
             }
           },
         },
@@ -300,7 +348,7 @@ export default function BrokersPage() {
                 onPress={() =>
                   router.push({
                     pathname: "/broker/brokerDetail",
-                    params: { brokerId: broker.id },
+                    params: { brokerId: broker.id }, // ✅ MEVCUT YAPIDA brokerId kullanılıyor
                   })
                 }
                 showDeleteIcon={false}
@@ -414,7 +462,7 @@ export default function BrokersPage() {
         </View>
       </Modal>
 
-      {/* Aracı Düzenleme Modal'ı */}
+      {/* Aracı Düzenleme Modal'ı - ZATEN MEVCUT, SADECE BACKEND ENTEGRASYONu EKLENDİ */}
       <Modal
         visible={isEditBrokerModalVisible}
         onClose={handleCloseEditBrokerModal}
@@ -460,14 +508,20 @@ export default function BrokersPage() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleEditSaveBroker}
+              disabled={updateBrokerMutation.isPending} // ✅ DÜZELTME: Update mutation loading state'i
             >
-              <Typography className="text-white">Güncelle</Typography>
+              <Typography className="text-white">
+                {updateBrokerMutation.isPending
+                  ? "Güncelleniyor..."
+                  : "Güncelle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"
               fullWidth
               className="border-stock-border"
               onPress={handleCloseEditBrokerModal}
+              disabled={updateBrokerMutation.isPending} // ✅ DÜZELTME: Update mutation loading state'i
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
