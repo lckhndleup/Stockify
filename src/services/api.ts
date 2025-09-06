@@ -470,6 +470,146 @@ class ApiService {
       throw error;
     }
   }
+  //GET /broker/all
+  async getBrokers(): Promise<any[]> {
+    try {
+      console.log("🤝 API: Fetching brokers...");
+
+      const result = await this.request<any[]>("/broker/all", {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Brokers fetched - Count:",
+        Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0
+          ? Object.keys(result[0])
+          : "empty"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🤝 API: Brokers fetch error:", error);
+      throw error;
+    }
+  }
+
+  // Broker detayı getir - GET /broker/detail/{id}
+  async getBrokerDetail(id: string | number): Promise<any> {
+    try {
+      console.log("🤝 API: Fetching broker detail for ID:", id);
+
+      const result = await this.request<any>(`/broker/detail/${id}`, {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Broker detail fetched:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🤝 API: Broker detail fetch error:", error);
+      throw error;
+    }
+  }
+
+  // Yeni broker kaydet - POST /broker/save
+  async saveBroker(broker: {
+    firstName: string;
+    lastName: string;
+    discountRate: number;
+  }): Promise<any> {
+    try {
+      console.log("🤝 API: Saving broker:", broker);
+
+      const result = await this.request<any>("/broker/save", {
+        method: "POST",
+        body: JSON.stringify(broker),
+      });
+
+      console.log(
+        "✅ API: Broker saved:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🤝 API: Broker save error:", error);
+      throw error;
+    }
+  }
+
+  // Broker güncelle - PUT /broker/update
+  async updateBroker(broker: {
+    brokerId: number;
+    firstName: string;
+    lastName: string;
+    discountRate: number;
+  }): Promise<any> {
+    try {
+      console.log("🤝 API: Updating broker:", broker);
+
+      const result = await this.request<any>("/broker/update", {
+        method: "PUT",
+        body: JSON.stringify(broker),
+      });
+
+      console.log(
+        "✅ API: Broker updated:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🤝 API: Broker update error:", error);
+      throw error;
+    }
+  }
+
+  // Broker discount rate güncelle - PUT /broker/update/discount-rate
+  async updateBrokerDiscountRate(discountData: {
+    brokerId: number;
+    discountRate: number;
+  }): Promise<any> {
+    try {
+      console.log("🤝 API: Updating broker discount rate:", discountData);
+
+      const result = await this.request<any>("/broker/update/discount-rate", {
+        method: "PUT",
+        body: JSON.stringify(discountData),
+      });
+
+      console.log(
+        "✅ API: Broker discount rate updated:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🤝 API: Broker discount rate update error:", error);
+      throw error;
+    }
+  }
+
+  // Broker sil - DELETE /broker/delete/{id}
+  async deleteBroker(id: string | number): Promise<any> {
+    try {
+      console.log("🤝 API: Deleting broker ID:", id);
+
+      const result = await this.request<any>(`/broker/delete/${id}`, {
+        method: "DELETE",
+      });
+
+      console.log("✅ API: Broker deleted:", result);
+      return result;
+    } catch (error) {
+      console.log("🤝 API: Broker delete error:", error);
+      throw error;
+    }
+  }
 }
 
 // Singleton instance
