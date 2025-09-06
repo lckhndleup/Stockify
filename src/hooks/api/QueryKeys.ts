@@ -72,6 +72,12 @@ export const queryKeys = {
     available: () => [...queryKeys.inventory.all, "available"] as const,
     updates: () => [...queryKeys.inventory.all, "update"] as const,
   },
+  // Payment related
+  payments: {
+    all: ["payments"] as const,
+    broker: (brokerId: string) =>
+      [...queryKeys.payments.all, "broker", brokerId] as const,
+  },
   // Transaction related
   transactions: {
     all: ["transactions"] as const,
