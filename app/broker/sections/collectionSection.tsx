@@ -10,33 +10,61 @@ import {
   Button,
   Divider,
   Toast,
+  Loading,
   type SelectBoxOption,
 } from "@/src/components/ui";
 import { useAppStore } from "@/src/stores/appStore";
 import { useToast } from "@/src/hooks/useToast";
 
+// Backend hooks
+import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
+import { useCreatePayment } from "@/src/hooks/api/usePayments";
+
+// Payment types
+import {
+  PaymentFormData,
+  PAYMENT_TYPE_OPTIONS,
+  PAYMENT_TYPE_LABELS,
+} from "@/src/types/payment";
+
 export default function CollectionSection() {
   // Hooks
   const { brokerId } = useLocalSearchParams();
-  const { brokers, getBrokerTotalDebt, collectFromBroker } = useAppStore();
-  const { toast, showSuccess, showError } = useToast();
+  const { toast, showSuccess, showError, hideToast } = useToast();
+
+  // Backend hooks
+  const {
+    data: backendBrokers = [],
+    isLoading: brokersLoading,
+    error: brokersError,
+  } = useActiveBrokers();
+
+  const createPaymentMutation = useCreatePayment();
+
+  // Local store
+  const {
+    brokers: localBrokers,
+    getBrokerTotalDebt,
+    collectFromBroker: localCollectFromBroker,
+  } = useAppStore();
 
   // State'ler
   const [paymentType, setPaymentType] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [amountError, setAmountError] = useState<string>("");
 
+  // Backend broker'ları öncelikle kullan, fallback olarak local
+  const brokers = brokersError ? localBrokers : backendBrokers;
+
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);
-  const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
 
-  // Ödeme tipi seçenekleri
-  const paymentTypeOptions: SelectBoxOption[] = [
-    { label: "Nakit", value: "cash" },
-    { label: "Kredi Kartı", value: "credit_card" },
-    { label: "Havale/EFT", value: "bank_transfer" },
-    { label: "Çek", value: "check" },
-  ];
+  // Balance hesaplama
+  const brokerDebt = broker
+    ? "balance" in broker
+      ? (broker as any).balance
+      : getBrokerTotalDebt(broker.id)
+    : 0;
 
   // Miktar doğrulama
   const validateAmount = (value: string) => {
@@ -71,7 +99,7 @@ export default function CollectionSection() {
   };
 
   // Tahsilat işlemini gerçekleştir
-  const handleCollection = () => {
+  const handleCollection = async () => {
     if (!paymentType) {
       showError("Lütfen ödeme tipini seçiniz");
       return;
@@ -84,28 +112,98 @@ export default function CollectionSection() {
     }
 
     const amountValue = parseFloat(amount);
+    const paymentTypeLabel =
+      PAYMENT_TYPE_LABELS[paymentType as keyof typeof PAYMENT_TYPE_LABELS];
 
-    // Tahsilat işlemini gerçekleştir
-    const result = collectFromBroker(
-      brokerId as string,
-      amountValue,
-      paymentType
+    Alert.alert(
+      "Tahsilat Onayı",
+      `${broker?.name} ${
+        broker?.surname
+      } aracısından ${paymentTypeLabel} ile ₺${amountValue.toLocaleString()} tahsilat yapılacak.\n\nOnaylıyor musunuz?`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Tahsil Et",
+          style: "default",
+          onPress: async () => {
+            try {
+              // Backend'e kaydet
+              const paymentData: PaymentFormData = {
+                amount: amountValue,
+                paymentType: paymentType as any,
+              };
+
+              console.log("🎯 Creating payment with backend:", {
+                brokerId,
+                paymentData,
+              });
+
+              const result = await createPaymentMutation.mutateAsync({
+                brokerId: brokerId as string,
+                paymentData,
+              });
+
+              console.log(
+                "✅ Payment created successfully via backend:",
+                result
+              );
+
+              showSuccess(
+                `₺${amountValue.toLocaleString()} tutarında tahsilat başarıyla alındı!`
+              );
+
+              // Formu sıfırla
+              setPaymentType("");
+              setAmount("");
+              setAmountError("");
+            } catch (error) {
+              console.error("❌ Backend payment creation failed:", error);
+
+              // Backend başarısız olursa local store'a fall back
+              try {
+                console.log("🔄 Falling back to local store...");
+                const result = localCollectFromBroker(
+                  brokerId as string,
+                  amountValue,
+                  paymentType
+                );
+
+                if (result.success) {
+                  showSuccess(
+                    `₺${amountValue.toLocaleString()} tutarında tahsilat başarıyla alındı! (Local)`
+                  );
+                  setPaymentType("");
+                  setAmount("");
+                  setAmountError("");
+                } else {
+                  showError(result.error || "Tahsilat işlemi başarısız oldu.");
+                }
+              } catch (localError) {
+                console.error("❌ Local collection also failed:", localError);
+                showError("Tahsilat işlemi başarısız oldu.");
+              }
+            }
+          },
+        },
+      ]
     );
-
-    if (result.success) {
-      showSuccess(
-        `₺${amountValue.toLocaleString()} tutarında tahsilat başarıyla alındı`
-      );
-      // Formu sıfırla
-      setPaymentType("");
-      setAmount("");
-      setAmountError("");
-    } else {
-      showError(result.error || "Tahsilat işlemi başarısız oldu");
-    }
   };
 
-  // Placeholder view
+  // Loading state
+  if (brokersLoading) {
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <View className="items-center justify-center flex-1">
+          <Loading size="large" />
+          <Typography variant="body" className="text-stock-text mt-4">
+            Aracı bilgileri yükleniyor...
+          </Typography>
+        </View>
+      </Container>
+    );
+  }
+
+  // Broker not found
   if (!broker) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
@@ -120,6 +218,23 @@ export default function CollectionSection() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
+      {/* Toast Notification */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
+
+      {/* Backend Error Bilgilendirme */}
+      {brokersError && (
+        <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
+          <Typography variant="body" className="text-yellow-800 text-center">
+            ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
+          </Typography>
+        </View>
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Header - İsim ve Bakiye kısmı */}
         <View className="mb-6 items-center">
@@ -162,7 +277,7 @@ export default function CollectionSection() {
           <SelectBox
             label="Ödeme Tipi"
             placeholder="Ödeme tipini seçiniz..."
-            options={paymentTypeOptions}
+            options={PAYMENT_TYPE_OPTIONS}
             value={paymentType}
             onSelect={setPaymentType}
             className="mb-4"
@@ -194,13 +309,11 @@ export default function CollectionSection() {
                 className="text-blue-700"
                 weight="medium"
               >
-                {paymentType === "cash"
-                  ? "Nakit"
-                  : paymentType === "credit_card"
-                  ? "Kredi Kartı"
-                  : paymentType === "bank_transfer"
-                  ? "Havale/EFT"
-                  : "Çek"}
+                {
+                  PAYMENT_TYPE_LABELS[
+                    paymentType as keyof typeof PAYMENT_TYPE_LABELS
+                  ]
+                }{" "}
                 ile ₺{parseFloat(amount).toLocaleString()} tahsil edilecek.
               </Typography>
 
@@ -241,11 +354,25 @@ export default function CollectionSection() {
             fullWidth
             className="bg-stock-red"
             onPress={handleCollection}
-            disabled={!paymentType || !amount || !!amountError}
+            disabled={
+              !paymentType ||
+              !amount ||
+              !!amountError ||
+              createPaymentMutation.isPending
+            }
           >
-            <Typography className="text-white" weight="bold">
-              TAHSİLATI TAMAMLA
-            </Typography>
+            {createPaymentMutation.isPending ? (
+              <View className="flex-row items-center">
+                <Loading size="small" color="white" />
+                <Typography className="text-white ml-2" weight="bold">
+                  TAHSİL EDİLİYOR...
+                </Typography>
+              </View>
+            ) : (
+              <Typography className="text-white" weight="bold">
+                TAHSİLATI TAMAMLA
+              </Typography>
+            )}
           </Button>
         </Card>
 
@@ -257,13 +384,6 @@ export default function CollectionSection() {
           </Typography>
         </View>
       </ScrollView>
-
-      {/* Toast mesajı */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-      />
     </Container>
   );
 }
