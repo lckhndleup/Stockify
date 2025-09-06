@@ -12,6 +12,7 @@ import {
   Divider,
   Modal,
   Checkbox,
+  Loading,
   //@ts-ignore TODOMALİ
   type SelectBoxOption,
   Toast,
@@ -23,6 +24,13 @@ import {
   editQuantitySchema,
 } from "@/src/validations/salesValidation";
 import { useNavigation } from "@react-navigation/native";
+
+// Backend hooks - YENİ EKLENEN
+import {
+  useActiveBrokers,
+  useUpdateBrokerDiscountRate,
+} from "@/src/hooks/api/useBrokers";
+import { validateDiscountRate } from "@/src/validations/brokerValidation";
 
 // Eklenen ürün tipi
 interface AddedProduct {
@@ -57,14 +65,26 @@ const giveProductToBrokerWithDiscount = (
 
 export default function SalesSection() {
   const { brokerId } = useLocalSearchParams();
+
+  // BACKEND HOOKS - YENİ EKLENEN
   const {
-    brokers,
+    data: backendBrokers = [],
+    isLoading: brokersLoading,
+    error: brokersError,
+  } = useActiveBrokers();
+
+  const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
+
+  // LOCAL STORE - Geriye uyumluluk için korundu
+  const {
+    brokers: localBrokers,
     getActiveProducts,
     giveProductToBroker,
     getBrokerTotalDebt,
-    getBrokerDiscount,
-    updateBrokerDiscount,
+    getBrokerDiscount: getLocalBrokerDiscount,
+    updateBrokerDiscount: updateLocalBrokerDiscount,
   } = useAppStore();
+
   const { toast, showSuccess, showError } = useToast();
 
   // State'ler
@@ -87,11 +107,30 @@ export default function SalesSection() {
   const [discountValue, setDiscountValue] = useState("");
   const [discountError, setDiscountError] = useState("");
 
-  // Broker bilgisini al
+  // Validation Error States - YENİ EKLENEN
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+
+  // Backend broker'ları öncelikle kullan, fallback olarak local
+  const brokers = brokersError ? localBrokers : backendBrokers;
+
+  // Broker bilgisini al (güncellendi)
   const broker = brokers.find((b) => b.id === brokerId);
   const activeProducts = getActiveProducts();
-  const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
-  const brokerDiscount = broker ? getBrokerDiscount(broker.id) : 0;
+  const brokerDebt = broker
+    ? "balance" in broker
+      ? (broker as any).balance
+      : getBrokerTotalDebt(broker.id)
+    : 0;
+
+  // Discount rate - backend'den veya local'den al
+  const brokerDiscount = broker
+    ? broker.discountRate || 0
+    : brokersError
+    ? getLocalBrokerDiscount(brokerId as string)
+    : 0;
+
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -132,6 +171,7 @@ export default function SalesSection() {
       ),
     });
   }, [navigation, brokerId]);
+
   // Kullanılabilir ürünler
   const availableProducts = useMemo(() => {
     const addedProductIds = addedProducts.map((p) => p.id);
@@ -288,40 +328,86 @@ export default function SalesSection() {
     setEditQuantityError("");
   };
 
+  // BACKEND ENTEGRELİ DİSCOUNT RATE GÜNCELLEME - YENİ
   const handleDiscountPress = () => {
     setDiscountValue(brokerDiscount.toString());
     setDiscountError("");
+    setValidationErrors({});
     setDiscountModalVisible(true);
   };
 
   const handleDiscountChange = (text: string) => {
     setDiscountValue(text);
-    if (text) {
-      const num = parseFloat(text);
-      if (isNaN(num) || num < 0 || num > 100) {
-        setDiscountError("İskonto %0-%100 arasında olmalıdır");
-      } else {
-        setDiscountError("");
-      }
+
+    // Validation
+    const validation = validateDiscountRate(text);
+    setValidationErrors(validation.errors);
+
+    if (!validation.isValid) {
+      setDiscountError(validation.errors.discountRate || "Geçersiz değer");
     } else {
       setDiscountError("");
     }
   };
 
-  const handleSaveDiscount = () => {
-    if (!discountValue || discountError) return;
+  // BACKEND ENTEGRELİ SAVE DISCOUNT - YENİ
+  const handleSaveDiscount = async () => {
+    // Form validation
+    const validation = validateDiscountRate(discountValue);
+    setValidationErrors(validation.errors);
+
+    if (!validation.isValid) {
+      showError("Lütfen geçerli bir iskonto oranı girin.");
+      return;
+    }
 
     const discount = parseFloat(discountValue);
-    updateBrokerDiscount(brokerId as string, discount);
-    setDiscountModalVisible(false);
-    setDiscountValue("");
-    setDiscountError("");
+
+    try {
+      if (!brokersError) {
+        // Backend güncelleme
+        console.log("💰 Updating discount rate via backend");
+        await updateDiscountRateMutation.mutateAsync({
+          brokerId: brokerId as string,
+          discountRate: discount,
+        });
+        console.log("✅ Discount rate updated via backend");
+      } else {
+        // Local fallback
+        console.log("💰 Updating discount rate via local store");
+        updateLocalBrokerDiscount(brokerId as string, discount);
+        console.log("✅ Discount rate updated via local store");
+      }
+
+      setDiscountModalVisible(false);
+      setDiscountValue("");
+      setDiscountError("");
+      setValidationErrors({});
+      showSuccess("İskonto oranı başarıyla güncellendi!");
+    } catch (error) {
+      console.error("❌ Update discount rate error:", error);
+
+      // Backend başarısız olursa local'e fall back
+      try {
+        console.log("🔄 Falling back to local store for discount update...");
+        updateLocalBrokerDiscount(brokerId as string, discount);
+        setDiscountModalVisible(false);
+        setDiscountValue("");
+        setDiscountError("");
+        setValidationErrors({});
+        showSuccess("İskonto oranı başarıyla güncellendi! (Local)");
+      } catch (localError) {
+        console.error("❌ Local discount update also failed:", localError);
+        showError("İskonto oranı güncellenirken bir hata oluştu.");
+      }
+    }
   };
 
   const handleCloseDiscountModal = () => {
     setDiscountModalVisible(false);
     setDiscountValue("");
     setDiscountError("");
+    setValidationErrors({});
   };
 
   const calculateSubTotal = () => {
@@ -367,6 +453,20 @@ export default function SalesSection() {
     });
   };
 
+  // Loading state kontrolü (yeni eklenen)
+  if (brokersLoading && !brokersError) {
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <View className="items-center justify-center flex-1">
+          <Loading size="large" />
+          <Typography variant="body" className="text-stock-text mt-4">
+            Aracı bilgileri yükleniyor...
+          </Typography>
+        </View>
+      </Container>
+    );
+  }
+
   if (!broker) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
@@ -381,6 +481,15 @@ export default function SalesSection() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
+      {/* Backend Error Bilgilendirme - YENİ EKLENEN (Opsiyonel) */}
+      {brokersError && (
+        <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
+          <Typography variant="body" className="text-yellow-800 text-center">
+            ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
+          </Typography>
+        </View>
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Header - İsim ve Bakiye Altlı Üstlü */}
         <View className="mb-6 items-center">
@@ -742,7 +851,7 @@ export default function SalesSection() {
         </View>
       </Modal>
 
-      {/* İskonto Modalı */}
+      {/* İskonto Modal'ı - GÜNCELLENDİ */}
       <Modal
         visible={discountModalVisible}
         onClose={handleCloseDiscountModal}
@@ -757,7 +866,7 @@ export default function SalesSection() {
             value={discountValue}
             onChangeText={handleDiscountChange}
             numericOnly={true}
-            error={discountError}
+            error={validationErrors.discountRate || discountError}
             className="mb-4"
             helperText="İskonto oranını % cinsinden girin (örn: 20)"
           />
@@ -768,15 +877,25 @@ export default function SalesSection() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleSaveDiscount}
-              disabled={!discountValue || !!discountError}
+              disabled={
+                !discountValue ||
+                !!discountError ||
+                !!validationErrors.discountRate ||
+                updateDiscountRateMutation.isPending
+              }
             >
-              <Typography className="text-white">Güncelle</Typography>
+              <Typography className="text-white">
+                {updateDiscountRateMutation.isPending
+                  ? "Güncelleniyor..."
+                  : "Güncelle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"
               fullWidth
               className="border-stock-border"
               onPress={handleCloseDiscountModal}
+              disabled={updateDiscountRateMutation.isPending}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>

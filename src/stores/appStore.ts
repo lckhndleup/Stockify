@@ -24,6 +24,7 @@ export interface Product {
 export interface Broker {
   id: string;
   name: string;
+  surname: string; // YENİ EKLENEN - UI uyumluluğu için
   email: string;
   phone: string;
   address: string;
@@ -94,6 +95,13 @@ interface AppStore {
     success: boolean;
     error?: string;
   };
+
+  // YENİ EKLENEN - Give Product to Broker
+  giveProductToBroker: (
+    brokerId: string,
+    productId: string,
+    quantity: number
+  ) => { success: boolean; error?: string };
 
   // Collection Actions
   collectFromBroker: (
@@ -359,6 +367,44 @@ const middleware = persist<AppStore>(
       return { success: true };
     },
 
+    // YENİ EKLENEN - Give Product to Broker
+    giveProductToBroker: (brokerId, productId, quantity) => {
+      const broker = get().getBrokerById(brokerId);
+      const product = get().products.find((p) => p.id === productId);
+
+      if (!broker) {
+        return { success: false, error: "Aracı bulunamadı!" };
+      }
+
+      if (!product) {
+        return { success: false, error: "Ürün bulunamadı!" };
+      }
+
+      if (product.stock < quantity) {
+        return { success: false, error: "Yetersiz stok!" };
+      }
+
+      // Satış transaction'ı ekle
+      const saleResult = get().addTransaction({
+        brokerId,
+        brokerName: `${broker.name} ${broker.surname}`,
+        type: "sale",
+        amount: quantity * product.price,
+        date: new Date().toISOString().split("T")[0],
+        description: `${product.name} satışı`,
+        products: [
+          {
+            id: product.id,
+            name: product.name,
+            quantity,
+            price: product.price,
+          },
+        ],
+      });
+
+      return saleResult;
+    },
+
     // Collection Actions
     collectFromBroker: (brokerId, amount, paymentType) => {
       const broker = get().getBrokerById(brokerId);
@@ -369,7 +415,7 @@ const middleware = persist<AppStore>(
       // Tahsilat transaction'ı ekle
       const collectionResult = get().addTransaction({
         brokerId,
-        brokerName: broker.name,
+        brokerName: `${broker.name} ${broker.surname}`,
         type: "collection",
         amount,
         date: new Date().toISOString().split("T")[0],

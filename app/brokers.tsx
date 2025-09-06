@@ -11,10 +11,16 @@ import {
   Button,
   Modal,
   Input,
+  Loading,
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAppStore, Broker } from "@/src/stores/appStore";
+
+// Backend hooks - YENİ EKLENEN
+import { useActiveBrokers, useCreateBroker } from "@/src/hooks/api/useBrokers";
+import { BrokerFormData } from "@/src/types/broker";
+import { validateBrokerForm } from "@/src/validations/brokerValidation";
 
 export default function BrokersPage() {
   const [searchText, setSearchText] = useState("");
@@ -30,9 +36,24 @@ export default function BrokersPage() {
   const [brokerDiscount, setBrokerDiscount] = useState(""); // Yeni iskonto alanı
   const [editingBroker, setEditingBroker] = useState<Broker | null>(null);
 
-  // Global Store
+  // Validation Error States
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+
+  // BACKEND HOOKS - YENİ EKLENEN
   const {
-    brokers,
+    data: backendBrokers = [],
+    isLoading: brokersLoading,
+    error: brokersError,
+    refetch: refetchBrokers,
+  } = useActiveBrokers();
+
+  const createBrokerMutation = useCreateBroker();
+
+  // LOCAL STORE - Geriye uyumluluk için korundu
+  const {
+    brokers: localBrokers, // Local store'dan brokers (geçici)
     addBroker,
     updateBroker,
     getBrokerTotalDebt,
@@ -42,6 +63,9 @@ export default function BrokersPage() {
 
   // Toast
   const { toast, showSuccess, showError, hideToast } = useToast();
+
+  // Backend broker'ları öncelikle kullan, fallback olarak local
+  const brokers = brokersError ? localBrokers : backendBrokers;
 
   const handleSearch = (text: string) => {
     setSearchText(text);
@@ -65,14 +89,18 @@ export default function BrokersPage() {
     return !isNaN(num) && num >= 0 && num <= 100;
   };
 
-  const handleSaveBroker = () => {
-    if (!brokerName.trim() || !brokerSurname.trim()) {
-      showError("Lütfen ad ve soyad alanlarını doldurun.");
-      return;
-    }
+  // BACKEND ENTEGRELİ BROKER EKLEME
+  const handleSaveBroker = async () => {
+    // Form validation
+    const validation = validateBrokerForm(
+      brokerName,
+      brokerSurname,
+      brokerDiscount || "0"
+    );
+    setValidationErrors(validation.errors);
 
-    if (brokerDiscount && !validateDiscount(brokerDiscount)) {
-      showError("İskonto oranı 0-100 arasında olmalıdır.");
+    if (!validation.isValid) {
+      showError("Lütfen form hatalarını düzeltin.");
       return;
     }
 
@@ -87,17 +115,45 @@ export default function BrokersPage() {
         { text: "İptal", style: "cancel" },
         {
           text: "Ekle",
-          onPress: () => {
+          onPress: async () => {
             try {
-              const newBroker = addBroker({
-                name: brokerName,
-                surname: brokerSurname,
+              // Backend'e kaydet
+              const brokerData: BrokerFormData = {
+                firstName: brokerName.trim(),
+                lastName: brokerSurname.trim(),
                 discountRate: discountRate,
-              });
+              };
+
+              console.log("🎯 Creating broker with backend:", brokerData);
+
+              await createBrokerMutation.mutateAsync(brokerData);
+
+              console.log("✅ Broker created successfully via backend");
               handleCloseBrokerModal();
               showSuccess("Aracı başarıyla eklendi!");
             } catch (error) {
-              showError("Aracı eklenirken bir hata oluştu.");
+              console.error("❌ Backend broker creation failed:", error);
+
+              // Backend başarısız olursa local store'a fall back
+              try {
+                console.log("🔄 Falling back to local store...");
+                const newBroker = addBroker({
+                  name: brokerName,
+                  surname: brokerSurname,
+                  email: "", // Backend'de olmayan alanlar boş
+                  phone: "",
+                  address: "",
+                  discountRate: discountRate,
+                });
+                handleCloseBrokerModal();
+                showSuccess("Aracı başarıyla eklendi! (Local)");
+              } catch (localError) {
+                console.error(
+                  "❌ Local broker creation also failed:",
+                  localError
+                );
+                showError("Aracı eklenirken bir hata oluştu.");
+              }
             }
           },
         },
@@ -105,14 +161,19 @@ export default function BrokersPage() {
     );
   };
 
-  const handleUpdateBroker = () => {
-    if (!brokerName.trim() || !brokerSurname.trim() || !editingBroker) {
-      showError("Lütfen ad ve soyad alanlarını doldurun.");
-      return;
-    }
+  const handleEditSaveBroker = () => {
+    if (!editingBroker) return;
 
-    if (brokerDiscount && !validateDiscount(brokerDiscount)) {
-      showError("İskonto oranı 0-100 arasında olmalıdır.");
+    // Form validation
+    const validation = validateBrokerForm(
+      brokerName,
+      brokerSurname,
+      brokerDiscount || "0"
+    );
+    setValidationErrors(validation.errors);
+
+    if (!validation.isValid) {
+      showError("Lütfen form hatalarını düzeltin.");
       return;
     }
 
@@ -120,7 +181,7 @@ export default function BrokersPage() {
 
     Alert.alert(
       "Aracı Güncelle",
-      `"${brokerName} ${brokerSurname}" olarak güncellemek istediğinizden emin misiniz?${
+      `"${brokerName} ${brokerSurname}" aracısını güncellemek istediğinizden emin misiniz?${
         discountRate > 0 ? `\n\nİskonto Oranı: %${discountRate}` : ""
       }`,
       [
@@ -129,6 +190,7 @@ export default function BrokersPage() {
           text: "Güncelle",
           onPress: () => {
             try {
+              // Şimdilik local store kullan - sonra backend entegre edilecek
               updateBroker(editingBroker.id, {
                 name: brokerName,
                 surname: brokerSurname,
@@ -150,6 +212,7 @@ export default function BrokersPage() {
     setBrokerName("");
     setBrokerSurname("");
     setBrokerDiscount(""); // İskonto alanını da temizle
+    setValidationErrors({});
   };
 
   const handleCloseEditBrokerModal = () => {
@@ -158,6 +221,7 @@ export default function BrokersPage() {
     setBrokerName("");
     setBrokerSurname("");
     setBrokerDiscount(""); // İskonto alanını da temizle
+    setValidationErrors({});
   };
 
   // Filtering
@@ -166,6 +230,20 @@ export default function BrokersPage() {
       .toLowerCase()
       .includes(searchText.toLowerCase())
   );
+
+  // Loading state
+  if (brokersLoading && !brokersError) {
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <View className="items-center justify-center flex-1">
+          <Loading size="large" />
+          <Typography variant="body" className="text-stock-text mt-4">
+            Aracılar yükleniyor...
+          </Typography>
+        </View>
+      </Container>
+    );
+  }
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
@@ -183,6 +261,16 @@ export default function BrokersPage() {
         type={globalToast.type}
         onHide={hideGlobalToast}
       />
+
+      {/* Backend Error Bilgilendirme */}
+      {brokersError && (
+        <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
+          <Typography variant="body" className="text-yellow-800 text-center">
+            ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
+          </Typography>
+        </View>
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search Bar */}
         <SearchBar
@@ -197,7 +285,11 @@ export default function BrokersPage() {
           style={{ gap: 10 }}
         >
           {filteredBrokers.map((broker) => {
-            const totalDebt = getBrokerTotalDebt(broker.id);
+            // Backend broker'ları için balance, local için totalDebt hesapla
+            const totalDebt =
+              "balance" in broker
+                ? (broker as any).balance
+                : getBrokerTotalDebt(broker.id);
 
             return (
               <SquareCard
@@ -247,8 +339,11 @@ export default function BrokersPage() {
             leftIcon={
               <Icon family="MaterialIcons" name="add" size={18} color="white" />
             }
+            disabled={createBrokerMutation.isPending}
           >
-            Yeni Aracı Ekle
+            {createBrokerMutation.isPending
+              ? "Ekleniyor..."
+              : "Yeni Aracı Ekle"}
           </Button>
         </View>
       </ScrollView>
@@ -269,6 +364,7 @@ export default function BrokersPage() {
             placeholder="Aracının adını girin..."
             variant="outlined"
             className="mb-4"
+            error={validationErrors.firstName}
           />
 
           <Input
@@ -278,6 +374,7 @@ export default function BrokersPage() {
             placeholder="Aracının soyadını girin..."
             variant="outlined"
             className="mb-4"
+            error={validationErrors.lastName}
           />
 
           <Input
@@ -289,6 +386,7 @@ export default function BrokersPage() {
             numericOnly={true}
             className="mb-4"
             helperText="Boş bırakırsanız %0 iskonto uygulanır"
+            error={validationErrors.discountRate}
           />
 
           <View className="mt-6">
@@ -297,14 +395,18 @@ export default function BrokersPage() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleSaveBroker}
+              disabled={createBrokerMutation.isPending}
             >
-              <Typography className="text-white">Ekle</Typography>
+              <Typography className="text-white">
+                {createBrokerMutation.isPending ? "Ekleniyor..." : "Ekle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"
               fullWidth
               className="border-stock-border"
               onPress={handleCloseBrokerModal}
+              disabled={createBrokerMutation.isPending}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
@@ -328,6 +430,7 @@ export default function BrokersPage() {
             placeholder="Aracının adını girin..."
             variant="outlined"
             className="mb-4"
+            error={validationErrors.firstName}
           />
 
           <Input
@@ -337,17 +440,18 @@ export default function BrokersPage() {
             placeholder="Aracının soyadını girin..."
             variant="outlined"
             className="mb-4"
+            error={validationErrors.lastName}
           />
 
           <Input
             label="İskonto Oranı (%)"
             value={brokerDiscount}
             onChangeText={setBrokerDiscount}
-            placeholder="0-100 arası değer (örn: 20)"
+            placeholder="0-100 arası değer"
             variant="outlined"
             numericOnly={true}
             className="mb-4"
-            helperText="Aracının genel iskonto oranı"
+            error={validationErrors.discountRate}
           />
 
           <View className="mt-6">
@@ -355,7 +459,7 @@ export default function BrokersPage() {
               variant="primary"
               fullWidth
               className="bg-stock-red mb-3"
-              onPress={handleUpdateBroker}
+              onPress={handleEditSaveBroker}
             >
               <Typography className="text-white">Güncelle</Typography>
             </Button>

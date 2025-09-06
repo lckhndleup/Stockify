@@ -124,6 +124,27 @@ export const useInvalidateQueries = () => {
         queryKey: queryKeys.invoices.broker(brokerId),
       });
     },
+    // Invalidate all broker data
+    invalidateAllBrokerData: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.brokers.lists() });
+    },
+
+    // Invalidate broker and all related data
+    invalidateBrokerWithRelations: (brokerId: string) => {
+      // Broker detay ve listelerini yenile
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.brokers.detail(brokerId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.brokers.lists() });
+
+      // İlişkili verileri de yenile
+      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.invoices.broker(brokerId),
+      });
+    },
 
     // Invalidate by product ID
     invalidateProductData: (productId: string) => {
