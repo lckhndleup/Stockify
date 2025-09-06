@@ -635,6 +635,31 @@ class ApiService {
       throw error;
     }
   }
+  // Sales endpoints
+  //products
+  async getSalesProducts(): Promise<any[]> {
+    try {
+      console.log("💰 API: Fetching sales products...");
+
+      const result = await this.request<any[]>("/sales/products", {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Sales products fetched - Count:",
+        Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0
+          ? Object.keys(result[0])
+          : "empty"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("💰 API: Sales products fetch error:", error);
+      throw error;
+    }
+  }
 }
 
 // Singleton instance
