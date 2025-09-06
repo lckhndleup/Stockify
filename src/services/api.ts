@@ -610,6 +610,31 @@ class ApiService {
       throw error;
     }
   }
+  // Payment endpoints
+  async savePayment(payment: {
+    brokerId: number;
+    paymentPrice: number;
+    paymentType: "CASH" | "CREDIT_CARD" | "BANK_TRANSFER" | "CHECK";
+  }): Promise<any> {
+    try {
+      console.log("💰 API: Saving payment:", payment);
+
+      const result = await this.request<any>("/payment/save", {
+        method: "POST",
+        body: JSON.stringify(payment),
+      });
+
+      console.log(
+        "✅ API: Payment saved:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("💰 API: Payment save error:", error);
+      throw error;
+    }
+  }
 }
 
 // Singleton instance
