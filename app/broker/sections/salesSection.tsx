@@ -30,6 +30,10 @@ import {
   useActiveBrokers,
   useUpdateBrokerDiscountRate,
 } from "@/src/hooks/api/useBrokers";
+import {
+  useSalesProductsForUI,
+  useSalesProductOptions,
+} from "@/src/hooks/api/useSalesProducts";
 import { validateDiscountRate } from "@/src/validations/brokerValidation";
 
 // Eklenen ürün tipi
@@ -75,6 +79,13 @@ export default function SalesSection() {
 
   const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
 
+  // SALES PRODUCTS BACKEND HOOKS - YENİ EKLENEN
+  const {
+    data: backendSalesProducts = [],
+    isLoading: salesProductsLoading,
+    error: salesProductsError,
+  } = useSalesProductsForUI({ enabled: true });
+
   // LOCAL STORE - Geriye uyumluluk için korundu
   const {
     brokers: localBrokers,
@@ -115,9 +126,20 @@ export default function SalesSection() {
   // Backend broker'ları öncelikle kullan, fallback olarak local
   const brokers = brokersError ? localBrokers : backendBrokers;
 
+  // Backend products'ları öncelikle kullan, fallback olarak local
+  const activeProducts = salesProductsError
+    ? getActiveProducts()
+    : backendSalesProducts;
+
+  // SelectBox için backend options - YENİ EKLENEN
+  const addedProductIds = addedProducts.map((p) => p.id);
+  const { data: backendProductOptions = [], isLoading: optionsLoading } =
+    useSalesProductOptions(addedProductIds, {
+      enabled: backendSalesProducts.length > 0,
+    });
+
   // Broker bilgisini al (güncellendi)
   const broker = brokers.find((b) => b.id === brokerId);
-  const activeProducts = getActiveProducts();
   const brokerDebt = broker
     ? "balance" in broker
       ? (broker as any).balance
@@ -180,13 +202,13 @@ export default function SalesSection() {
     );
   }, [activeProducts, addedProducts]);
 
-  // SelectBox için ürün seçenekleri
-  const productOptions: SelectBoxOption[] = availableProducts.map(
-    (product) => ({
-      label: `${product.name} (Stok: ${product.stock}, ₺${product.price}/adet)`,
-      value: product.id,
-    })
-  );
+  // SelectBox için ürün seçenekleri - GÜNCELLENDİ
+  const productOptions: SelectBoxOption[] = salesProductsError
+    ? availableProducts.map((product) => ({
+        label: `${product.name} (Stok: ${product.stock}, ₺${product.price}/adet)`,
+        value: product.id,
+      }))
+    : backendProductOptions;
 
   // Seçilen ürünün bilgilerini al
   const selectedProductData = availableProducts.find(
@@ -453,14 +475,18 @@ export default function SalesSection() {
     });
   };
 
-  // Loading state kontrolü (yeni eklenen)
-  if (brokersLoading && !brokersError) {
+  // Loading state kontrolü (güncellendi)
+  if (
+    (brokersLoading && !brokersError) ||
+    (salesProductsLoading && !salesProductsError)
+  ) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
           <Loading size="large" />
           <Typography variant="body" className="text-stock-text mt-4">
-            Aracı bilgileri yükleniyor...
+            {brokersLoading ? "Aracı bilgileri" : "Ürün bilgileri"}{" "}
+            yükleniyor...
           </Typography>
         </View>
       </Container>
@@ -481,11 +507,13 @@ export default function SalesSection() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
-      {/* Backend Error Bilgilendirme - YENİ EKLENEN (Opsiyonel) */}
-      {brokersError && (
+      {/* Backend Error Bilgilendirme - GÜNCELLENDİ */}
+      {(brokersError || salesProductsError) && (
         <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
           <Typography variant="body" className="text-yellow-800 text-center">
             ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
+            {brokersError && " (Broker)"}
+            {salesProductsError && " (Ürünler)"}
           </Typography>
         </View>
       )}

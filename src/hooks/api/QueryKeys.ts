@@ -78,6 +78,15 @@ export const queryKeys = {
     broker: (brokerId: string) =>
       [...queryKeys.payments.all, "broker", brokerId] as const,
   },
+  // Sales related products
+  sales: {
+    all: ["sales"] as const,
+    products: () => [...queryKeys.sales.all, "products"] as const,
+    transactions: () => [...queryKeys.sales.all, "transactions"] as const,
+    invoices: () => [...queryKeys.sales.all, "invoices"] as const,
+    history: (brokerId?: string) =>
+      [...queryKeys.sales.all, "history", brokerId] as const,
+  },
   // Transaction related
   transactions: {
     all: ["transactions"] as const,
