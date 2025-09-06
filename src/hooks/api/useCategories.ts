@@ -1,7 +1,7 @@
 // src/hooks/api/useCategories.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
-import { queryKeys } from "./queryKeys";
+import { queryKeys } from "./QueryKeys";
 
 // Types
 export interface Category {
