@@ -1,5 +1,5 @@
 // src/services/api.ts - Sadece minimal güncelleme
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = "https://stockify-gcsq.onrender.com";
 
 // API Response types
 export interface LoginRequest {
