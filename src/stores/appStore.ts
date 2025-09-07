@@ -1,4 +1,4 @@
-// src/stores/appStore.ts - Simplified: Hybrid product management removed
+// src/stores/appStore.ts
 import React from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";

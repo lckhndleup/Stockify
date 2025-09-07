@@ -1,4 +1,4 @@
-// successAnimation.tsx
+// src/components/svg/successAnimation.tsx
 import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { StyleProp, ViewStyle } from "react-native";
 import LottieView from "lottie-react-native";

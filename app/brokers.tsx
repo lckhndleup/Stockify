@@ -1,4 +1,4 @@
-// app/brokers.tsx - DOĞRU IMPORTS VE YAPIYA UYGUN KOD
+// app/brokers.tsx
 
 import React, { useState } from "react";
 import { ScrollView, View, Alert } from "react-native";

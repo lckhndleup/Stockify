@@ -1,3 +1,4 @@
+// src/components/common/FontProvider.tsx
 import { useEffect, useState } from "react";
 import { Text as RNText } from "react-native";
 import {

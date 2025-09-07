@@ -1,4 +1,4 @@
-// src/services/api.ts - Sadece minimal güncelleme
+// src/services/api.ts
 const API_BASE_URL = "https://stockify-gcsq.onrender.com";
 
 // API Response types

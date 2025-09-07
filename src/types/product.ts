@@ -1,4 +1,4 @@
-// src/types/product.ts - Updated: Stock/Price removed from forms
+// src/types/product.ts
 export interface Product {
   productId: number;
   categoryId: number;

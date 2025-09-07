@@ -1,3 +1,4 @@
+// app/broker/sections/resultSales.tsx
 import React, { useEffect, useRef } from "react";
 import { Alert, BackHandler, ScrollView, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";

@@ -1,3 +1,4 @@
+// app/categories.tsx
 import React, { useState } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
 
