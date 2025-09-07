@@ -1,4 +1,12 @@
 // src/services/api.ts
+
+import { SalesProduct, SalesRequest, SalesResponse } from "@/src/types/sales";
+import {
+  BasketItem,
+  BasketAddRequest,
+  BasketRemoveRequest,
+  BasketUpdateRequest,
+} from "@/src/types/basket";
 const API_BASE_URL = "https://stockify-gcsq.onrender.com";
 
 // API Response types
@@ -635,28 +643,170 @@ class ApiService {
       throw error;
     }
   }
-  // Sales endpoints
-  //products
-  async getSalesProducts(): Promise<any[]> {
+  // ====================================
+  // SALES ENDPOINTS
+  // ====================================
+
+  // GET /sales/products
+  async getSalesProducts(): Promise<SalesProduct[]> {
     try {
       console.log("💰 API: Fetching sales products...");
 
-      const result = await this.request<any[]>("/sales/products", {
+      const result = await this.request<SalesProduct[]>("/sales/products", {
         method: "GET",
       });
 
       console.log(
         "✅ API: Sales products fetched - Count:",
-        Array.isArray(result) ? result.length : "not array",
-        "Keys:",
-        Array.isArray(result) && result.length > 0
-          ? Object.keys(result[0])
-          : "empty"
+        Array.isArray(result) ? result.length : "not array"
       );
 
       return result;
     } catch (error) {
       console.log("💰 API: Sales products fetch error:", error);
+      throw error;
+    }
+  }
+
+  // POST /sales/calculate
+  async calculateSales(salesData: SalesRequest): Promise<SalesResponse> {
+    try {
+      console.log("🧮 API: Calculating sales with data:", salesData);
+
+      const result = await this.request<SalesResponse>("/sales/calculate", {
+        method: "POST",
+        body: JSON.stringify(salesData),
+      });
+
+      console.log("✅ API: Sales calculated:", {
+        salesId: result.salesId,
+        totalPrice: result.totalPrice,
+        itemsCount: result.salesItems.length,
+      });
+
+      return result;
+    } catch (error) {
+      console.log("🧮 API: Sales calculation error:", error);
+      throw error;
+    }
+  }
+
+  // POST /sales/confirm
+  async confirmSales(salesData: SalesRequest): Promise<SalesResponse> {
+    try {
+      console.log("✅ API: Confirming sales with data:", salesData);
+
+      const result = await this.request<SalesResponse>("/sales/confirm", {
+        method: "POST",
+        body: JSON.stringify(salesData),
+      });
+
+      console.log("✅ API: Sales confirmed:", {
+        salesId: result.salesId,
+        documentNumber: result.documentNumber,
+        totalPrice: result.totalPriceWithTax,
+      });
+
+      return result;
+    } catch (error) {
+      console.log("✅ API: Sales confirmation error:", error);
+      throw error;
+    }
+  }
+
+  // ====================================
+  // BASKET ENDPOINTS
+  // ====================================
+
+  // POST /basket/add
+  async addToBasket(
+    basketData: BasketAddRequest
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log("🛒 API: Adding to basket with data:", basketData);
+
+      const result = await this.request<{ success: boolean; message: string }>(
+        "/basket/add",
+        {
+          method: "POST",
+          body: JSON.stringify(basketData),
+        }
+      );
+
+      console.log("✅ API: Item added to basket:", result);
+      return result;
+    } catch (error) {
+      console.log("🛒 API: Add to basket error:", error);
+      throw error;
+    }
+  }
+
+  // POST /basket/remove
+  async removeFromBasket(
+    basketData: BasketRemoveRequest
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log("🛒 API: Removing from basket with data:", basketData);
+
+      const result = await this.request<{ success: boolean; message: string }>(
+        "/basket/remove",
+        {
+          method: "POST",
+          body: JSON.stringify(basketData),
+        }
+      );
+
+      console.log("✅ API: Item removed from basket:", result);
+      return result;
+    } catch (error) {
+      console.log("🛒 API: Remove from basket error:", error);
+      throw error;
+    }
+  }
+
+  // POST /basket/update
+  async updateBasket(
+    basketData: BasketUpdateRequest
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log("🛒 API: Updating basket with data:", basketData);
+
+      const result = await this.request<{ success: boolean; message: string }>(
+        "/basket/update",
+        {
+          method: "POST",
+          body: JSON.stringify(basketData),
+        }
+      );
+
+      console.log("✅ API: Basket updated:", result);
+      return result;
+    } catch (error) {
+      console.log("🛒 API: Update basket error:", error);
+      throw error;
+    }
+  }
+
+  // GET /basket/all/{brokerId}
+  async getBasketItems(brokerId: number): Promise<BasketItem[]> {
+    try {
+      console.log("🛒 API: Fetching basket items for broker:", brokerId);
+
+      const result = await this.request<BasketItem[]>(
+        `/basket/all/${brokerId}`,
+        {
+          method: "GET",
+        }
+      );
+
+      console.log(
+        "✅ API: Basket items fetched - Count:",
+        Array.isArray(result) ? result.length : "not array"
+      );
+
+      return result;
+    } catch (error) {
+      console.log("🛒 API: Basket items fetch error:", error);
       throw error;
     }
   }

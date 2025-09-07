@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { View, ScrollView, Alert, TouchableOpacity, Text } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -25,18 +25,17 @@ import {
 } from "@/src/validations/salesValidation";
 import { useNavigation } from "@react-navigation/native";
 
-// Backend hooks - YENİ EKLENEN
+// Backend hooks - UPDATED IMPORTS
 import {
   useActiveBrokers,
   useUpdateBrokerDiscountRate,
 } from "@/src/hooks/api/useBrokers";
-import {
-  useSalesProductsForUI,
-  useSalesProductOptions,
-} from "@/src/hooks/api/useSalesProducts";
+import { useSales } from "@/src/hooks/api/useSales";
+import { useBasket } from "@/src/hooks/api/useBasket";
 import { validateDiscountRate } from "@/src/validations/brokerValidation";
+import { useAuthStore } from "@/src/stores/authStore";
 
-// Eklenen ürün tipi
+// Eklenen ürün tipi - AYNI KALDI
 interface AddedProduct {
   id: string;
   name: string;
@@ -45,32 +44,11 @@ interface AddedProduct {
   totalPrice: number;
 }
 
-// Özel giveProductToBrokerWithDiscount fonksiyonu
-const giveProductToBrokerWithDiscount = (
-  giveProductToBroker: any,
-  updateBrokerDiscount: any,
-  brokerId: string,
-  productId: string,
-  quantity: number,
-  discountedAmount: number,
-  originalAmount: number
-) => {
-  // Önce normal işlemi yap
-  const result = giveProductToBroker(brokerId, productId, quantity);
-
-  if (result.success) {
-    // Transaction'ı bul ve totalAmount'ı güncelle
-    // Bu biraz karmaşık olacak, bu yüzden store'a yeni bir fonksiyon eklemek daha iyi
-    return { success: true };
-  }
-
-  return result;
-};
-
 export default function SalesSection() {
   const { brokerId } = useLocalSearchParams();
+  const { user } = useAuthStore();
 
-  // BACKEND HOOKS - YENİ EKLENEN
+  // BACKEND HOOKS
   const {
     data: backendBrokers = [],
     isLoading: brokersLoading,
@@ -79,26 +57,16 @@ export default function SalesSection() {
 
   const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
 
-  // SALES PRODUCTS BACKEND HOOKS - YENİ EKLENEN
+  // SALES HOOKS
   const {
-    data: backendSalesProducts = [],
-    isLoading: salesProductsLoading,
+    products: backendSalesProducts,
+    loadProducts,
+    isLoadingProducts: salesProductsLoading,
     error: salesProductsError,
-  } = useSalesProductsForUI({ enabled: true });
+    getProductById,
+  } = useSales();
 
-  // LOCAL STORE - Geriye uyumluluk için korundu
-  const {
-    brokers: localBrokers,
-    getActiveProducts,
-    giveProductToBroker,
-    getBrokerTotalDebt,
-    getBrokerDiscount: getLocalBrokerDiscount,
-    updateBrokerDiscount: updateLocalBrokerDiscount,
-  } = useAppStore();
-
-  const { toast, showSuccess, showError } = useToast();
-
-  // State'ler
+  // STATE'LER - ÖNCE TANIMLA
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState("");
   const [quantityError, setQuantityError] = useState("");
@@ -118,27 +86,89 @@ export default function SalesSection() {
   const [discountValue, setDiscountValue] = useState("");
   const [discountError, setDiscountError] = useState("");
 
-  // Validation Error States - YENİ EKLENEN
+  // Validation Error States
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
 
+  // MEMOIZED PRODUCT INFO - Sonsuz loop önlemek için
+  const productInfo = useMemo(() => {
+    return backendSalesProducts.map((p) => ({
+      productId: p.productId,
+      productName: p.productName,
+      price: p.price,
+      taxRate: p.taxRate,
+      isAvailable: p.productCount > 0,
+      stockCount: p.productCount,
+    }));
+  }, [backendSalesProducts]);
+
+  // BASKET HOOKS - Memoized productInfo ile
+  const numericBrokerId = brokerId ? parseInt(brokerId as string) : 0;
+  const {
+    items: basketItems,
+    addToBasket,
+    removeFromBasket,
+    updateBasketItem,
+    refreshBasket,
+    isLoading: basketLoading,
+    getProductQuantity,
+    isProductInBasket,
+  } = useBasket(numericBrokerId, productInfo);
+
+  // LOCAL STORE - Fallback için
+  const {
+    brokers: localBrokers,
+    getActiveProducts,
+    giveProductToBroker,
+    getBrokerTotalDebt,
+    getBrokerDiscount: getLocalBrokerDiscount,
+    updateBrokerDiscount: updateLocalBrokerDiscount,
+  } = useAppStore();
+
+  const { toast, showSuccess, showError } = useToast();
+
+  // LOAD PRODUCTS ONLY ONCE
+  useEffect(() => {
+    loadProducts();
+  }, []); // Empty dependency - sadece mount'ta çalış
+
+  // SYNC BASKET WITH ADDED PRODUCTS - OPTIMIZED
+  useEffect(() => {
+    if (basketItems.length > 0) {
+      const convertedProducts: AddedProduct[] = basketItems.map((item) => ({
+        id: item.productId.toString(),
+        name: item.productName,
+        quantity: item.productCount,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+      }));
+
+      // Sadece gerçekten değişmişse güncelle
+      if (JSON.stringify(convertedProducts) !== JSON.stringify(addedProducts)) {
+        setAddedProducts(convertedProducts);
+      }
+    } else if (addedProducts.length > 0) {
+      setAddedProducts([]);
+    }
+  }, [basketItems]); // Sadece basketItems değiştiğinde
+
   // Backend broker'ları öncelikle kullan, fallback olarak local
   const brokers = brokersError ? localBrokers : backendBrokers;
 
-  // Backend products'ları öncelikle kullan, fallback olarak local
-  const activeProducts = salesProductsError
-    ? getActiveProducts()
-    : backendSalesProducts;
+  // Backend products'ları öncelikle kullan, fallback olarak local - MEMOIZED
+  const activeProducts = useMemo(() => {
+    return salesProductsError
+      ? getActiveProducts()
+      : backendSalesProducts.map((p) => ({
+          id: p.productId.toString(),
+          name: p.productName,
+          stock: p.productCount,
+          price: p.price,
+        }));
+  }, [salesProductsError, backendSalesProducts, getActiveProducts]);
 
-  // SelectBox için backend options - YENİ EKLENEN
-  const addedProductIds = addedProducts.map((p) => p.id);
-  const { data: backendProductOptions = [], isLoading: optionsLoading } =
-    useSalesProductOptions(addedProductIds, {
-      enabled: backendSalesProducts.length > 0,
-    });
-
-  // Broker bilgisini al (güncellendi)
+  // Broker bilgisini al
   const broker = brokers.find((b) => b.id === brokerId);
   const brokerDebt = broker
     ? "balance" in broker
@@ -155,6 +185,7 @@ export default function SalesSection() {
 
   const navigation = useNavigation();
 
+  // NAVIGATION SETUP - MEMOIZED
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
@@ -194,7 +225,7 @@ export default function SalesSection() {
     });
   }, [navigation, brokerId]);
 
-  // Kullanılabilir ürünler
+  // Kullanılabilir ürünler - MEMOIZED
   const availableProducts = useMemo(() => {
     const addedProductIds = addedProducts.map((p) => p.id);
     return activeProducts.filter(
@@ -202,28 +233,29 @@ export default function SalesSection() {
     );
   }, [activeProducts, addedProducts]);
 
-  // SelectBox için ürün seçenekleri - GÜNCELLENDİ
-  const productOptions: SelectBoxOption[] = salesProductsError
-    ? availableProducts.map((product) => ({
-        label: `${product.name} (Stok: ${product.stock}, ₺${product.price}/adet)`,
-        value: product.id,
-      }))
-    : backendProductOptions;
+  // SelectBox için ürün seçenekleri - MEMOIZED
+  const productOptions: SelectBoxOption[] = useMemo(() => {
+    return availableProducts.map((product) => ({
+      label: `${product.name} (Stok: ${product.stock}, ₺${product.price}/adet)`,
+      value: product.id,
+    }));
+  }, [availableProducts]);
 
-  // Seçilen ürünün bilgilerini al
-  const selectedProductData = availableProducts.find(
-    (p) => p.id === selectedProduct
-  );
+  // Seçilen ürünün bilgilerini al - MEMOIZED
+  const selectedProductData = useMemo(() => {
+    return availableProducts.find((p) => p.id === selectedProduct);
+  }, [availableProducts, selectedProduct]);
 
-  const handleProductSelect = (productId: string) => {
+  // HANDLERS - MEMOIZED
+  const handleProductSelect = useCallback((productId: string) => {
     setSelectedProduct(productId);
     setQuantity("");
     setQuantityError("");
-  };
+  }, []);
 
-  const validateQuantity = (value: string, maxStock?: number) => {
+  const validateQuantity = useCallback((value: string, maxStock?: number) => {
     try {
-      const result = salesQuantitySchema.parse({ quantity: value });
+      salesQuantitySchema.parse({ quantity: value });
       const qty = parseInt(value);
 
       if (maxStock && qty > maxStock) {
@@ -234,19 +266,23 @@ export default function SalesSection() {
     } catch (error: any) {
       return error.errors?.[0]?.message || "Geçersiz adet";
     }
-  };
+  }, []);
 
-  const handleQuantityChange = (text: string) => {
-    setQuantity(text);
-    if (text) {
-      const error = validateQuantity(text, selectedProductData?.stock);
-      setQuantityError(error);
-    } else {
-      setQuantityError("");
-    }
-  };
+  const handleQuantityChange = useCallback(
+    (text: string) => {
+      setQuantity(text);
+      if (text && selectedProductData) {
+        const error = validateQuantity(text, selectedProductData.stock);
+        setQuantityError(error);
+      } else {
+        setQuantityError("");
+      }
+    },
+    [selectedProductData, validateQuantity]
+  );
 
-  const handleAddProduct = () => {
+  // UPDATED - Now uses basket API
+  const handleAddProduct = useCallback(async () => {
     if (!selectedProductData || !quantity) return;
 
     const error = validateQuantity(quantity, selectedProductData.stock);
@@ -256,112 +292,113 @@ export default function SalesSection() {
     }
 
     const qty = parseInt(quantity);
-    const newProduct: AddedProduct = {
-      id: selectedProductData.id,
-      name: selectedProductData.name,
-      quantity: qty,
-      unitPrice: selectedProductData.price,
-      totalPrice: qty * selectedProductData.price,
-    };
+    const productId = parseInt(selectedProductData.id);
 
-    setAddedProducts((prev) => [...prev, newProduct]);
-    setSelectedProduct("");
-    setQuantity("");
-    setQuantityError("");
-  };
+    // Add to basket via API
+    const success = await addToBasket(productId, qty);
 
-  const handleRemoveProduct = (productId: string) => {
-    Alert.alert(
-      "Ürün Kaldır",
-      "Bu ürünü listeden kaldırmak istediğinizden emin misiniz?",
-      [
-        { text: "İptal", style: "cancel" },
-        {
-          text: "Kaldır",
-          style: "destructive",
-          onPress: () => {
-            setAddedProducts((prev) => prev.filter((p) => p.id !== productId));
-          },
-        },
-      ]
-    );
-  };
-
-  const handleEditProduct = (productId: string) => {
-    const product = addedProducts.find((p) => p.id === productId);
-    if (!product) return;
-
-    setEditingProduct(product);
-    setEditQuantity(product.quantity.toString());
-    setEditQuantityError("");
-    setEditModalVisible(true);
-  };
-
-  const handleEditQuantityChange = (text: string) => {
-    setEditQuantity(text);
-    if (text) {
-      try {
-        const result = editQuantitySchema.parse({ quantity: text });
-        const qty = parseInt(text);
-        const originalProduct = activeProducts.find(
-          (p) => p.id === editingProduct?.id
-        );
-
-        if (originalProduct && qty > originalProduct.stock) {
-          setEditQuantityError(
-            `Yetersiz stok! Mevcut stok: ${originalProduct.stock} adet`
-          );
-        } else {
-          setEditQuantityError("");
-        }
-      } catch (error: any) {
-        setEditQuantityError(error.errors?.[0]?.message || "Geçersiz adet");
-      }
-    } else {
-      setEditQuantityError("");
+    if (success) {
+      setSelectedProduct("");
+      setQuantity("");
+      setQuantityError("");
     }
-  };
+  }, [selectedProductData, quantity, validateQuantity, addToBasket]);
 
-  const handleSaveEdit = () => {
+  // UPDATED - Now uses basket API
+  const handleRemoveProduct = useCallback(
+    (productId: string) => {
+      Alert.alert(
+        "Ürün Kaldır",
+        "Bu ürünü listeden kaldırmak istediğinizden emin misiniz?",
+        [
+          { text: "İptal", style: "cancel" },
+          {
+            text: "Kaldır",
+            style: "destructive",
+            onPress: async () => {
+              await removeFromBasket(parseInt(productId));
+            },
+          },
+        ]
+      );
+    },
+    [removeFromBasket]
+  );
+
+  const handleEditProduct = useCallback(
+    (productId: string) => {
+      const product = addedProducts.find((p) => p.id === productId);
+      if (!product) return;
+
+      setEditingProduct(product);
+      setEditQuantity(product.quantity.toString());
+      setEditQuantityError("");
+      setEditModalVisible(true);
+    },
+    [addedProducts]
+  );
+
+  const handleEditQuantityChange = useCallback(
+    (text: string) => {
+      setEditQuantity(text);
+      if (text && editingProduct) {
+        try {
+          editQuantitySchema.parse({ quantity: text });
+          const qty = parseInt(text);
+          const originalProduct = activeProducts.find(
+            (p) => p.id === editingProduct.id
+          );
+
+          if (originalProduct && qty > originalProduct.stock) {
+            setEditQuantityError(
+              `Yetersiz stok! Mevcut stok: ${originalProduct.stock} adet`
+            );
+          } else {
+            setEditQuantityError("");
+          }
+        } catch (error: any) {
+          setEditQuantityError(error.errors?.[0]?.message || "Geçersiz adet");
+        }
+      } else {
+        setEditQuantityError("");
+      }
+    },
+    [editingProduct, activeProducts]
+  );
+
+  // UPDATED - Now uses basket API
+  const handleSaveEdit = useCallback(async () => {
     if (!editingProduct || !editQuantity || editQuantityError) return;
 
     const qty = parseInt(editQuantity);
-    const updatedProducts = addedProducts.map((p) =>
-      p.id === editingProduct.id
-        ? {
-            ...p,
-            quantity: qty,
-            totalPrice: qty * p.unitPrice,
-          }
-        : p
-    );
+    const success = await updateBasketItem(parseInt(editingProduct.id), qty);
 
-    setAddedProducts(updatedProducts);
+    if (success) {
+      setEditModalVisible(false);
+      setEditingProduct(null);
+      setEditQuantity("");
+      setEditQuantityError("");
+    }
+  }, [editingProduct, editQuantity, editQuantityError, updateBasketItem]);
+
+  const handleCloseEditModal = useCallback(() => {
     setEditModalVisible(false);
     setEditingProduct(null);
     setEditQuantity("");
     setEditQuantityError("");
-  };
+  }, []);
 
-  const handleCloseEditModal = () => {
-    setEditModalVisible(false);
-    setEditingProduct(null);
-    setEditQuantity("");
-    setEditQuantityError("");
-  };
-
-  // BACKEND ENTEGRELİ DİSCOUNT RATE GÜNCELLEME - YENİ
-  const handleDiscountPress = () => {
+  // DISCOUNT HANDLERS - MEMOIZED
+  const handleDiscountPress = useCallback(() => {
     setDiscountValue(brokerDiscount.toString());
     setDiscountError("");
     setValidationErrors({});
     setDiscountModalVisible(true);
-  };
+  }, [brokerDiscount]);
 
-  const handleDiscountChange = (text: string) => {
+  const handleDiscountChange = useCallback((text: string) => {
     setDiscountValue(text);
 
-    // Validation
     const validation = validateDiscountRate(text);
     setValidationErrors(validation.errors);
 
@@ -370,11 +407,9 @@ export default function SalesSection() {
     } else {
       setDiscountError("");
     }
-  };
+  }, []);
 
-  // BACKEND ENTEGRELİ SAVE DISCOUNT - YENİ
-  const handleSaveDiscount = async () => {
-    // Form validation
+  const handleSaveDiscount = useCallback(async () => {
     const validation = validateDiscountRate(discountValue);
     setValidationErrors(validation.errors);
 
@@ -387,18 +422,12 @@ export default function SalesSection() {
 
     try {
       if (!brokersError) {
-        // Backend güncelleme
-        console.log("💰 Updating discount rate via backend");
         await updateDiscountRateMutation.mutateAsync({
           brokerId: brokerId as string,
           discountRate: discount,
         });
-        console.log("✅ Discount rate updated via backend");
       } else {
-        // Local fallback
-        console.log("💰 Updating discount rate via local store");
         updateLocalBrokerDiscount(brokerId as string, discount);
-        console.log("✅ Discount rate updated via local store");
       }
 
       setDiscountModalVisible(false);
@@ -407,11 +436,7 @@ export default function SalesSection() {
       setValidationErrors({});
       showSuccess("İskonto oranı başarıyla güncellendi!");
     } catch (error) {
-      console.error("❌ Update discount rate error:", error);
-
-      // Backend başarısız olursa local'e fall back
       try {
-        console.log("🔄 Falling back to local store for discount update...");
         updateLocalBrokerDiscount(brokerId as string, discount);
         setDiscountModalVisible(false);
         setDiscountValue("");
@@ -419,63 +444,61 @@ export default function SalesSection() {
         setValidationErrors({});
         showSuccess("İskonto oranı başarıyla güncellendi! (Local)");
       } catch (localError) {
-        console.error("❌ Local discount update also failed:", localError);
         showError("İskonto oranı güncellenirken bir hata oluştu.");
       }
     }
-  };
+  }, [
+    discountValue,
+    brokersError,
+    updateDiscountRateMutation,
+    brokerId,
+    updateLocalBrokerDiscount,
+    showSuccess,
+    showError,
+  ]);
 
-  const handleCloseDiscountModal = () => {
+  const handleCloseDiscountModal = useCallback(() => {
     setDiscountModalVisible(false);
     setDiscountValue("");
     setDiscountError("");
     setValidationErrors({});
-  };
+  }, []);
 
-  const calculateSubTotal = () => {
+  // CALCULATION FUNCTIONS - MEMOIZED
+  const calculateSubTotal = useCallback(() => {
     return addedProducts.reduce(
       (total, product) => total + product.totalPrice,
       0
     );
-  };
+  }, [addedProducts]);
 
-  const calculateDiscountAmount = () => {
+  const calculateDiscountAmount = useCallback(() => {
     const subTotal = calculateSubTotal();
     return (subTotal * brokerDiscount) / 100;
-  };
+  }, [calculateSubTotal, brokerDiscount]);
 
-  const calculateTotalAmount = () => {
+  const calculateTotalAmount = useCallback(() => {
     const subTotal = calculateSubTotal();
     const discountAmount = calculateDiscountAmount();
     return subTotal - discountAmount;
-  };
+  }, [calculateSubTotal, calculateDiscountAmount]);
 
-  const handleCompleteSale = () => {
+  const handleCompleteSale = useCallback(() => {
     if (addedProducts.length === 0) {
       Alert.alert("Hata", "Lütfen en az bir ürün ekleyiniz.");
       return;
     }
 
-    // Confirm sayfasına yönlendir - tüm işlem orada yapılacak
     router.push({
       pathname: "/broker/sections/confirmSales",
       params: {
         brokerId: brokerId,
-        salesData: JSON.stringify(
-          addedProducts.map((product) => ({
-            id: product.id,
-            name: product.name,
-            quantity: product.quantity,
-            unitPrice: product.unitPrice,
-            totalPrice: product.totalPrice,
-          }))
-        ),
         createInvoice: createInvoice.toString(),
       },
     });
-  };
+  }, [addedProducts.length, brokerId, createInvoice]);
 
-  // Loading state kontrolü (güncellendi)
+  // Loading state kontrolü
   if (
     (brokersLoading && !brokersError) ||
     (salesProductsLoading && !salesProductsError)
@@ -507,7 +530,7 @@ export default function SalesSection() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
-      {/* Backend Error Bilgilendirme - GÜNCELLENDİ */}
+      {/* Backend Error Bilgilendirme */}
       {(brokersError || salesProductsError) && (
         <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
           <Typography variant="body" className="text-yellow-800 text-center">
@@ -527,7 +550,9 @@ export default function SalesSection() {
             size="3xl"
             className="text-stock-black text-center mb-0"
           >
-            {`${broker.name} ${broker.surname}`}
+            {`${broker.firstName || broker.name} ${
+              broker.lastName || broker.surname
+            }`}
           </Typography>
           <Typography
             variant="body"
@@ -632,11 +657,14 @@ export default function SalesSection() {
                 className="bg-stock-red"
                 onPress={handleAddProduct}
                 disabled={
-                  !quantity || !!quantityError || parseInt(quantity) <= 0
+                  !quantity ||
+                  !!quantityError ||
+                  parseInt(quantity) <= 0 ||
+                  basketLoading
                 }
               >
                 <Typography className="text-white" weight="semibold">
-                  EKLE
+                  {basketLoading ? "EKLENIYOR..." : "EKLE"}
                 </Typography>
               </Button>
             </>
@@ -790,12 +818,12 @@ export default function SalesSection() {
           </View>
         )}
 
-        {/* Boş durum mesajı */}
+        {/* Boş durum mesajı - ICON FIX */}
         {addedProducts.length === 0 && (
           <View className="items-center py-8">
             <Icon
               family="MaterialIcons"
-              name="shopping_cart"
+              name="shopping-cart"
               size={48}
               color="#ECECEC"
               containerClassName="mb-4"
@@ -863,15 +891,18 @@ export default function SalesSection() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleSaveEdit}
-              disabled={!editQuantity || !!editQuantityError}
+              disabled={!editQuantity || !!editQuantityError || basketLoading}
             >
-              <Typography className="text-white">Güncelle</Typography>
+              <Typography className="text-white">
+                {basketLoading ? "Güncelleniyor..." : "Güncelle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"
               fullWidth
               className="border-stock-border"
               onPress={handleCloseEditModal}
+              disabled={basketLoading}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
@@ -879,7 +910,7 @@ export default function SalesSection() {
         </View>
       </Modal>
 
-      {/* İskonto Modal'ı - GÜNCELLENDİ */}
+      {/* İskonto Modal'ı */}
       <Modal
         visible={discountModalVisible}
         onClose={handleCloseDiscountModal}
