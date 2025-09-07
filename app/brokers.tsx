@@ -320,16 +320,27 @@ export default function BrokersPage() {
       )}
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Search Bar */}
-        <SearchBar
-          placeholder="Aracı ara..."
-          onSearch={handleSearch}
-          className="mb-4"
-        />
+        {/* Search ve Add Butonu */}
+        <View className="flex-row items-center mb-4">
+          <SearchBar
+            placeholder="Aracı ara..."
+            onSearch={handleSearch}
+            className="flex-1 mr-3"
+          />
+          <Icon
+            family="MaterialIcons"
+            name="add"
+            size={28}
+            color="#E3001B"
+            pressable
+            onPress={handleAddBroker}
+            containerClassName="bg-gray-100 px-4 py-3 rounded-lg"
+          />
+        </View>
 
         {/* Aracı Grid Listesi */}
         <View
-          className="flex-row flex-wrap justify-between"
+          className="flex-row flex-wrap justify-between mb-10"
           style={{ gap: 10 }}
         >
           {filteredBrokers.map((broker) => {
@@ -375,25 +386,6 @@ export default function BrokersPage() {
             </Typography>
           </View>
         )}
-
-        {/* Yeni Aracı Ekle Butonu */}
-        <View className="mt-6 mb-6">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            className="bg-stock-red"
-            onPress={handleAddBroker}
-            leftIcon={
-              <Icon family="MaterialIcons" name="add" size={18} color="white" />
-            }
-            disabled={createBrokerMutation.isPending}
-          >
-            {createBrokerMutation.isPending
-              ? "Ekleniyor..."
-              : "Yeni Aracı Ekle"}
-          </Button>
-        </View>
       </ScrollView>
 
       {/* Aracı Ekleme Modal'ı */}

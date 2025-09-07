@@ -16,16 +16,24 @@ import SuccessAnimation, {
 } from "@/src/components/svg/successAnimation"; // ref tipi de import
 
 export default function ResultSales() {
-  // URL parametrelerinden sonuç bilgilerini al
+  // URL parametrelerinden sonuç bilgilerini al - GÜNCELLENDİ
   const params = useLocalSearchParams();
-  const { brokerId, success, totalAmount, discountAmount, createInvoice } =
-    params;
+  const {
+    brokerId,
+    success,
+    salesId, // YENİ - API'den gelen
+    documentNumber, // YENİ - API'den gelen
+    totalAmount,
+    itemCount, // YENİ - API'den gelen
+    discountAmount,
+    createInvoice,
+  } = params;
 
-  // Hooks
+  // Hooks - AYNÎ KALDI
   const { brokers, getBrokerTotalDebt } = useAppStore();
   const successAnimationRef = useRef<SuccessAnimationRef>(null);
 
-  // Android back button handling - completed process sayfasında ana sayfaya yönlendir
+  // Android back button handling - AYNÎ KALDI
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -50,13 +58,18 @@ export default function ResultSales() {
     return () => backHandler.remove();
   }, []);
 
-  // Broker bilgilerini al
+  // Broker bilgilerini al - AYNÎ KALDI
   const broker = brokers.find((b) => b.id === brokerId);
   const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
   const isSuccess = success === "true";
   const willCreateInvoice = createInvoice === "true";
 
-  // Buton handlers
+  // YENİ - API response değerleri
+  const hasSalesId = !!salesId;
+  const hasDocumentNumber = !!documentNumber;
+  const hasItemCount = !!itemCount;
+
+  // Buton handlers - AYNÎ KALDI
   const handleGoToBrokerDetail = () => {
     router.replace({
       pathname: "/broker/brokerDetail",
@@ -75,6 +88,20 @@ export default function ResultSales() {
     });
   };
 
+  // YENİ - Fatura görüntüleme butonu
+  const handleViewInvoice = () => {
+    if (documentNumber) {
+      router.push({
+        pathname: "/broker/sections/invoiceSection",
+        params: {
+          brokerId,
+          documentNumber,
+          salesId,
+        },
+      });
+    }
+  };
+
   if (!broker) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
@@ -89,13 +116,22 @@ export default function ResultSales() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
+      {/* Backend Error Warning - YENİ EKLENEN */}
+      {brokersError && (
+        <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
+          <Typography variant="body" className="text-yellow-800 text-center">
+            ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
+          </Typography>
+        </View>
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Header - Başarı Durumu */}
+        {/* Header - Başarı Durumu - AYNÎ KALDI */}
         <View className="mb-6 items-center">
           <View className="mb-4 items-center justify-center">
             {isSuccess ? (
               <SuccessAnimation
-                ref={successAnimationRef} // <-- Artık tanımlı
+                ref={successAnimationRef}
                 size={80}
                 autoPlay={true}
                 loop={false}
@@ -130,7 +166,7 @@ export default function ResultSales() {
 
         {isSuccess && (
           <>
-            {/* Satış Özet Kartı */}
+            {/* Satış Özet Kartı - GÜNCELLENDİ */}
             <Card
               variant="default"
               padding="lg"
@@ -155,6 +191,55 @@ export default function ResultSales() {
               </View>
 
               <View className="space-y-2">
+                {/* YENİ - Satış ID */}
+                {hasSalesId && (
+                  <View className="flex-row justify-between items-center">
+                    <Typography variant="body" className="text-green-700">
+                      Satış ID:
+                    </Typography>
+                    <Typography
+                      variant="body"
+                      weight="bold"
+                      className="text-green-800"
+                    >
+                      #{salesId}
+                    </Typography>
+                  </View>
+                )}
+
+                {/* YENİ - Belge Numarası */}
+                {hasDocumentNumber && (
+                  <View className="flex-row justify-between items-center">
+                    <Typography variant="body" className="text-green-700">
+                      Belge No:
+                    </Typography>
+                    <Typography
+                      variant="body"
+                      weight="bold"
+                      className="text-green-800"
+                    >
+                      {documentNumber}
+                    </Typography>
+                  </View>
+                )}
+
+                {/* YENİ - Ürün Adedi */}
+                {hasItemCount && (
+                  <View className="flex-row justify-between items-center">
+                    <Typography variant="body" className="text-green-700">
+                      Ürün Adedi:
+                    </Typography>
+                    <Typography
+                      variant="body"
+                      weight="bold"
+                      className="text-green-800"
+                    >
+                      {itemCount} adet
+                    </Typography>
+                  </View>
+                )}
+
+                {/* MEVCUT - Satış Tutarı */}
                 <View className="flex-row justify-between items-center">
                   <Typography variant="body" className="text-green-700">
                     Satış Tutarı:
@@ -171,6 +256,7 @@ export default function ResultSales() {
                   </Typography>
                 </View>
 
+                {/* MEVCUT - İskonto */}
                 {discountAmount && parseFloat(discountAmount as string) > 0 && (
                   <View className="flex-row justify-between items-center">
                     <Typography variant="body" className="text-green-700">
@@ -186,8 +272,27 @@ export default function ResultSales() {
                   </View>
                 )}
 
+                {/* YENİ - Tarih ve Saat */}
+                <View className="flex-row justify-between items-center">
+                  <Typography variant="body" className="text-green-700">
+                    Tarih:
+                  </Typography>
+                  <Typography
+                    variant="body"
+                    weight="bold"
+                    className="text-green-800"
+                  >
+                    {new Date().toLocaleDateString("tr-TR")}{" "}
+                    {new Date().toLocaleTimeString("tr-TR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Typography>
+                </View>
+
                 <Divider className="my-2" />
 
+                {/* MEVCUT - Yeni Bakiye */}
                 <View className="flex-row justify-between items-center">
                   <Typography
                     variant="body"
@@ -207,7 +312,7 @@ export default function ResultSales() {
               </View>
             </Card>
 
-            {/* Fatura Bilgisi */}
+            {/* Fatura Bilgisi - GÜNCELLENDİ */}
             {willCreateInvoice && (
               <Card
                 variant="default"
@@ -229,7 +334,9 @@ export default function ResultSales() {
                       className="text-blue-700"
                       weight="medium"
                     >
-                      Fatura oluşturuldu
+                      {hasDocumentNumber
+                        ? `Fatura oluşturuldu: ${documentNumber}`
+                        : "Fatura oluşturuldu"}
                     </Typography>
                     <Typography variant="caption" className="text-blue-600">
                       Faturanız elektronik ortamda iletilecektir
@@ -239,7 +346,7 @@ export default function ResultSales() {
               </Card>
             )}
 
-            {/* Bilgi Notu */}
+            {/* Bilgi Notu - AYNÎ KALDI */}
             <Card
               variant="default"
               padding="md"
@@ -275,9 +382,9 @@ export default function ResultSales() {
           </>
         )}
 
-        {/* Aksiyon Butonları */}
+        {/* Aksiyon Butonları - GÜNCELLENDİ */}
         <View className="space-y-3 mb-6">
-          {/* Ana Sayfa Butonu */}
+          {/* Ana Sayfa Butonu - AYNÎ KALDI */}
           <Button
             variant="outline"
             size="lg"
@@ -300,7 +407,30 @@ export default function ResultSales() {
 
           {isSuccess && (
             <>
-              {/* Yeni Satış Butonu */}
+              {/* YENİ - Fatura Görüntüle Butonu */}
+              {willCreateInvoice && hasDocumentNumber && (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="bg-blue-600"
+                  onPress={handleViewInvoice}
+                  leftIcon={
+                    <Icon
+                      family="MaterialIcons"
+                      name="description"
+                      size={20}
+                      color="white"
+                    />
+                  }
+                >
+                  <Typography className="text-white" weight="bold">
+                    FATURAYA GÖRÜNTÜLE
+                  </Typography>
+                </Button>
+              )}
+
+              {/* Yeni Satış Butonu - AYNÎ KALDI */}
               <Button
                 variant="secondary"
                 size="lg"
@@ -321,7 +451,7 @@ export default function ResultSales() {
                 </Typography>
               </Button>
 
-              {/* Aracı Detayına Git Butonu */}
+              {/* Aracı Detayına Git Butonu - AYNÎ KALDI */}
               <Button
                 variant="primary"
                 size="lg"
@@ -345,7 +475,7 @@ export default function ResultSales() {
           )}
 
           {!isSuccess && (
-            /* Tekrar Dene Butonu */
+            /* Tekrar Dene Butonu - AYNÎ KALDI */
             <Button
               variant="primary"
               size="lg"

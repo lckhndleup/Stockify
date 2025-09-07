@@ -1,12 +1,23 @@
 import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { router, usePathname, useRouter } from "expo-router";
 import Providers from "@/src/components/common/Providers";
-import { BottomNavigation } from "@/src/components/ui";
+import { BottomNavigation, Icon } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
 import "../global.css";
+
+// Custom Header Left Component
+const CustomHeaderLeft = () => (
+  <TouchableOpacity
+    onPress={() => router.push("/")}
+    style={{ marginLeft: -5 }}
+    activeOpacity={0.7}
+  >
+    <Icon family="MaterialIcons" name="arrow-back" size={24} color="#000" />
+  </TouchableOpacity>
+);
 
 export default function RootLayout() {
   const { isAuthenticated, initializeAuth } = useAuthStore();
@@ -102,6 +113,7 @@ export default function RootLayout() {
             options={{
               title: "Ürünler",
               headerShown: true,
+              headerLeft: CustomHeaderLeft,
             }}
           />
           <Stack.Screen
@@ -109,6 +121,7 @@ export default function RootLayout() {
             options={{
               title: "Aracılar",
               headerShown: true,
+              headerLeft: CustomHeaderLeft,
             }}
           />
           <Stack.Screen
@@ -116,6 +129,7 @@ export default function RootLayout() {
             options={{
               title: "Stok Takip",
               headerShown: true,
+              headerLeft: CustomHeaderLeft,
             }}
           />
           <Stack.Screen
