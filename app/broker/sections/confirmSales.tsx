@@ -194,17 +194,9 @@ export default function ConfirmSales() {
         message={toast.message}
         type={toast.type}
       />
-
-      <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* 1) BAŞLIK: SATIŞ ONAYI */}
-        <View className="items-center mb-2">
-          <Typography className="text-stock-text tracking-wider">
-            SATIŞ ONAYI
-          </Typography>
-        </View>
-
-        {/* 2) ARACI İSMİ */}
-        <View className="items-center mb-6">
+      <ScrollView showsVerticalScrollIndicator={false} className="mt-4">
+        {/* 1) ARACI İSMİ */}
+        <View className="items-center mb-4">
           <Typography
             variant="h1"
             size="3xl"
@@ -214,13 +206,78 @@ export default function ConfirmSales() {
             {`${broker.name} ${broker.surname}`}
           </Typography>
         </View>
-
-        {/* 3) TOPLAM KARTI (SalesSection mizanpajı) */}
+        {/* 2) BAKİYE SATIRI (| ile iki sütun) */}
+        <View className="border border-stock-border rounded-2xl bg-white mb-4 overflow-hidden">
+          <View className="flex-row">
+            <View className="flex-1 px-4 py-3">
+              <Typography className="text-stock-text">
+                onceki bakiye :
+              </Typography>
+              <Typography weight="semibold" className="text-stock-dark mt-0.5">
+                ₺{Number(brokerDebt).toLocaleString()}
+              </Typography>
+            </View>
+            <View className="w-px bg-stock-border" />
+            <View className="flex-1 px-4 py-3">
+              <Typography className="text-stock-text">yeni bakiye :</Typography>
+              <Typography weight="bold" className="text-stock-dark mt-0.5">
+                ₺
+                {(
+                  Number(brokerDebt) +
+                  (summary?.totalPriceWithTax ?? subTotalLocal)
+                ).toLocaleString()}
+              </Typography>
+            </View>
+          </View>
+        </View>
+        {/* 3) FATURA BİLGİ ŞERİDİ */}
+        {willCreateInvoice && (
+          <View className="border border-stock-border rounded-2xl px-4 py-3 bg-white mb-4">
+            <Typography weight="medium" className="text-stock-dark">
+              fatura oluşturulacak
+            </Typography>
+          </View>
+        )}
+        {/* 4) ÜRÜNLER BAŞLIĞI */}
+        <Typography className="text-stock-text mb-4" weight="medium">
+          ÜRÜNLER
+        </Typography>
+        {/* 5) ÜRÜN SATIRLARI (kutu kutu) */}
+        <View className="">
+          {parsedSalesData.map((item, idx) => (
+            <View
+              key={`${item.id}-${idx}`}
+              className="border border-stock-border rounded-2xl px-3 py-2 mb-4 bg-white"
+            >
+              <View className="flex-row justify-between items-center">
+                <View className="flex-1 pr-3">
+                  <Typography weight="semibold" className="text-stock-dark">
+                    {item.name}
+                  </Typography>
+                  <Typography className="text-stock-text mt-0.5">
+                    {item.quantity} adet × ₺{item.unitPrice.toLocaleString()}
+                  </Typography>
+                  {item.taxRate != null && (
+                    <Typography className="text-stock-text">
+                      KDV %{item.taxRate} = ₺
+                      {(item.taxPrice ?? 0).toLocaleString()}
+                    </Typography>
+                  )}
+                </View>
+                <Typography weight="bold" className="text-stock-dark">
+                  ₺
+                  {(item.totalPriceWithTax ?? item.totalPrice).toLocaleString()}
+                </Typography>
+              </View>
+            </View>
+          ))}
+        </View>
+        {/* 6) TOPLAM KARTI (SalesSection mizanpajı) */}
         <Card
           variant="default"
           padding="lg"
           radius="md"
-          className="border border-stock-border bg-white mb-10"
+          className="border border-stock-border bg-white mb-4"
         >
           <View className="flex-row justify-between py-1">
             <Typography className="text-stock-dark">Alt Toplam:</Typography>
@@ -272,78 +329,7 @@ export default function ConfirmSales() {
             </Typography>
           </View>
         </Card>
-
-        {/* 4) ÜRÜNLER BAŞLIĞI */}
-        <Typography className="text-stock-text mb-2" weight="medium">
-          ÜRÜNLER
-        </Typography>
-
-        {/* 5) ÜRÜN SATIRLARI (kutu kutu) */}
-        <View className="mb-8">
-          {parsedSalesData.map((item, idx) => (
-            <View
-              key={`${item.id}-${idx}`}
-              className="border border-stock-border rounded-2xl px-3 py-2 mb-3 bg-white"
-            >
-              <View className="flex-row justify-between items-center">
-                <View className="flex-1 pr-3">
-                  <Typography weight="semibold" className="text-stock-dark">
-                    {item.name}
-                  </Typography>
-                  <Typography className="text-stock-text mt-0.5">
-                    {item.quantity} adet × ₺{item.unitPrice.toLocaleString()}
-                  </Typography>
-                  {item.taxRate != null && (
-                    <Typography className="text-stock-text">
-                      KDV %{item.taxRate} = ₺
-                      {(item.taxPrice ?? 0).toLocaleString()}
-                    </Typography>
-                  )}
-                </View>
-                <Typography weight="bold" className="text-stock-dark">
-                  ₺
-                  {(item.totalPriceWithTax ?? item.totalPrice).toLocaleString()}
-                </Typography>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* 6) FATURA BİLGİ ŞERİDİ */}
-        {willCreateInvoice && (
-          <View className="border border-stock-border rounded-2xl px-4 py-3 bg-white mb-4">
-            <Typography weight="medium" className="text-stock-dark">
-              fatura oluşturulacak
-            </Typography>
-          </View>
-        )}
-
-        {/* 7) BAKİYE SATIRI (| ile iki sütun) */}
-        <View className="border border-stock-border rounded-2xl bg-white mb-8 overflow-hidden">
-          <View className="flex-row">
-            <View className="flex-1 px-4 py-3">
-              <Typography className="text-stock-text">
-                onceki bakiye :
-              </Typography>
-              <Typography weight="semibold" className="text-stock-dark mt-0.5">
-                ₺{Number(brokerDebt).toLocaleString()}
-              </Typography>
-            </View>
-            <View className="w-px bg-stock-border" />
-            <View className="flex-1 px-4 py-3">
-              <Typography className="text-stock-text">yeni bakiye :</Typography>
-              <Typography weight="bold" className="text-stock-dark mt-0.5">
-                ₺
-                {(
-                  Number(brokerDebt) +
-                  (summary?.totalPriceWithTax ?? subTotalLocal)
-                ).toLocaleString()}
-              </Typography>
-            </View>
-          </View>
-        </View>
-
-        {/* 8) YAN YANA BUTONLAR: DÜZENLE | İPTAL ET */}
+        {/* 7) YAN YANA BUTONLAR: DÜZENLE | İPTAL ET */}
         <View className="flex-row gap-3 mb-4">
           <View className="flex-1">
             <Button
@@ -395,13 +381,12 @@ export default function ConfirmSales() {
             </Button>
           </View>
         </View>
-
-        {/* 9) ALTTA TAM GENİŞLİK: ONAYLA VE DEVAM ET */}
+        {/* 8) ALTTA TAM GENİŞLİK: ONAYLA VE DEVAM ET */}
         <Button
           variant="primary"
           size="lg"
           fullWidth
-          className="bg-stock-red mb-10"
+          className="bg-stock-red mb-4"
           onPress={handleConfirm}
           loading={isProcessing && confirmMutation.isPending}
           leftIcon={
