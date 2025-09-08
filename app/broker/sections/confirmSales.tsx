@@ -10,6 +10,7 @@ import {
   Icon,
   Divider,
   Toast,
+  Loading,
 } from "@/src/components/ui";
 import { useAppStore } from "@/src/stores/appStore";
 import { useToast } from "@/src/hooks/useToast";
@@ -177,9 +178,7 @@ export default function ConfirmSales() {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
-          <Typography variant="body" className="text-stock-text">
-            Yükleniyor...
-          </Typography>
+          <Loading size="large" />
         </View>
       </Container>
     );

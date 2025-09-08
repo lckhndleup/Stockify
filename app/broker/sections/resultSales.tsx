@@ -1,3 +1,4 @@
+// app/broker/sections/resultSales.tsx
 import React, { useEffect, useMemo, useRef } from "react";
 import { Alert, BackHandler, ScrollView, View, Linking } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
@@ -63,7 +64,7 @@ export default function ResultSales() {
     useActiveBrokers();
 
   // Broker'ı hem backend'ten hem store'dan bul
-  // TODOMali: any kullanılmayacak. Düzenlenece !!!! 
+  // TODOMali: any kullanılmayacak. Düzenlenece !!!!
   const backendBroker: any = useMemo(
     () =>
       backendBrokers.find((b: any) => String(b.brokerId) === String(brokerId)),
@@ -157,9 +158,6 @@ export default function ResultSales() {
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
           <Loading size="large" />
-          <Typography variant="body" className="text-stock-text mt-4">
-            Aracı bilgileri yükleniyor...
-          </Typography>
         </View>
       </Container>
     );

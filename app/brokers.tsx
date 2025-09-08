@@ -282,14 +282,9 @@ export default function BrokersPage() {
   // Loading state
   if (brokersLoading && !brokersError) {
     return (
-      <Container className="bg-white" padding="sm" safeTop={false}>
-        <View className="items-center justify-center flex-1">
-          <Loading size="large" />
-          <Typography variant="body" className="text-stock-text mt-4">
-            Aracılar yükleniyor...
-          </Typography>
-        </View>
-      </Container>
+      <View className="items-center justify-center flex-1">
+        <Loading size="large" />
+      </View>
     );
   }
 

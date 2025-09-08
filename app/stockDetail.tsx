@@ -142,7 +142,7 @@ export default function StockDetailPage() {
   if (isLoading) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
-        <Loading text="Stok detayı yükleniyor..." />
+        <Loading size="large" />
       </Container>
     );
   }

@@ -130,9 +130,6 @@ export default function BrokerDetailPage() {
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
           <Loading size="large" />
-          <Typography variant="body" className="text-stock-text mt-4">
-            Aracı bilgileri yükleniyor...
-          </Typography>
         </View>
       </Container>
     );
@@ -142,11 +139,7 @@ export default function BrokerDetailPage() {
     console.log("⚠️ Early return - broker not found, showing loading");
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
-        <View className="items-center justify-center flex-1">
-          <Typography variant="body" className="text-stock-text">
-            Yükleniyor...
-          </Typography>
-        </View>
+        <Loading size="large" />
       </Container>
     );
   }

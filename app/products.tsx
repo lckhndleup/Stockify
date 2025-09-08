@@ -95,10 +95,7 @@ function Dropdown({
             {label}
           </Typography>
         )}
-        <View className="flex-row items-center justify-between border border-stock-border rounded-lg px-4 py-3 bg-gray-100">
-          <Typography variant="body" className="text-stock-text flex-1">
-            Kategoriler yükleniyor...
-          </Typography>
+        <View className="flex-row items-center justify-center border border-stock-border rounded-lg px-4 py-3 bg-gray-100">
           <Loading size="small" />
         </View>
         {error && (
@@ -691,12 +688,9 @@ export default function ProductsPage() {
 
   if (isLoading) {
     return (
-      <Container className="bg-white" padding="sm" safeTop={false}>
-        <View className="flex-1 justify-center items-center">
-          <Loading size="large" />
-          <Typography className="mt-4 text-gray-600">Yükleniyor...</Typography>
-        </View>
-      </Container>
+      <View className="flex-1 justify-center items-center">
+        <Loading size="large" />
+      </View>
     );
   }
 
@@ -785,7 +779,6 @@ export default function ProductsPage() {
         {searchLoading && searchText.trim().length > 0 ? (
           <View className="items-center py-8">
             <Loading size="large" />
-            <Typography className="mt-4 text-gray-600">Aranıyor...</Typography>
           </View>
         ) : (
           <View className="mt-3">
