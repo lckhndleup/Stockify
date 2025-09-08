@@ -386,7 +386,7 @@ export default function ConfirmSales() {
           variant="primary"
           size="lg"
           fullWidth
-          className="bg-stock-red mb-4"
+          className="bg-stock-red mb-16"
           onPress={handleConfirm}
           loading={isProcessing && confirmMutation.isPending}
           leftIcon={
