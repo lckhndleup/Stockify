@@ -1013,6 +1013,7 @@ export default function SalesSection() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleSaveDiscount}
+              loading={updateDiscountRateMutation.isPending}
               disabled={
                 !discountValue ||
                 !!discountError ||

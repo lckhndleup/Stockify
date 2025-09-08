@@ -699,6 +699,10 @@ export default function BrokerDetailPage() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleUpdateBroker}
+              loading={
+                updateBrokerMutation.isPending ||
+                updateDiscountRateMutation.isPending
+              }
               disabled={
                 updateBrokerMutation.isPending ||
                 updateDiscountRateMutation.isPending

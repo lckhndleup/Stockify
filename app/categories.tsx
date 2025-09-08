@@ -473,8 +473,11 @@ export default function CategoriesPage() {
               className="bg-stock-red mb-3"
               onPress={handleConfirmAddCategory}
               loading={createCategoryMutation.isPending}
+              disabled={createCategoryMutation.isPending}
             >
-              <Typography className="text-white">Ekle</Typography>
+              <Typography className="text-white">
+                {createCategoryMutation.isPending ? "Ekleniyor..." : "Ekle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"

@@ -947,14 +947,18 @@ export default function ProductsPage() {
               className="bg-stock-red mb-3"
               onPress={handleConfirmAddProduct}
               loading={createProductMutation.isPending}
+              disabled={createProductMutation.isPending}
             >
-              <Typography className="text-white">Ekle</Typography>
+              <Typography className="text-white">
+                {createProductMutation.isPending ? "Ekleniyor..." : "Ekle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"
               fullWidth
               className="border-stock-border"
               onPress={handleProductModalClose}
+              disabled={createProductMutation.isPending}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
@@ -1008,14 +1012,20 @@ export default function ProductsPage() {
               className="bg-stock-red mb-3"
               onPress={handleUpdateProduct}
               loading={updateProductMutation.isPending}
+              disabled={updateProductMutation.isPending}
             >
-              <Typography className="text-white">Güncelle</Typography>
+              <Typography className="text-white">
+                {updateProductMutation.isPending
+                  ? "Güncelleniyor..."
+                  : "Güncelle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"
               fullWidth
               className="border-stock-border"
               onPress={handleEditProductModalClose}
+              disabled={updateProductMutation.isPending}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>
@@ -1060,8 +1070,11 @@ export default function ProductsPage() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleConfirmAddCategory}
+              //loading={/* Burada mutation olması gerekiyor */}TODOMali - Mutation eklenmedi
+              //disabled={/* Burada mutation olması gerekiyor */}TODOMali - Mutation eklenmedi
             >
               <Typography className="text-white">Ekle</Typography>
+              {/* Mutation.isPending ? "Ekleniyor..." : "Ekle" TODO-Mali - Mutation eklenmedi*/}
             </Button>
             <Button
               variant="outline"
