@@ -55,7 +55,7 @@ export interface SalesItem {
   unitPrice: number;
   totalPrice: number;
   taxRate: number;
-  taxPrice: number;
+  taxPrice: number; // ✅ kalem KDV tutarı (backend: taxPrice)
   totalPriceWithTax: number;
 }
 export interface SalesSummary {
@@ -64,8 +64,8 @@ export interface SalesSummary {
   subtotalPrice: number;
   discountPrice: number;
   discountRate: number;
-  totalPrice: number;
-  taxPrice: number;
-  totalPriceWithTax: number;
+  totalPrice: number; // iskontodan sonraki ara toplam (KDV hariç)
+  totalTaxPrice: number; // ✅ toplam KDV (backend: totalTaxPrice)
+  totalPriceWithTax: number; // KDV dahil genel toplam
   downloadUrl?: string; // confirm
 }

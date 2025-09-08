@@ -14,7 +14,7 @@ import {
   Modal,
   Checkbox,
   Loading,
-  //@ts-ignore TODOMALİ
+  // @ts-ignore TODOMALİ
   type SelectBoxOption,
   Toast,
 } from "@/src/components/ui";
@@ -35,8 +35,8 @@ import {
 } from "@/src/hooks/api/useBasket";
 
 import { apiService } from "@/src/services/api";
-// tipleri saleValidations’tan alıyoruz (swagger ile uyumlu)
-import type { SalesSummary } from "@/src/validations/saleValidations";
+// tipler (swagger ile uyumlu)
+import type { SalesSummary } from "@/src/types/sales";
 
 // UI’da kullanılan ara tip
 interface AddedProduct {
@@ -44,7 +44,11 @@ interface AddedProduct {
   name: string;
   quantity: number;
   unitPrice: number;
-  totalPrice: number;
+  /** Kart sağ tarafında gösterilecek toplam için KDV dahil tutarı da taşıyalım */
+  totalPrice: number; // geriye dönük; yoksa totalPriceWithTax kullanacağız
+  taxRate?: number;
+  taxPrice?: number;
+  totalPriceWithTax?: number;
 }
 
 export default function SalesSection() {
@@ -164,14 +168,18 @@ export default function SalesSection() {
     });
   }, [navigation, brokerId]);
 
-  // Sepeti backend’den UI tipine map
+  // Sepeti backend’den UI tipine map (KDV bilgilerini de al)
   const addedProducts: AddedProduct[] = useMemo(() => {
     return (basketItems || []).map((i: any) => ({
       id: String(i.id ?? i.productId),
       name: i.name ?? i.productName,
       quantity: i.quantity ?? i.productCount,
-      unitPrice: i.unitPrice,
-      totalPrice: i.total ?? i.totalPriceWithTax ?? i.totalPrice,
+      unitPrice: i.unitPrice ?? i.price,
+      // Sağdaki toplamda öncelik KDV dahil tutar
+      totalPrice: i.totalPriceWithTax ?? i.totalPrice ?? i.total,
+      taxRate: i.taxRate,
+      taxPrice: i.taxPrice,
+      totalPriceWithTax: i.totalPriceWithTax,
     }));
   }, [basketItems]);
 
@@ -192,7 +200,11 @@ export default function SalesSection() {
     (product: any) => ({
       label: `${product.name} (Stok: ${product.stock}, ₺${
         product.unitPrice ?? product.price
-      }/adet)`,
+      }/adet${
+        "taxRate" in product && typeof product.taxRate === "number"
+          ? ` + KDV %${product.taxRate}`
+          : ""
+      })`,
       value: String(product.id ?? product.productId),
     })
   );
@@ -463,6 +475,14 @@ export default function SalesSection() {
     }
   };
 
+  const getTaxRate = (p: unknown): number | undefined =>
+    p &&
+    typeof p === "object" &&
+    "taxRate" in p &&
+    typeof (p as any).taxRate === "number"
+      ? (p as any).taxRate
+      : undefined;
+
   const handleCloseDiscountModal = () => {
     setDiscountModalVisible(false);
     setDiscountValue("");
@@ -498,7 +518,9 @@ export default function SalesSection() {
             name: p.name,
             quantity: p.quantity,
             unitPrice: p.unitPrice,
-            totalPrice: p.totalPrice,
+            totalPrice: p.totalPriceWithTax ?? p.totalPrice,
+            taxRate: p.taxRate,
+            taxPrice: p.taxPrice,
           }))
         ),
         createInvoice: createInvoice.toString(),
@@ -647,7 +669,7 @@ export default function SalesSection() {
                 error={quantityError}
                 helperText={
                   !quantityError && selectedProductData
-                    ? `Mevcut stok: ${selectedProductData.stock} adet`
+                    ? `Mevcut stok: ${selectedProductData.stock} adet / KDV %${selectedProductData.taxRate}`
                     : ""
                 }
                 className="mb-4"
@@ -706,33 +728,30 @@ export default function SalesSection() {
                     >
                       {product.name}
                     </Typography>
+
                     <Typography variant="caption" className="text-stock-text">
-                      {product.quantity} adet × ₺{product.unitPrice} = ₺
-                      {product.totalPrice.toLocaleString()}
+                      {product.quantity} adet × ₺
+                      {product.unitPrice.toLocaleString()}
                     </Typography>
+
+                    {product.taxRate != null && (
+                      <Typography variant="caption" className="text-stock-text">
+                        KDV %{product.taxRate} = ₺
+                        {(product.taxPrice ?? 0).toLocaleString()}
+                      </Typography>
+                    )}
                   </View>
 
-                  <View className="flex-row items-center">
-                    <Icon
-                      family="MaterialIcons"
-                      name="edit"
-                      size={20}
-                      color="#67686A"
-                      pressable
-                      onPress={() => handleEditProduct(product.id)}
-                      containerClassName="mr-3 p-1"
-                    />
-
-                    <Icon
-                      family="MaterialIcons"
-                      name="cancel"
-                      size={20}
-                      color="#E3001B"
-                      pressable
-                      onPress={() => handleRemoveProduct(product.id)}
-                      containerClassName="p-1"
-                    />
-                  </View>
+                  <Typography
+                    variant="body"
+                    weight="bold"
+                    className="text-stock-dark"
+                  >
+                    ₺
+                    {(
+                      product.totalPriceWithTax ?? product.totalPrice
+                    ).toLocaleString()}
+                  </Typography>
                 </View>
               </Card>
             ))}
@@ -775,6 +794,42 @@ export default function SalesSection() {
                 </View>
               )}
 
+              {/* İskontodan sonraki ara toplam (KDV hariç) */}
+              <View className="flex-row justify-between items-center mb-2">
+                <Typography
+                  variant="body"
+                  weight="medium"
+                  className="text-stock-dark"
+                >
+                  Ara Toplam (KDV hariç):
+                </Typography>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  className="text-stock-dark"
+                >
+                  ₺{(summary?.totalPrice ?? 0).toLocaleString()}
+                </Typography>
+              </View>
+
+              {/* Toplam KDV */}
+              <View className="flex-row justify-between items-center mb-2">
+                <Typography
+                  variant="body"
+                  weight="medium"
+                  className="text-stock-dark"
+                >
+                  KDV Toplamı:
+                </Typography>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  className="text-stock-dark"
+                >
+                  ₺{(summary?.totalTaxPrice ?? 0).toLocaleString()}
+                </Typography>
+              </View>
+
               <Divider className="my-2" />
 
               <View className="flex-row justify-between items-center">
@@ -783,7 +838,7 @@ export default function SalesSection() {
                   weight="bold"
                   className="text-stock-black"
                 >
-                  Toplam:
+                  Genel Toplam (KDV dahil):
                 </Typography>
                 <Typography
                   variant="h3"
@@ -865,7 +920,15 @@ export default function SalesSection() {
                 numericOnly
                 error={editQuantityError}
                 className="mb-4"
-                helperText={`Birim fiyat: ₺${editingProduct.unitPrice}`}
+                helperText={
+                  !quantityError && selectedProductData
+                    ? `Mevcut stok: ${selectedProductData.stock} adet${
+                        getTaxRate(selectedProductData) != null
+                          ? ` / KDV %${getTaxRate(selectedProductData)}`
+                          : ""
+                      }`
+                    : ""
+                }
               />
 
               {editQuantity && !editQuantityError && (
