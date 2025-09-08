@@ -1,110 +1,71 @@
 // src/types/sales.ts
+// SalesController: /sales/products, /sales/calculate, /sales/confirm, /sales/cancel
 
-// Product type for sales (from GET /sales/products)
-export interface SalesProduct {
+/** GET /sales/products */
+export interface BackendSalesProduct {
   productId: number;
   productName: string;
-  productCount: number;
-  price: number;
+  productCount: number; // stok
+  price: number; // birim fiyat
+  taxRate: number; // %
+}
+export type SalesProductsResponse = BackendSalesProduct[];
+
+/** UI-friendly ürün tipi */
+export interface SalesProductDisplayItem {
+  id: number;
+  name: string;
+  stock: number;
+  unitPrice: number;
   taxRate: number;
 }
+export const adaptSalesProductForUI = (
+  p: BackendSalesProduct
+): SalesProductDisplayItem => ({
+  id: p.productId,
+  name: p.productName,
+  stock: p.productCount,
+  unitPrice: p.price,
+  taxRate: p.taxRate,
+});
+export const adaptSalesProductsForUI = (
+  list: BackendSalesProduct[]
+): SalesProductDisplayItem[] => list.map(adaptSalesProductForUI);
 
-// Sales item in the sales response
+// ---------- Request DTOs ----------
+export interface SalesCalculateRequest {
+  brokerId: number;
+  createInvoice: boolean;
+}
+export interface SalesConfirmRequest {
+  brokerId: number;
+  createInvoice: boolean;
+}
+export interface SalesCancelRequest {
+  brokerId: number;
+  createInvoice: boolean;
+}
+
+// ---------- Response DTOs ----------
 export interface SalesItem {
-  id: number;
-  salesId: number;
+  salesId?: number; // confirm'de olabilir
   productId: number;
   productName: string;
   productCount: number;
   unitPrice: number;
   totalPrice: number;
   taxRate: number;
-  taxPrice: number;
+  taxPrice: number; // ✅ kalem KDV tutarı (backend: taxPrice)
   totalPriceWithTax: number;
-  createdDate: number;
 }
-
-// Sales calculation/confirmation request
-export interface SalesRequest {
-  brokerId: number;
-  createInvoice: boolean;
-}
-
-// Sales response (from POST /sales/calculate and POST /sales/confirm)
-export interface SalesResponse {
-  salesId: number;
-  documentNumber: string;
+export interface SalesSummary {
+  documentNumber?: string; // confirm
   salesItems: SalesItem[];
   subtotalPrice: number;
-  discountRate: number;
   discountPrice: number;
-  totalPrice: number;
-  totalTaxPrice: number;
-  totalPriceWithTax: number;
+  discountRate: number;
+  totalPrice: number; // iskontodan sonraki ara toplam (KDV hariç)
+  totalTaxPrice: number; // ✅ toplam KDV (backend: totalTaxPrice)
+  totalPriceWithTax: number; // KDV dahil genel toplam
+  downloadUrl?: string; // confirm
 }
-
-// UI için kullanılacak types
-export interface SalesFormData {
-  createInvoice: boolean;
-}
-
-export interface SalesDisplayItem {
-  id: string;
-  salesId: number;
-  documentNumber: string;
-  totalAmount: number;
-  totalTax: number;
-  grandTotal: number;
-  itemCount: number;
-  createdDate: string;
-}
-
-// Sales summary for confirmation page
-export interface SalesSummary {
-  totalItems: number;
-  subtotal: number;
-  tax: number;
-  discount: number;
-  grandTotal: number;
-  documentNumber?: string;
-}
-
-// Adapters
-export const adaptSalesProductsForUI = (products: SalesProduct[]) => {
-  return products.map((product) => ({
-    ...product,
-    id: product.productId.toString(),
-    formattedPrice: `₺${product.price.toFixed(2)}`,
-    isInStock: product.productCount > 0,
-  }));
-};
-
-export const adaptSalesResponseForUI = (
-  response: SalesResponse
-): SalesDisplayItem => {
-  return {
-    id: response.salesId.toString(),
-    salesId: response.salesId,
-    documentNumber: response.documentNumber,
-    totalAmount: response.totalPrice,
-    totalTax: response.totalTaxPrice,
-    grandTotal: response.totalPriceWithTax,
-    itemCount: response.salesItems.length,
-    createdDate: new Date().toISOString(), // Backend'de tarih yok, current date kullanıyoruz
-  };
-};
-
-export const calculateSalesSummary = (
-  salesItems: SalesItem[]
-): SalesSummary => {
-  return {
-    totalItems: salesItems.reduce((sum, item) => sum + item.productCount, 0),
-    subtotal: salesItems.reduce((sum, item) => sum + item.totalPrice, 0),
-    tax: salesItems.reduce((sum, item) => sum + item.taxPrice, 0),
-    discount: 0, // Backend'de discount hesaplaması var ama item level'da yok
-    grandTotal: salesItems.reduce(
-      (sum, item) => sum + item.totalPriceWithTax,
-      0
-    ),
-  };
-};

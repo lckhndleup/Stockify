@@ -1,8 +1,10 @@
 // src/hooks/api/index.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService, ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
 export * from "./usePayments";
+export * from "./useSales"; // NEW
+export * from "./useBasket"; // NEW
 
 // Base hook types
 interface UseQueryOptions<T> {
@@ -65,12 +67,14 @@ export const createQueryHook = <TData, TParams = void>(
     const queryKey =
       params !== undefined
         ? queryKeyFactory(params as TParams)
-        : queryKeyFactory();
+        : (queryKeyFactory as () => readonly unknown[])();
 
     return useQuery({
       queryKey,
       queryFn: () =>
-        params !== undefined ? queryFn(params as TParams) : queryFn(),
+        params !== undefined
+          ? queryFn(params as TParams)
+          : (queryFn as () => Promise<TData>)(),
       ...options,
     });
   }) as QueryHook<TData, TParams>;
@@ -85,11 +89,16 @@ export const createMutationHook = <TData, TVariables = void>(
 
     return useMutation({
       mutationFn,
-      onError: (error) => {
+      onError: (error, variables) => {
         handleApiError(error);
-        options?.onError?.(error, {} as TVariables);
+        options?.onError?.(error, variables);
       },
-      ...options,
+      onSuccess: (data, variables) => {
+        options?.onSuccess?.(data, variables);
+      },
+      onSettled: (data, error, variables) => {
+        options?.onSettled?.(data, error ?? null, variables);
+      },
     });
   };
 };
@@ -125,6 +134,7 @@ export const useInvalidateQueries = () => {
         queryKey: queryKeys.invoices.broker(brokerId),
       });
     },
+
     // Invalidate all broker data
     invalidateAllBrokerData: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all });
@@ -154,6 +164,25 @@ export const useInvalidateQueries = () => {
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.stock.all });
     },
+
+    // NEW: Basket helpers
+    invalidateBasket: (brokerId: string | number) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.basket.byBroker(brokerId),
+      });
+    },
+
+    // NEW: Sales helpers
+    invalidateSalesAll: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.sales.all }),
+    clearSalesCalculation: (brokerId: string | number) =>
+      queryClient.removeQueries({
+        queryKey: queryKeys.sales.calculate(brokerId),
+      }),
+    clearSalesConfirm: (brokerId: string | number) =>
+      queryClient.removeQueries({
+        queryKey: queryKeys.sales.confirm(brokerId),
+      }),
 
     // Invalidate all
     invalidateAll: () => queryClient.invalidateQueries(),

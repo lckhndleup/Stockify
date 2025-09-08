@@ -16,7 +16,7 @@ export default function DebugPanel() {
       const tests = [
         {
           name: "Health Check",
-          test: () => fetch("http://localhost:8080/actuator/health"),
+          test: () => fetch("https://stockify-gcsq.onrender.com"),
         },
         {
           name: "Products Search",

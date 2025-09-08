@@ -1,3 +1,4 @@
+// app/broker/sections/confirmSales.tsx
 import React, { useState } from "react";
 import { View, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
