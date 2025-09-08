@@ -207,7 +207,7 @@ export default function ConfirmSales() {
           </Typography>
         </View>
         {/* 2) BAKİYE SATIRI (| ile iki sütun) */}
-        <View className="border border-stock-border rounded-2xl bg-white mb-4 overflow-hidden">
+        <View className="border border-stock-border rounded-lg bg-white mb-4 overflow-hidden">
           <View className="flex-row">
             <View className="flex-1 px-4 py-3">
               <Typography className="text-stock-text">
@@ -232,7 +232,7 @@ export default function ConfirmSales() {
         </View>
         {/* 3) FATURA BİLGİ ŞERİDİ */}
         {willCreateInvoice && (
-          <View className="border border-stock-border rounded-2xl px-4 py-3 bg-white mb-4">
+          <View className="border border-stock-border rounded-lg px-4 py-3 bg-white mb-4">
             <Typography weight="medium" className="text-stock-dark">
               fatura oluşturulacak
             </Typography>
@@ -247,7 +247,7 @@ export default function ConfirmSales() {
           {parsedSalesData.map((item, idx) => (
             <View
               key={`${item.id}-${idx}`}
-              className="border border-stock-border rounded-2xl px-3 py-2 mb-4 bg-white"
+              className="border border-stock-border rounded-lg px-3 py-2 mb-4 bg-white"
             >
               <View className="flex-row justify-between items-center">
                 <View className="flex-1 pr-3">
@@ -277,7 +277,7 @@ export default function ConfirmSales() {
           variant="default"
           padding="lg"
           radius="md"
-          className="border border-stock-border bg-white mb-4"
+          className="border border-stock-border bg-stock-gray mb-4"
         >
           <View className="flex-row justify-between py-1">
             <Typography className="text-stock-dark">Alt Toplam:</Typography>
