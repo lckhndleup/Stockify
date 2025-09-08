@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { View, StyleProp, ViewStyle } from "react-native";
 import LottieView from "lottie-react-native";
 import Typography from "./typography";
 
 interface LoadingProps {
   size?: "small" | "large";
-  color?: string; // Geriye uyumluluk için tutuyoruz (kullanılmayacak)
+  color?: string;
   text?: string;
   overlay?: boolean;
   className?: string;
@@ -15,7 +15,6 @@ interface LoadingProps {
 
 export default function Loading({
   size = "large",
-  color, // Kullanılmıyor artık ama API uyumluluğu için tutuyoruz
   text,
   overlay = false,
   className = "",
@@ -29,23 +28,48 @@ export default function Loading({
   };
 
   const animationSize = sizeMapping[size];
+  const animationRef = useRef<LottieView>(null);
+  const [animationKey, setAnimationKey] = useState(0);
+
+  // Animasyon bittiğinde hemen yeniden başlatma işlevi
+  const handleAnimationFinish = () => {
+    // Animasyon bitince anında yeni bir animasyon başlat
+    if (animationRef.current) {
+      // Animasyonu sıfırla ve anında yeniden başlat
+      animationRef.current.reset();
+      animationRef.current.play();
+    }
+  };
+
+  // Yedek çözüm - herhangi bir sorun olursa periyodik olarak animasyonu yeniden başlat
+  useEffect(() => {
+    // Her 2 saniyede bir animasyonu kontrol et
+    const intervalId = setInterval(() => {
+      if (animationRef.current) {
+        // Animasyonu yeniden başlat
+        animationRef.current.reset();
+        animationRef.current.play();
+      }
+    }, 1400);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const content = (
     <View className={`items-center justify-center ${className}`} style={style}>
       <LottieView
+        key={animationKey}
+        ref={animationRef}
         source={require("../../assets/loadingAnimation.json")}
         autoPlay={true}
-        loop={true}
+        loop={false} // Loop'u kapatıyoruz çünkü manuel kontrol edeceğiz
         speed={speed}
+        onAnimationFinish={handleAnimationFinish} // Animasyon bitince hemen yeniden başlat
         style={{
           width: animationSize,
           height: animationSize,
         }}
         resizeMode="contain"
-        // Loop'u daha hızlı yapmak için
-        onAnimationFinish={() => {
-          // Animasyon bitince hemen yeniden başlat
-        }}
       />
       {text && text.trim() && (
         <Typography

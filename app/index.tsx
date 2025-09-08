@@ -10,6 +10,7 @@ import {
   Card,
   SearchBar,
   Icon,
+  Loading,
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
@@ -288,6 +289,7 @@ export default function HomePage() {
               />
             </View>
           </Card>
+          <Loading size="large" />
         </View>
       </ScrollView>
     </Container>
