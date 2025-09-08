@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { Alert, BackHandler, ScrollView, View } from "react-native";
+import React, { useEffect, useMemo, useRef } from "react";
+import { Alert, BackHandler, ScrollView, View, Linking } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   Container,
@@ -8,106 +8,157 @@ import {
   Button,
   Icon,
   Divider,
+  Loading,
 } from "@/src/components/ui";
 import { useAppStore } from "@/src/stores/appStore";
+import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
+
+type SalesItem = {
+  salesId?: number;
+  productId: number;
+  productName: string;
+  productCount: number;
+  unitPrice: number;
+  totalPrice: number;
+  taxRate: number;
+  taxPrice: number;
+  totalPriceWithTax: number;
+};
+type SalesSummary = {
+  documentNumber?: string;
+  salesItems: SalesItem[];
+  subtotalPrice: number;
+  discountRate: number;
+  discountPrice: number;
+  totalPrice: number; // iskonto sonrası ara toplam (KDV hariç)
+  totalTaxPrice?: number; // toplam KDV
+  totalPriceWithTax: number; // KDV dahil genel toplam
+  downloadUrl?: string;
+};
 
 import SuccessAnimation, {
   SuccessAnimationRef,
-} from "@/src/components/svg/successAnimation"; // ref tipi de import
+} from "@/src/components/svg/successAnimation";
 
 export default function ResultSales() {
-  // URL parametrelerinden sonuç bilgilerini al - GÜNCELLENDİ
   const params = useLocalSearchParams();
   const {
     brokerId,
     success,
-    salesId, // YENİ - API'den gelen
-    documentNumber, // YENİ - API'den gelen
     totalAmount,
-    itemCount, // YENİ - API'den gelen
     discountAmount,
     createInvoice,
+    documentNumber,
+    downloadUrl,
+    summaryJSON, // opsiyonel – confirmSales'ten gönderilirse ürün kalemleri listelenir
   } = params;
 
-  // Hooks - AYNÎ KALDI
-  const { brokers, getBrokerTotalDebt } = useAppStore();
+  const isSuccess = String(success) === "true";
+  const willCreateInvoice = String(createInvoice) === "true";
   const successAnimationRef = useRef<SuccessAnimationRef>(null);
 
-  // Android back button handling - AYNÎ KALDI
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        Alert.alert(
-          "Sayfadan Ayrıl",
-          "Ana sayfaya dönmek istediğinizden emin misiniz?",
-          [
-            { text: "Kalın", style: "cancel" },
-            {
-              text: "Ana Sayfa",
-              onPress: () => {
-                router.push("/");
-              },
-            },
-          ]
-        );
-        return true; // Geri gitmeyi engelle ve kontrollü yönlendirme yap
-      }
-    );
+  // Store + Backend brokerları
+  const { brokers: storeBrokers, getBrokerTotalDebt } = useAppStore();
+  const { data: backendBrokers = [], isLoading: brokersLoading } =
+    useActiveBrokers();
 
-    return () => backHandler.remove();
+  // Broker'ı hem backend'ten hem store'dan bul
+  // TODOMali: any kullanılmayacak. Düzenlenece !!!! 
+  const backendBroker: any = useMemo(
+    () =>
+      backendBrokers.find((b: any) => String(b.brokerId) === String(brokerId)),
+    [backendBrokers, brokerId]
+  );
+  const storeBroker = useMemo(
+    () => storeBrokers.find((b: any) => String(b.id) === String(brokerId)),
+    [storeBrokers, brokerId]
+  );
+
+  // Görünen isim
+  const displayName = backendBroker
+    ? `${backendBroker.firstName} ${backendBroker.lastName}`
+    : storeBroker
+    ? `${storeBroker.name} ${storeBroker.surname}`
+    : `Aracı #${brokerId}`;
+
+  // Mevcut bakiye
+  const currentBalance =
+    typeof backendBroker?.currentBalance === "number"
+      ? backendBroker.currentBalance
+      : storeBroker
+      ? getBrokerTotalDebt(storeBroker.id)
+      : 0;
+
+  // Confirm'den gelen özet (varsa)
+  const summary: SalesSummary | null = useMemo(() => {
+    try {
+      return summaryJSON
+        ? (JSON.parse(summaryJSON as string) as SalesSummary)
+        : null;
+    } catch {
+      return null;
+    }
+  }, [summaryJSON]);
+
+  // Toplamlar – parametre veya summary’den
+  const totalWithTax =
+    typeof totalAmount === "string"
+      ? Number(totalAmount) || 0
+      : summary?.totalPriceWithTax ?? 0;
+
+  const discountValue =
+    typeof discountAmount === "string"
+      ? Number(discountAmount) || 0
+      : summary?.discountPrice ?? 0;
+
+  // Android back – ana sayfaya sorarak dön
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      Alert.alert(
+        "Sayfadan Ayrıl",
+        "Ana sayfaya dönmek istediğinizden emin misiniz?",
+        [
+          { text: "Kalın", style: "cancel" },
+          { text: "Ana Sayfa", onPress: () => router.push("/") },
+        ]
+      );
+      return true;
+    });
+    return () => sub.remove();
   }, []);
 
-  // Broker bilgilerini al - AYNÎ KALDI
-  const broker = brokers.find((b) => b.id === brokerId);
-  const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
-  const isSuccess = success === "true";
-  const willCreateInvoice = createInvoice === "true";
+  // Aksiyonlar
+  const handleGoToBrokerDetail = () =>
+    router.replace({ pathname: "/broker/brokerDetail", params: { brokerId } });
 
-  // YENİ - API response değerleri
-  const hasSalesId = !!salesId;
-  const hasDocumentNumber = !!documentNumber;
-  const hasItemCount = !!itemCount;
+  const handleGoToHome = () => router.replace("/");
 
-  // Buton handlers - AYNÎ KALDI
-  const handleGoToBrokerDetail = () => {
-    router.replace({
-      pathname: "/broker/brokerDetail",
-      params: { brokerId: brokerId },
-    });
-  };
-
-  const handleGoToHome = () => {
-    router.replace("/");
-  };
-
-  const handleNewSale = () => {
+  const handleNewSale = () =>
     router.replace({
       pathname: "/broker/sections/salesSection",
-      params: { brokerId: brokerId },
+      params: { brokerId },
     });
-  };
 
-  // YENİ - Fatura görüntüleme butonu
-  const handleViewInvoice = () => {
-    if (documentNumber) {
-      router.push({
-        pathname: "/broker/sections/invoiceSection",
-        params: {
-          brokerId,
-          documentNumber,
-          salesId,
-        },
-      });
+  const handleOpenInvoice = async () => {
+    const url =
+      (typeof downloadUrl === "string" && downloadUrl) ||
+      (summary?.downloadUrl ?? "");
+    if (!url) return;
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("Hata", "Belge açılamadı.");
     }
   };
 
-  if (!broker) {
+  // Sadece broker yüklenirken kısa bir loader
+  if (brokersLoading && !backendBroker && !storeBroker) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
-          <Typography variant="body" className="text-stock-text">
-            Aracı bulunamadı...
+          <Loading size="large" />
+          <Typography variant="body" className="text-stock-text mt-4">
+            Aracı bilgileri yükleniyor...
           </Typography>
         </View>
       </Container>
@@ -116,24 +167,15 @@ export default function ResultSales() {
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
-      {/* Backend Error Warning - YENİ EKLENEN */}
-      {brokersError && (
-        <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
-          <Typography variant="body" className="text-yellow-800 text-center">
-            ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
-          </Typography>
-        </View>
-      )}
-
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Header - Başarı Durumu - AYNÎ KALDI */}
+        {/* Header */}
         <View className="mb-6 items-center">
           <View className="mb-4 items-center justify-center">
             {isSuccess ? (
               <SuccessAnimation
                 ref={successAnimationRef}
                 size={80}
-                autoPlay={true}
+                autoPlay
                 loop={false}
                 speed={1.2}
               />
@@ -160,13 +202,13 @@ export default function ResultSales() {
           </Typography>
 
           <Typography variant="body" className="text-stock-text text-center">
-            {broker.name} {broker.surname}
+            {displayName}
           </Typography>
         </View>
 
         {isSuccess && (
           <>
-            {/* Satış Özet Kartı - GÜNCELLENDİ */}
+            {/* Satış Özeti */}
             <Card
               variant="default"
               padding="lg"
@@ -190,129 +232,202 @@ export default function ResultSales() {
                 </Typography>
               </View>
 
+              {(summary?.documentNumber || documentNumber) && (
+                <View className="flex-row justify-between items-center mb-3">
+                  <Typography variant="body" className="text-green-700">
+                    Belge No:
+                  </Typography>
+                  <Typography
+                    variant="body"
+                    weight="bold"
+                    className="text-green-800"
+                  >
+                    {summary?.documentNumber ?? (documentNumber as string)}
+                  </Typography>
+                </View>
+              )}
+
+              {!!summary?.salesItems?.length && (
+                <>
+                  <Divider className="my-2" />
+                  <View className="mb-3">
+                    {summary.salesItems.map((it, idx) => (
+                      <Card
+                        key={`${it.productId}-${idx}`}
+                        variant="default"
+                        padding="sm"
+                        className="bg-white border border-green-100 mb-2"
+                        radius="md"
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <View className="flex-1">
+                            <Typography
+                              variant="body"
+                              weight="semibold"
+                              className="text-green-900 mb-1"
+                            >
+                              {it.productName}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              className="text-green-700"
+                            >
+                              {it.productCount} adet × ₺
+                              {it.unitPrice.toLocaleString()}
+                            </Typography>
+
+                            {/* Kalem KDV bilgisi */}
+                            {typeof it.taxRate === "number" && (
+                              <Typography
+                                variant="caption"
+                                className="text-green-700"
+                              >
+                                KDV %{it.taxRate} = ₺
+                                {(it.taxPrice ?? 0).toLocaleString()}
+                              </Typography>
+                            )}
+                          </View>
+
+                          <Typography
+                            variant="body"
+                            weight="bold"
+                            className="text-green-900"
+                          >
+                            ₺
+                            {(
+                              it.totalPriceWithTax ?? it.totalPrice
+                            ).toLocaleString()}
+                          </Typography>
+                        </View>
+                      </Card>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              <Divider className="my-2" />
+
+              {/* Tutarlar */}
               <View className="space-y-2">
-                {/* YENİ - Satış ID */}
-                {hasSalesId && (
+                {summary?.subtotalPrice !== undefined && (
                   <View className="flex-row justify-between items-center">
                     <Typography variant="body" className="text-green-700">
-                      Satış ID:
+                      Alt Toplam:
                     </Typography>
                     <Typography
                       variant="body"
                       weight="bold"
                       className="text-green-800"
                     >
-                      #{salesId}
+                      ₺{summary.subtotalPrice.toLocaleString()}
                     </Typography>
                   </View>
                 )}
 
-                {/* YENİ - Belge Numarası */}
-                {hasDocumentNumber && (
+                {(summary?.discountPrice ?? discountValue) > 0 && (
                   <View className="flex-row justify-between items-center">
                     <Typography variant="body" className="text-green-700">
-                      Belge No:
+                      İskonto
+                      {summary?.discountRate
+                        ? ` (%${summary.discountRate})`
+                        : ""}
+                      :
                     </Typography>
                     <Typography
                       variant="body"
                       weight="bold"
                       className="text-green-800"
                     >
-                      {documentNumber}
+                      -₺
+                      {(
+                        summary?.discountPrice ?? discountValue
+                      ).toLocaleString()}
                     </Typography>
                   </View>
                 )}
 
-                {/* YENİ - Ürün Adedi */}
-                {hasItemCount && (
+                {/* Ara Toplam (KDV hariç) */}
+                {summary?.totalPrice !== undefined && (
                   <View className="flex-row justify-between items-center">
                     <Typography variant="body" className="text-green-700">
-                      Ürün Adedi:
+                      Ara Toplam (KDV hariç):
                     </Typography>
                     <Typography
                       variant="body"
                       weight="bold"
                       className="text-green-800"
                     >
-                      {itemCount} adet
+                      ₺{summary.totalPrice.toLocaleString()}
                     </Typography>
                   </View>
                 )}
 
-                {/* MEVCUT - Satış Tutarı */}
-                <View className="flex-row justify-between items-center">
-                  <Typography variant="body" className="text-green-700">
-                    Satış Tutarı:
-                  </Typography>
-                  <Typography
-                    variant="body"
-                    weight="bold"
-                    className="text-green-800"
-                  >
-                    ₺
-                    {totalAmount
-                      ? parseFloat(totalAmount as string).toLocaleString()
-                      : "0"}
-                  </Typography>
-                </View>
-
-                {/* MEVCUT - İskonto */}
-                {discountAmount && parseFloat(discountAmount as string) > 0 && (
+                {/* Toplam KDV */}
+                {summary?.totalTaxPrice !== undefined && (
                   <View className="flex-row justify-between items-center">
                     <Typography variant="body" className="text-green-700">
-                      Uygulanan İskonto:
+                      KDV Toplamı:
                     </Typography>
                     <Typography
                       variant="body"
                       weight="bold"
                       className="text-green-800"
                     >
-                      -₺{parseFloat(discountAmount as string).toLocaleString()}
+                      ₺{summary.totalTaxPrice.toLocaleString()}
                     </Typography>
                   </View>
                 )}
-
-                {/* YENİ - Tarih ve Saat */}
-                <View className="flex-row justify-between items-center">
-                  <Typography variant="body" className="text-green-700">
-                    Tarih:
-                  </Typography>
-                  <Typography
-                    variant="body"
-                    weight="bold"
-                    className="text-green-800"
-                  >
-                    {new Date().toLocaleDateString("tr-TR")}{" "}
-                    {new Date().toLocaleTimeString("tr-TR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Typography>
-                </View>
 
                 <Divider className="my-2" />
 
-                {/* MEVCUT - Yeni Bakiye */}
                 <View className="flex-row justify-between items-center">
-                  <Typography
-                    variant="body"
-                    weight="bold"
-                    className="text-green-800"
-                  >
-                    Yeni Bakiye:
-                  </Typography>
                   <Typography
                     variant="h4"
                     weight="bold"
                     className="text-green-800"
                   >
-                    ₺{brokerDebt.toLocaleString()}
+                    Genel Toplam (KDV dahil):
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    weight="bold"
+                    className="text-green-800"
+                  >
+                    ₺
+                    {(
+                      summary?.totalPriceWithTax ?? totalWithTax
+                    ).toLocaleString()}
                   </Typography>
                 </View>
               </View>
+
+              {((typeof downloadUrl === "string" && downloadUrl) ||
+                summary?.downloadUrl) && (
+                <View className="mt-4">
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    fullWidth
+                    className="bg-white border border-green-300"
+                    onPress={handleOpenInvoice}
+                    leftIcon={
+                      <Icon
+                        family="MaterialIcons"
+                        name="download"
+                        size={20}
+                        color="#059669"
+                      />
+                    }
+                  >
+                    <Typography className="text-green-800" weight="bold">
+                      PDF/Belgeyi İndir
+                    </Typography>
+                  </Button>
+                </View>
+              )}
             </Card>
 
-            {/* Fatura Bilgisi - GÜNCELLENDİ */}
+            {/* Fatura Bilgisi */}
             {willCreateInvoice && (
               <Card
                 variant="default"
@@ -334,9 +449,7 @@ export default function ResultSales() {
                       className="text-blue-700"
                       weight="medium"
                     >
-                      {hasDocumentNumber
-                        ? `Fatura oluşturuldu: ${documentNumber}`
-                        : "Fatura oluşturuldu"}
+                      Fatura oluşturuldu
                     </Typography>
                     <Typography variant="caption" className="text-blue-600">
                       Faturanız elektronik ortamda iletilecektir
@@ -346,7 +459,7 @@ export default function ResultSales() {
               </Card>
             )}
 
-            {/* Bilgi Notu - AYNÎ KALDI */}
+            {/* Bilgi Notu */}
             <Card
               variant="default"
               padding="md"
@@ -373,8 +486,7 @@ export default function ResultSales() {
                     variant="caption"
                     className="text-yellow-600 mt-1"
                   >
-                    Ürün stokları otomatik olarak güncellendi ve aracının
-                    bakiyesine eklendi.
+                    Ürün stokları güncellendi ve aracının bakiyesine eklendi.
                   </Typography>
                 </View>
               </View>
@@ -382,9 +494,8 @@ export default function ResultSales() {
           </>
         )}
 
-        {/* Aksiyon Butonları - GÜNCELLENDİ */}
+        {/* Aksiyonlar */}
         <View className="space-y-3 mb-6">
-          {/* Ana Sayfa Butonu - AYNÎ KALDI */}
           <Button
             variant="outline"
             size="lg"
@@ -405,32 +516,8 @@ export default function ResultSales() {
             </Typography>
           </Button>
 
-          {isSuccess && (
+          {isSuccess ? (
             <>
-              {/* YENİ - Fatura Görüntüle Butonu */}
-              {willCreateInvoice && hasDocumentNumber && (
-                <Button
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  className="bg-blue-600"
-                  onPress={handleViewInvoice}
-                  leftIcon={
-                    <Icon
-                      family="MaterialIcons"
-                      name="description"
-                      size={20}
-                      color="white"
-                    />
-                  }
-                >
-                  <Typography className="text-white" weight="bold">
-                    FATURAYA GÖRÜNTÜLE
-                  </Typography>
-                </Button>
-              )}
-
-              {/* Yeni Satış Butonu - AYNÎ KALDI */}
               <Button
                 variant="secondary"
                 size="lg"
@@ -451,7 +538,6 @@ export default function ResultSales() {
                 </Typography>
               </Button>
 
-              {/* Aracı Detayına Git Butonu - AYNÎ KALDI */}
               <Button
                 variant="primary"
                 size="lg"
@@ -472,10 +558,7 @@ export default function ResultSales() {
                 </Typography>
               </Button>
             </>
-          )}
-
-          {!isSuccess && (
-            /* Tekrar Dene Butonu - AYNÎ KALDI */
+          ) : (
             <Button
               variant="primary"
               size="lg"

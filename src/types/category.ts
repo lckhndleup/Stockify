@@ -24,7 +24,7 @@ export interface CategoryDisplayItem {
   name: string;
   taxRate: number;
   createdDate: string;
-  isActive: boolean; // Her zaman true olacak (backend'de silinmiş olanlar gelmiyor)
+  isActive: boolean;
 }
 
 // API Responses

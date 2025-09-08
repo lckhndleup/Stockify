@@ -1,4 +1,4 @@
-// app/broker/brokerDetail.tsx - TAM ÇALIŞAN KOD
+// app/broker/brokerDetail.tsx
 
 import React, { useState, useEffect } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";

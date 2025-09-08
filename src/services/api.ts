@@ -1,12 +1,4 @@
 // src/services/api.ts
-
-import { SalesProduct, SalesRequest, SalesResponse } from "@/src/types/sales";
-import {
-  BasketItem,
-  BasketAddRequest,
-  BasketRemoveRequest,
-  BasketUpdateRequest,
-} from "@/src/types/basket";
 const API_BASE_URL = "https://stockify-gcsq.onrender.com";
 
 // API Response types
@@ -128,7 +120,7 @@ class ApiService {
 
       if (!response.ok) {
         const errorInfo = {
-          message: data.message || "Bir hata oluştu",
+          message: data?.message || "Bir hata oluştu",
           status: response.status,
         } as ApiError;
 
@@ -143,7 +135,7 @@ class ApiService {
       if (isDebugMode) {
         console.log("✅ API Success:", {
           endpoint,
-          dataKeys: Object.keys(data),
+          dataKeys: data ? Object.keys(data) : [],
         });
       }
 
@@ -166,7 +158,7 @@ class ApiService {
     }
   }
 
-  // Auth endpoints
+  // -------------------- Auth --------------------
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     console.log("🔐 API Login called with:", {
       username: credentials.username,
@@ -179,7 +171,7 @@ class ApiService {
     });
   }
 
-  // Category endpoints
+  // -------------------- Category --------------------
   async getCategories(): Promise<any[]> {
     return this.request<any[]>("/category/all");
   }
@@ -237,7 +229,7 @@ class ApiService {
     }
   }
 
-  // Product endpoints - Backend swagger'a göre güncellenmiş
+  // -------------------- Product (backend swagger'a göre) --------------------
   async getProducts(params?: {
     productText?: string;
     status?: "ACTIVE" | "PASSIVE";
@@ -360,7 +352,8 @@ class ApiService {
       throw error;
     }
   }
-  // Inventory endpoints
+
+  // -------------------- Inventory --------------------
   async getInventoryAll(): Promise<any[]> {
     try {
       console.log("📦 API: Fetching all inventory...");
@@ -478,7 +471,9 @@ class ApiService {
       throw error;
     }
   }
-  //GET /broker/all
+
+  // -------------------- Broker --------------------
+  // GET /broker/all
   async getBrokers(): Promise<any[]> {
     try {
       console.log("🤝 API: Fetching brokers...");
@@ -618,7 +613,8 @@ class ApiService {
       throw error;
     }
   }
-  // Payment endpoints
+
+  // -------------------- Payment --------------------
   async savePayment(payment: {
     brokerId: number;
     paymentPrice: number;
@@ -643,22 +639,24 @@ class ApiService {
       throw error;
     }
   }
-  // ====================================
-  // SALES ENDPOINTS
-  // ====================================
 
-  // GET /sales/products
-  async getSalesProducts(): Promise<SalesProduct[]> {
+  // -------------------- Sales (SalesController) --------------------
+  /** GET /sales/products */
+  async getSalesProducts(): Promise<any[]> {
     try {
       console.log("💰 API: Fetching sales products...");
 
-      const result = await this.request<SalesProduct[]>("/sales/products", {
+      const result = await this.request<any[]>("/sales/products", {
         method: "GET",
       });
 
       console.log(
         "✅ API: Sales products fetched - Count:",
-        Array.isArray(result) ? result.length : "not array"
+        Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0
+          ? Object.keys(result[0])
+          : "empty"
       );
 
       return result;
@@ -668,145 +666,171 @@ class ApiService {
     }
   }
 
-  // POST /sales/calculate
-  async calculateSales(salesData: SalesRequest): Promise<SalesResponse> {
+  /** GET /sales/basket/{brokerId} */
+  async getBasket(brokerId: number): Promise<any[]> {
     try {
-      console.log("🧮 API: Calculating sales with data:", salesData);
+      console.log("🧺 API: Fetching basket for broker:", brokerId);
 
-      const result = await this.request<SalesResponse>("/sales/calculate", {
-        method: "POST",
-        body: JSON.stringify(salesData),
+      const result = await this.request<any[]>(`/sales/basket/${brokerId}`, {
+        method: "GET",
       });
-
-      console.log("✅ API: Sales calculated:", {
-        salesId: result.salesId,
-        totalPrice: result.totalPrice,
-        itemsCount: result.salesItems.length,
-      });
-
-      return result;
-    } catch (error) {
-      console.log("🧮 API: Sales calculation error:", error);
-      throw error;
-    }
-  }
-
-  // POST /sales/confirm
-  async confirmSales(salesData: SalesRequest): Promise<SalesResponse> {
-    try {
-      console.log("✅ API: Confirming sales with data:", salesData);
-
-      const result = await this.request<SalesResponse>("/sales/confirm", {
-        method: "POST",
-        body: JSON.stringify(salesData),
-      });
-
-      console.log("✅ API: Sales confirmed:", {
-        salesId: result.salesId,
-        documentNumber: result.documentNumber,
-        totalPrice: result.totalPriceWithTax,
-      });
-
-      return result;
-    } catch (error) {
-      console.log("✅ API: Sales confirmation error:", error);
-      throw error;
-    }
-  }
-
-  // ====================================
-  // BASKET ENDPOINTS
-  // ====================================
-
-  // POST /basket/add
-  async addToBasket(
-    basketData: BasketAddRequest
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      console.log("🛒 API: Adding to basket with data:", basketData);
-
-      const result = await this.request<{ success: boolean; message: string }>(
-        "/basket/add",
-        {
-          method: "POST",
-          body: JSON.stringify(basketData),
-        }
-      );
-
-      console.log("✅ API: Item added to basket:", result);
-      return result;
-    } catch (error) {
-      console.log("🛒 API: Add to basket error:", error);
-      throw error;
-    }
-  }
-
-  // POST /basket/remove
-  async removeFromBasket(
-    basketData: BasketRemoveRequest
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      console.log("🛒 API: Removing from basket with data:", basketData);
-
-      const result = await this.request<{ success: boolean; message: string }>(
-        "/basket/remove",
-        {
-          method: "POST",
-          body: JSON.stringify(basketData),
-        }
-      );
-
-      console.log("✅ API: Item removed from basket:", result);
-      return result;
-    } catch (error) {
-      console.log("🛒 API: Remove from basket error:", error);
-      throw error;
-    }
-  }
-
-  // POST /basket/update
-  async updateBasket(
-    basketData: BasketUpdateRequest
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      console.log("🛒 API: Updating basket with data:", basketData);
-
-      const result = await this.request<{ success: boolean; message: string }>(
-        "/basket/update",
-        {
-          method: "POST",
-          body: JSON.stringify(basketData),
-        }
-      );
-
-      console.log("✅ API: Basket updated:", result);
-      return result;
-    } catch (error) {
-      console.log("🛒 API: Update basket error:", error);
-      throw error;
-    }
-  }
-
-  // GET /basket/all/{brokerId}
-  async getBasketItems(brokerId: number): Promise<BasketItem[]> {
-    try {
-      console.log("🛒 API: Fetching basket items for broker:", brokerId);
-
-      const result = await this.request<BasketItem[]>(
-        `/basket/all/${brokerId}`,
-        {
-          method: "GET",
-        }
-      );
 
       console.log(
-        "✅ API: Basket items fetched - Count:",
+        "✅ API: Basket fetched - Count:",
         Array.isArray(result) ? result.length : "not array"
       );
 
       return result;
     } catch (error) {
-      console.log("🛒 API: Basket items fetch error:", error);
+      console.log("🧺 API: Basket fetch error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /basket/add  (Swagger: /sales değil, root /basket) */
+  async addToBasket(payload: {
+    brokerId: number;
+    productId: number;
+    productCount: number;
+  }): Promise<{ success: true; message: string }> {
+    try {
+      console.log("🧺➕ API: Add to basket:", payload);
+
+      const result = await this.request<{ success: true; message: string }>(
+        "/basket/add",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log("✅ API: Added to basket");
+      return result;
+    } catch (error) {
+      console.log("🧺➕ API: Add to basket error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /basket/remove */
+  async removeFromBasket(payload: {
+    brokerId: number;
+    productId: number;
+  }): Promise<{ success: true; message: string }> {
+    try {
+      console.log("🧺➖ API: Remove from basket:", payload);
+
+      const result = await this.request<{ success: true; message: string }>(
+        "/basket/remove",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log("✅ API: Removed from basket");
+      return result;
+    } catch (error) {
+      console.log("🧺➖ API: Remove from basket error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /basket/update */
+  async updateBasket(payload: {
+    brokerId: number;
+    productId: number;
+    productCount: number;
+  }): Promise<{ success: true; message: string }> {
+    try {
+      console.log("🧺✏️ API: Update basket:", payload);
+
+      const result = await this.request<{ success: true; message: string }>(
+        "/basket/update",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log("✅ API: Basket updated");
+      return result;
+    } catch (error) {
+      console.log("🧺✏️ API: Update basket error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /sales/calculate */
+  async calculateSale(payload: {
+    brokerId: number;
+    createInvoice: boolean;
+  }): Promise<any> {
+    try {
+      console.log("🧮 API: Calculate sale:", payload);
+
+      const result = await this.request<any>("/sales/calculate", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      console.log(
+        "✅ API: Calculation summary:",
+        result ? Object.keys(result) : "null"
+      );
+
+      return result;
+    } catch (error) {
+      // Boş sepet durumunda 404 + { message: "Basket empty", code: ... } gelebilir
+      console.log("🧮 API: Calculate sale error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /sales/confirm */
+  async confirmSale(payload: {
+    brokerId: number;
+    createInvoice: boolean;
+  }): Promise<any> {
+    try {
+      console.log("✅ API: Confirm sale:", payload);
+
+      const result = await this.request<any>("/sales/confirm", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      console.log(
+        "✅ API: Sale confirmed:",
+        result ? result.documentNumber : "no-doc"
+      );
+      return result;
+    } catch (error) {
+      console.log("✅ API: Confirm sale error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /sales/cancel */
+  async cancelSale(payload: {
+    brokerId: number;
+    createInvoice: boolean;
+  }): Promise<{ success: true; message: string }> {
+    try {
+      console.log("🛑 API: Cancel sale:", payload);
+
+      const result = await this.request<{ success: true; message: string }>(
+        "/sales/cancel",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log("✅ API: Sale canceled");
+      return result;
+    } catch (error) {
+      console.log("🛑 API: Cancel sale error:", error);
       throw error;
     }
   }
@@ -814,5 +838,4 @@ class ApiService {
 
 // Singleton instance
 export const apiService = new ApiService(API_BASE_URL);
-
 export default apiService;

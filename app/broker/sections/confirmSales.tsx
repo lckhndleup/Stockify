@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+// app/broker/sections/confirmSales.tsx
+import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -15,62 +16,42 @@ import { useToast } from "@/src/hooks/useToast";
 
 // Backend hooks
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
-import { useSalesCalculation } from "@/src/hooks/api/useSales";
-import { useBasket } from "@/src/hooks/api/useBasket";
-import { useAuthStore } from "@/src/stores/authStore";
+import {
+  useSalesCalculate,
+  useSalesConfirm,
+  useSalesCancel,
+} from "@/src/hooks/api/useSales";
+import type { SalesSummary } from "@/src/types/sales";
 
-// UI compatibility için
-interface SalesItem {
+interface SalesItemParam {
   id: string;
   name: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
   taxRate?: number;
-  taxAmount?: number;
-  totalWithTax?: number;
+  taxPrice?: number;
+  totalPriceWithTax?: number;
 }
 
 export default function ConfirmSales() {
+  // URL parametreleri
   const params = useLocalSearchParams();
-  const { brokerId, createInvoice } = params;
+  const brokerId = params.brokerId as string;
+  const createInvoiceParam = params.createInvoice as string | undefined;
+  const willCreateInvoice = (createInvoiceParam ?? "true") === "true";
 
-  // State'ler
+  // Paramdan gelen (UI listesi için) satış kalemleri
+  const parsedSalesData: SalesItemParam[] = useMemo(
+    () => (params.salesData ? JSON.parse(params.salesData as string) : []),
+    [params.salesData]
+  );
+
+  // Ekran state
   const [isProcessing, setIsProcessing] = useState(false);
+  const [summary, setSummary] = useState<SalesSummary | null>(null);
 
-  // BACKEND HOOKS
-  const { user } = useAuthStore();
-  const {
-    data: backendBrokers = [],
-    isLoading: brokersLoading,
-    error: brokersError,
-  } = useActiveBrokers();
-
-  const numericBrokerId = useMemo(() => {
-    return brokerId ? parseInt(brokerId as string) : 0;
-  }, [brokerId]);
-
-  const {
-    calculateAndShow,
-    confirmAndShow,
-    isCalculating,
-    isConfirming,
-    lastCalculation,
-    lastConfirmation,
-    clearLastResults,
-  } = useSalesCalculation(numericBrokerId);
-
-  const emptyProductInfo = useMemo(() => [], []);
-
-  const {
-    items: basketItems,
-    summary: basketSummary,
-    refreshBasket,
-    clearBasket,
-    isLoading: basketLoading,
-  } = useBasket(numericBrokerId, emptyProductInfo);
-
-  // Fallback için local store (sadece broker bilgileri için)
+  // Store fallback
   const {
     brokers: localBrokers,
     getBrokerTotalDebt,
@@ -78,107 +59,50 @@ export default function ConfirmSales() {
   } = useAppStore();
   const { toast, showSuccess, showError } = useToast();
 
-  // LOAD DATA ONCE
-  useEffect(() => {
-    if (numericBrokerId) {
-      refreshBasket();
-      clearLastResults();
-      // Otomatik hesaplama yap
-      setTimeout(() => {
-        if (basketItems.length > 0) {
-          calculateAndShow(createInvoice === "true");
-        }
-      }, 500);
-    }
-  }, []);
+  // Broker (backend > local)
+  const {
+    data: backendBrokers = [],
+    isLoading: brokersLoading,
+    error: brokersError,
+  } = useActiveBrokers();
 
-  // AUTO CALCULATE when basket items change
-  useEffect(() => {
-    if (basketItems.length > 0 && !lastCalculation) {
-      calculateAndShow(createInvoice === "true");
-    }
-  }, [basketItems.length, lastCalculation, calculateAndShow, createInvoice]);
+  const brokers = brokersError ? localBrokers : backendBrokers;
+  const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
 
-  // CONVERT BASKET TO UI FORMAT with proper pricing
-  const parsedSalesData: SalesItem[] = useMemo(() => {
-    return basketItems.map((item) => ({
-      id: item.productId.toString(),
-      name: item.productName,
-      quantity: item.productCount,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      taxRate: item.taxRate || 0,
-      taxAmount: item.taxAmount || 0,
-      totalWithTax: item.totalWithTax || item.totalPrice,
-    }));
-  }, [basketItems]);
-
-  // BROKER DATA
-  const brokers = useMemo(() => {
-    return brokersError ? localBrokers : backendBrokers;
-  }, [brokersError, localBrokers, backendBrokers]);
-
-  const broker = useMemo(() => {
-    return brokers.find((b) => b.id === brokerId);
-  }, [brokers, brokerId]);
-
-  const brokerDebt = useMemo(() => {
-    if (!broker) return 0;
-    return "balance" in broker
+  const brokerDebt = broker
+    ? "balance" in broker
       ? (broker as any).balance
-      : getBrokerTotalDebt(broker.id);
-  }, [broker, getBrokerTotalDebt]);
+      : getBrokerTotalDebt(broker.id)
+    : 0;
 
-  const brokerDiscount = useMemo(() => {
-    if (!broker) return 0;
-    return broker.discountRate || getBrokerDiscount(broker.id);
-  }, [broker, getBrokerDiscount]);
+  const brokerDiscount = broker
+    ? broker.discountRate || 0
+    : getBrokerDiscount(brokerId);
 
-  const willCreateInvoice = useMemo(() => {
-    return createInvoice === "true";
-  }, [createInvoice]);
+  // Backend mutations
+  const calcMutation = useSalesCalculate();
+  const confirmMutation = useSalesConfirm();
+  const cancelMutation = useSalesCancel();
 
-  // Hesaplamalar - BACKEND'DEN GEL VEYA BASKET SUMMARY KULLAN
-  const calculateSubTotal = useCallback(() => {
-    return (
-      lastCalculation?.totalPrice ||
-      basketSummary.subtotal ||
-      parsedSalesData.reduce((total, item) => total + item.totalPrice, 0)
-    );
-  }, [lastCalculation?.totalPrice, basketSummary.subtotal, parsedSalesData]);
+  // İlk yüklemede (ve brokerId / willCreateInvoice değişince) toplamları backend’den hesapla
+  useEffect(() => {
+    const run = async () => {
+      if (!brokerId) return;
+      try {
+        const res = await calcMutation.mutateAsync({
+          brokerId: Number(brokerId),
+          createInvoice: willCreateInvoice,
+        });
+        setSummary(res);
+      } catch (e) {
+        setSummary(null);
+      }
+    };
+    run();
+  }, [brokerId, willCreateInvoice]);
 
-  const calculateTaxAmount = useCallback(() => {
-    return (
-      lastCalculation?.totalTaxPrice ||
-      basketSummary.totalTax ||
-      parsedSalesData.reduce((total, item) => total + (item.taxAmount || 0), 0)
-    );
-  }, [lastCalculation?.totalTaxPrice, basketSummary.totalTax, parsedSalesData]);
-
-  const calculateDiscountAmount = useCallback(() => {
-    return (
-      lastCalculation?.discountPrice ||
-      (calculateSubTotal() * brokerDiscount) / 100
-    );
-  }, [lastCalculation?.discountPrice, calculateSubTotal, brokerDiscount]);
-
-  const calculateGrandTotal = useCallback(() => {
-    return (
-      lastCalculation?.totalPriceWithTax ||
-      basketSummary.grandTotal ||
-      parsedSalesData.reduce(
-        (total, item) => total + (item.totalWithTax || item.totalPrice),
-        0
-      )
-    );
-  }, [
-    lastCalculation?.totalPriceWithTax,
-    basketSummary.grandTotal,
-    parsedSalesData,
-  ]);
-
-  // HANDLERS
-  const handleCancel = useCallback(() => {
+  // Butonlar
+  const handleCancel = () => {
     Alert.alert(
       "Satışı İptal Et",
       "Satış işlemini iptal etmek istediğinizden emin misiniz?\n\nTüm eklenen ürünler silinecektir.",
@@ -187,88 +111,69 @@ export default function ConfirmSales() {
         {
           text: "İptal Et",
           style: "destructive",
-          onPress: () => {
-            router.push({
-              pathname: "/broker/brokerDetail",
-              params: { brokerId: brokerId },
-            });
+          onPress: async () => {
+            try {
+              setIsProcessing(true);
+              await cancelMutation.mutateAsync({
+                brokerId: Number(brokerId),
+                createInvoice: willCreateInvoice,
+              });
+              showSuccess("Satış iptal edildi.");
+              // Aracı detay sayfasına git
+              router.push({
+                pathname: "/broker/brokerDetail",
+                params: { brokerId },
+              });
+            } catch (e) {
+              showError("Satış iptal edilirken bir hata oluştu.");
+            } finally {
+              setIsProcessing(false);
+            }
           },
         },
       ]
     );
-  }, [brokerId]);
+  };
 
-  const handleEdit = useCallback(() => {
+  const handleEdit = () => {
+    // Satış sayfasına geri dön
     router.back();
-  }, []);
+  };
 
-  // BACKEND ONLY CONFIRMATION
-  const handleConfirm = useCallback(async () => {
-    if (parsedSalesData.length === 0) {
+  const handleConfirm = async () => {
+    if (!parsedSalesData.length) {
       showError("Satış yapılacak ürün bulunamadı.");
       return;
     }
 
-    setIsProcessing(true);
-
     try {
-      console.log("🔄 Starting sales confirmation...");
-      const result = await confirmAndShow(willCreateInvoice);
+      setIsProcessing(true);
+      const res = await confirmMutation.mutateAsync({
+        brokerId: Number(brokerId),
+        createInvoice: willCreateInvoice,
+      });
 
-      if (result) {
-        console.log("✅ Sales confirmation successful:", result);
-
-        // Clear basket after successful confirmation
-        clearBasket();
-
-        // SAFE PARAMETER EXTRACTION
-        const salesIdParam = result.salesId
-          ? result.salesId.toString()
-          : Date.now().toString();
-        const documentNumberParam = result.documentNumber || "N/A";
-        const totalAmountParam = result.totalPriceWithTax
-          ? result.totalPriceWithTax.toString()
-          : "0";
-        const itemCountParam = result.salesItems
-          ? result.salesItems.length.toString()
-          : parsedSalesData.length.toString();
-
-        // Navigate to success page
-        router.push({
-          pathname: "/broker/sections/resultSales",
-          params: {
-            brokerId: brokerId,
-            success: "true",
-            salesId: salesIdParam,
-            documentNumber: documentNumberParam,
-            totalAmount: totalAmountParam,
-            itemCount: itemCountParam,
-            discountAmount: calculateDiscountAmount().toString(),
-            createInvoice: createInvoice,
-          },
-        });
-      } else {
-        showError("Satış onaylanamadı. Lütfen tekrar deneyin.");
-      }
-    } catch (error) {
-      console.error("❌ Confirm sales error:", error);
-      showError("Satış onaylanırken bir hata oluştu. Lütfen tekrar deneyin.");
+      // resultSales sayfasına geç — toplam & indirim backend’den
+      router.push({
+        pathname: "/broker/sections/resultSales",
+        params: {
+          brokerId,
+          success: "true",
+          totalAmount: String(res?.totalPriceWithTax ?? 0),
+          discountAmount: String(res?.discountPrice ?? 0),
+          createInvoice: String(willCreateInvoice),
+          documentNumber: res?.documentNumber ?? "",
+          downloadUrl: res?.downloadUrl ?? "",
+        },
+      });
+    } catch (e) {
+      showError("Satış onaylanırken bir hata oluştu.");
     } finally {
       setIsProcessing(false);
     }
-  }, [
-    parsedSalesData,
-    willCreateInvoice,
-    confirmAndShow,
-    clearBasket,
-    calculateDiscountAmount,
-    brokerId,
-    createInvoice,
-    showError,
-  ]);
+  };
 
-  // Loading state
-  if (brokersLoading && !brokersError) {
+  if (brokersLoading && !broker) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
@@ -292,6 +197,10 @@ export default function ConfirmSales() {
     );
   }
 
+  // UI hesaplamaları (kart görseli için); toplamlar summary’den gösterilecek
+  const calcSubTotalLocal = () =>
+    parsedSalesData.reduce((sum, i) => sum + i.totalPrice, 0);
+
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       <Toast
@@ -300,17 +209,8 @@ export default function ConfirmSales() {
         type={toast.type}
       />
 
-      {/* Backend Error Warning */}
-      {brokersError && (
-        <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
-          <Typography variant="body" className="text-yellow-800 text-center">
-            ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
-          </Typography>
-        </View>
-      )}
-
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Header */}
+        {/* Header - Aracı Bilgileri */}
         <View className="mb-6 items-center">
           <Typography
             variant="h1"
@@ -318,9 +218,7 @@ export default function ConfirmSales() {
             size="3xl"
             className="text-stock-black text-center mb-0"
           >
-            {`${broker.firstName || broker.name} ${
-              broker.lastName || broker.surname
-            }`}
+            {`${broker.name} ${broker.surname}`}
           </Typography>
           <Typography
             variant="body"
@@ -346,10 +244,10 @@ export default function ConfirmSales() {
             SATIŞ ÖZETİ
           </Typography>
 
-          {/* Ürün Listesi - FİYATLAR İLE */}
+          {/* Ürün Listesi – UI verisi paramdan */}
           <View className="mb-4">
             {parsedSalesData.map((item, index) => (
-              <View key={`${item.id}-${index}`} className="mb-3">
+              <View key={index} className="mb-3">
                 <Card
                   variant="default"
                   padding="sm"
@@ -366,30 +264,29 @@ export default function ConfirmSales() {
                         {item.name}
                       </Typography>
                       <Typography variant="caption" className="text-stock-text">
-                        {item.quantity} adet × ₺{item.unitPrice.toFixed(2)}
+                        {item.quantity} adet × ₺
+                        {item.unitPrice.toLocaleString()}
                       </Typography>
-                      {item.taxRate && item.taxRate > 0 && (
+                      {item.taxRate != null && (
                         <Typography
                           variant="caption"
                           className="text-stock-text"
                         >
-                          KDV (%{item.taxRate}): ₺
-                          {(item.taxAmount || 0).toFixed(2)}
+                          KDV %{item.taxRate} = ₺
+                          {(item.taxPrice ?? 0).toLocaleString()}
                         </Typography>
                       )}
                     </View>
-                    <View className="items-end">
-                      <Typography
-                        variant="body"
-                        weight="bold"
-                        className="text-stock-dark"
-                      >
-                        ₺{(item.totalWithTax || item.totalPrice).toFixed(2)}
-                      </Typography>
-                      <Typography variant="caption" className="text-stock-text">
-                        (KDV Dahil)
-                      </Typography>
-                    </View>
+                    <Typography
+                      variant="body"
+                      weight="bold"
+                      className="text-stock-dark"
+                    >
+                      ₺
+                      {(
+                        item.totalPriceWithTax ?? item.totalPrice
+                      ).toLocaleString()}
+                    </Typography>
                   </View>
                 </Card>
               </View>
@@ -398,7 +295,7 @@ export default function ConfirmSales() {
 
           <Divider className="my-4" />
 
-          {/* BACKEND HESAPLAMALARI */}
+          {/* Hesaplamalar – backend calculate sonucuna göre */}
           <View className="space-y-2">
             <View className="flex-row justify-between items-center">
               <Typography
@@ -406,52 +303,70 @@ export default function ConfirmSales() {
                 weight="medium"
                 className="text-stock-dark"
               >
-                Ara Toplam:
+                Alt Toplam:
               </Typography>
               <Typography
                 variant="body"
                 weight="semibold"
                 className="text-stock-dark"
               >
-                ₺{calculateSubTotal().toFixed(2)}
+                ₺{(summary?.totalPriceWithTax ?? 0).toLocaleString()}
               </Typography>
             </View>
 
-            <View className="flex-row justify-between items-center">
-              <Typography
-                variant="body"
-                weight="medium"
-                className="text-stock-dark"
-              >
-                Toplam KDV:
-              </Typography>
-              <Typography
-                variant="body"
-                weight="semibold"
-                className="text-stock-dark"
-              >
-                ₺{calculateTaxAmount().toFixed(2)}
-              </Typography>
-            </View>
-
-            {brokerDiscount > 0 && (
+            {(summary?.discountPrice ?? 0) > 0 && (
               <View className="flex-row justify-between items-center">
                 <Typography
                   variant="body"
                   weight="medium"
                   className="text-stock-red"
                 >
-                  İskonto (%{brokerDiscount}):
+                  İskonto (%{summary?.discountRate ?? brokerDiscount}):
                 </Typography>
                 <Typography
                   variant="body"
                   weight="semibold"
                   className="text-stock-red"
                 >
-                  -₺{calculateDiscountAmount().toFixed(2)}
+                  -₺{(summary?.discountPrice ?? 0).toLocaleString()}
                 </Typography>
               </View>
             )}
+            {/* İskontodan sonraki ara toplam (KDV hariç) */}
+            <View className="flex-row justify-between items-center">
+              <Typography
+                variant="body"
+                weight="medium"
+                className="text-stock-dark"
+              >
+                Ara Toplam (KDV hariç):
+              </Typography>
+              <Typography
+                variant="body"
+                weight="semibold"
+                className="text-stock-dark"
+              >
+                ₺{(summary?.totalPrice ?? 0).toLocaleString()}
+              </Typography>
+            </View>
+
+            {/* Toplam KDV */}
+            <View className="flex-row justify-between items-center">
+              <Typography
+                variant="body"
+                weight="medium"
+                className="text-stock-dark"
+              >
+                KDV Toplamı:
+              </Typography>
+              <Typography
+                variant="body"
+                weight="semibold"
+                className="text-stock-dark"
+              >
+                ₺{(summary?.totalTaxPrice ?? 0).toLocaleString()}
+              </Typography>
+            </View>
 
             <Divider className="my-2" />
 
@@ -461,10 +376,15 @@ export default function ConfirmSales() {
                 weight="bold"
                 className="text-stock-black"
               >
-                Genel Toplam:
+                Genel Toplam (KDV dahil):
               </Typography>
               <Typography variant="h3" weight="bold" className="text-stock-red">
-                ₺{calculateGrandTotal().toFixed(2)}
+                ₺
+                {(
+                  summary?.totalPriceWithTax ??
+                  summary?.totalPrice ??
+                  calcSubTotalLocal()
+                ).toLocaleString()}
               </Typography>
             </View>
           </View>
@@ -497,63 +417,7 @@ export default function ConfirmSales() {
           </Card>
         )}
 
-        {/* Calculation Status - OTOMATIK HESAPLAMA */}
-        {lastCalculation ? (
-          <Card
-            variant="default"
-            padding="md"
-            className="bg-green-50 border border-green-200 mb-4"
-            radius="md"
-          >
-            <View className="flex-row items-center mb-2">
-              <Icon
-                family="MaterialIcons"
-                name="check_circle"
-                size={20}
-                color="#059669"
-                containerClassName="mr-3"
-              />
-              <Typography
-                variant="body"
-                className="text-green-700"
-                weight="medium"
-              >
-                Hesaplama Tamamlandı
-              </Typography>
-            </View>
-            <Typography variant="caption" className="text-green-600">
-              Toplam: ₺{lastCalculation.totalPriceWithTax.toFixed(2)}
-              {lastCalculation.documentNumber &&
-                ` - Belge: ${lastCalculation.documentNumber}`}
-            </Typography>
-          </Card>
-        ) : isCalculating ? (
-          <Card
-            variant="default"
-            padding="md"
-            className="bg-blue-50 border border-blue-200 mb-4"
-            radius="md"
-          >
-            <View className="flex-row items-center">
-              <Icon
-                family="MaterialIcons"
-                name="calculate"
-                size={20}
-                color="#3B82F6"
-                containerClassName="mr-3"
-              />
-              <Typography
-                variant="body"
-                className="text-blue-700"
-                weight="medium"
-              >
-                Hesaplanıyor...
-              </Typography>
-            </View>
-          </Card>
-        ) : null}
-
-        {/* Bakiye Bilgisi - UPDATED WITH CORRECT CALCULATION */}
+        {/* Bakiye Bilgisi */}
         <Card
           variant="default"
           padding="md"
@@ -576,7 +440,7 @@ export default function ConfirmSales() {
               weight="semibold"
               className="text-yellow-700"
             >
-              ₺{brokerDebt.toFixed(2)}
+              ₺{Number(brokerDebt).toLocaleString()}
             </Typography>
           </View>
           <View className="flex-row justify-between items-center">
@@ -588,43 +452,50 @@ export default function ConfirmSales() {
               weight="bold"
               className="text-yellow-800"
             >
-              ₺{(brokerDebt + calculateGrandTotal()).toFixed(2)}
+              ₺
+              {(
+                Number(brokerDebt) + (summary?.totalPriceWithTax ?? 0)
+              ).toLocaleString()}
             </Typography>
           </View>
         </Card>
 
-        {/* Aksiyon Butonları - CALCULATE BUTONU KALDIRILDI */}
+        {/* Aksiyon Butonları */}
         <View className="space-y-3 mb-6">
-          {/* İptal Butonu */}
+          {/* İptal */}
           <Button
             variant="outline"
             size="lg"
             fullWidth
             className="border-stock-red"
             onPress={handleCancel}
-            disabled={isProcessing || isConfirming}
+            loading={isProcessing && cancelMutation.isPending}
             leftIcon={
-              <Icon
-                family="MaterialIcons"
-                name="cancel"
-                size={20}
-                color="#E3001B"
-              />
+              !(isProcessing && cancelMutation.isPending) ? (
+                <Icon
+                  family="MaterialIcons"
+                  name="cancel"
+                  size={20}
+                  color="#E3001B"
+                />
+              ) : undefined
             }
           >
             <Typography className="text-stock-red" weight="bold">
-              İPTAL ET
+              {isProcessing && cancelMutation.isPending
+                ? "İŞLEM YAPILIYOR..."
+                : "İPTAL ET"}
             </Typography>
           </Button>
 
-          {/* Düzenle Butonu */}
+          {/* Düzenle */}
           <Button
             variant="secondary"
             size="lg"
             fullWidth
             className="bg-stock-gray"
             onPress={handleEdit}
-            disabled={isProcessing || isConfirming}
+            disabled={isProcessing}
             leftIcon={
               <Icon
                 family="MaterialIcons"
@@ -639,17 +510,16 @@ export default function ConfirmSales() {
             </Typography>
           </Button>
 
-          {/* Onayla Butonu - SADECE BACKEND */}
+          {/* Onayla */}
           <Button
             variant="primary"
             size="lg"
             fullWidth
             className="bg-stock-red"
             onPress={handleConfirm}
-            loading={isProcessing || isConfirming}
-            disabled={parsedSalesData.length === 0 || !lastCalculation}
+            loading={isProcessing && confirmMutation.isPending}
             leftIcon={
-              !isProcessing && !isConfirming ? (
+              !(isProcessing && confirmMutation.isPending) ? (
                 <Icon
                   family="MaterialIcons"
                   name="check-circle"
@@ -660,8 +530,8 @@ export default function ConfirmSales() {
             }
           >
             <Typography className="text-white" weight="bold">
-              {isProcessing || isConfirming
-                ? "ONAYLANIYOR..."
+              {isProcessing && confirmMutation.isPending
+                ? "İŞLEM YAPILIYOR..."
                 : "ONAYLA VE TAMAMLA"}
             </Typography>
           </Button>
