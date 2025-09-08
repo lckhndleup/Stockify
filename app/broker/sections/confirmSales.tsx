@@ -1,5 +1,5 @@
 // app/broker/sections/confirmSales.tsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -14,7 +14,16 @@ import {
 import { useAppStore } from "@/src/stores/appStore";
 import { useToast } from "@/src/hooks/useToast";
 
-interface SalesItem {
+// Backend hooks
+import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
+import {
+  useSalesCalculate,
+  useSalesConfirm,
+  useSalesCancel,
+} from "@/src/hooks/api/useSales";
+import type { SalesSummary } from "@/src/validations/salesValidations";
+
+interface SalesItemParam {
   id: string;
   name: string;
   quantity: number;
@@ -23,48 +32,73 @@ interface SalesItem {
 }
 
 export default function ConfirmSales() {
-  // URL parametrelerinden satış bilgilerini al
+  // URL parametreleri
   const params = useLocalSearchParams();
-  const { brokerId, salesData, createInvoice } = params;
+  const brokerId = params.brokerId as string;
+  const createInvoiceParam = params.createInvoice as string | undefined;
+  const willCreateInvoice = (createInvoiceParam ?? "true") === "true";
 
-  // State'ler
+  // Paramdan gelen (UI listesi için) satış kalemleri
+  const parsedSalesData: SalesItemParam[] = useMemo(
+    () => (params.salesData ? JSON.parse(params.salesData as string) : []),
+    [params.salesData]
+  );
+
+  // Ekran state
   const [isProcessing, setIsProcessing] = useState(false);
+  const [summary, setSummary] = useState<SalesSummary | null>(null);
 
-  // Hooks
+  // Store fallback
   const {
-    brokers,
+    brokers: localBrokers,
     getBrokerTotalDebt,
     getBrokerDiscount,
-    giveProductToBroker,
   } = useAppStore();
   const { toast, showSuccess, showError } = useToast();
 
-  // Satış verilerini parse et (JSON string olarak gelecek)
-  const parsedSalesData: SalesItem[] = salesData
-    ? JSON.parse(salesData as string)
-    : [];
-  const broker = brokers.find((b) => b.id === brokerId);
-  const brokerDebt = broker ? getBrokerTotalDebt(broker.id) : 0;
-  const brokerDiscount = broker ? getBrokerDiscount(broker.id) : 0;
-  const willCreateInvoice = createInvoice === "true";
+  // Broker (backend > local)
+  const {
+    data: backendBrokers = [],
+    isLoading: brokersLoading,
+    error: brokersError,
+  } = useActiveBrokers();
 
-  // Hesaplamalar
-  const calculateSubTotal = () => {
-    return parsedSalesData.reduce((total, item) => total + item.totalPrice, 0);
-  };
+  const brokers = brokersError ? localBrokers : backendBrokers;
+  const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
 
-  const calculateDiscountAmount = () => {
-    const subTotal = calculateSubTotal();
-    return (subTotal * brokerDiscount) / 100;
-  };
+  const brokerDebt = broker
+    ? "balance" in broker
+      ? (broker as any).balance
+      : getBrokerTotalDebt(broker.id)
+    : 0;
 
-  const calculateTotalAmount = () => {
-    const subTotal = calculateSubTotal();
-    const discountAmount = calculateDiscountAmount();
-    return subTotal - discountAmount;
-  };
+  const brokerDiscount = broker
+    ? broker.discountRate || 0
+    : getBrokerDiscount(brokerId);
 
-  // Buton handlers
+  // Backend mutations
+  const calcMutation = useSalesCalculate();
+  const confirmMutation = useSalesConfirm();
+  const cancelMutation = useSalesCancel();
+
+  // İlk yüklemede (ve brokerId / willCreateInvoice değişince) toplamları backend’den hesapla
+  useEffect(() => {
+    const run = async () => {
+      if (!brokerId) return;
+      try {
+        const res = await calcMutation.mutateAsync({
+          brokerId: Number(brokerId),
+          createInvoice: willCreateInvoice,
+        });
+        setSummary(res);
+      } catch (e) {
+        setSummary(null);
+      }
+    };
+    run();
+  }, [brokerId, willCreateInvoice]);
+
+  // Butonlar
   const handleCancel = () => {
     Alert.alert(
       "Satışı İptal Et",
@@ -74,12 +108,24 @@ export default function ConfirmSales() {
         {
           text: "İptal Et",
           style: "destructive",
-          onPress: () => {
-            // Aracı detay sayfasına git (satış tamamen iptal)
-            router.push({
-              pathname: "/broker/brokerDetail",
-              params: { brokerId: brokerId },
-            });
+          onPress: async () => {
+            try {
+              setIsProcessing(true);
+              await cancelMutation.mutateAsync({
+                brokerId: Number(brokerId),
+                createInvoice: willCreateInvoice,
+              });
+              showSuccess("Satış iptal edildi.");
+              // Aracı detay sayfasına git
+              router.push({
+                pathname: "/broker/brokerDetail",
+                params: { brokerId },
+              });
+            } catch (e) {
+              showError("Satış iptal edilirken bir hata oluştu.");
+            } finally {
+              setIsProcessing(false);
+            }
           },
         },
       ]
@@ -87,55 +133,54 @@ export default function ConfirmSales() {
   };
 
   const handleEdit = () => {
-    // Düzenleme için satış sayfasına geri dön
+    // Satış sayfasına geri dön
     router.back();
   };
 
   const handleConfirm = async () => {
-    if (parsedSalesData.length === 0) {
+    if (!parsedSalesData.length) {
       showError("Satış yapılacak ürün bulunamadı.");
       return;
     }
 
-    setIsProcessing(true);
-
     try {
-      let allSuccess = true;
+      setIsProcessing(true);
+      const res = await confirmMutation.mutateAsync({
+        brokerId: Number(brokerId),
+        createInvoice: willCreateInvoice,
+      });
 
-      // Her ürün için satış işlemini gerçekleştir
-      for (const item of parsedSalesData) {
-        const result = giveProductToBroker(
-          brokerId as string,
-          item.id,
-          item.quantity
-        );
-
-        if (!result.success) {
-          showError(result.error || "Satış işlemi başarısız.");
-          allSuccess = false;
-          break;
-        }
-      }
-
-      if (allSuccess) {
-        // Başarılı sonuç sayfasına yönlendir
-        router.push({
-          pathname: "/broker/sections/resultSales",
-          params: {
-            brokerId: brokerId,
-            success: "true",
-            totalAmount: calculateTotalAmount().toString(),
-            discountAmount: calculateDiscountAmount().toString(),
-            createInvoice: createInvoice,
-          },
-        });
-      }
-    } catch (error) {
-      showError("Beklenmeyen bir hata oluştu.");
+      // resultSales sayfasına geç — toplam & indirim backend’den
+      router.push({
+        pathname: "/broker/sections/resultSales",
+        params: {
+          brokerId,
+          success: "true",
+          totalAmount: String(res?.totalPriceWithTax ?? 0),
+          discountAmount: String(res?.discountPrice ?? 0),
+          createInvoice: String(willCreateInvoice),
+          documentNumber: res?.documentNumber ?? "",
+          downloadUrl: res?.downloadUrl ?? "",
+        },
+      });
+    } catch (e) {
+      showError("Satış onaylanırken bir hata oluştu.");
     } finally {
       setIsProcessing(false);
     }
   };
+
+  if (brokersLoading && !broker) {
+    return (
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <View className="items-center justify-center flex-1">
+          <Typography variant="body" className="text-stock-text">
+            Yükleniyor...
+          </Typography>
+        </View>
+      </Container>
+    );
+  }
 
   if (!broker) {
     return (
@@ -148,6 +193,10 @@ export default function ConfirmSales() {
       </Container>
     );
   }
+
+  // UI hesaplamaları (kart görseli için); toplamlar summary’den gösterilecek
+  const calcSubTotalLocal = () =>
+    parsedSalesData.reduce((sum, i) => sum + i.totalPrice, 0);
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
@@ -192,7 +241,7 @@ export default function ConfirmSales() {
             SATIŞ ÖZETİ
           </Typography>
 
-          {/* Ürün Listesi */}
+          {/* Ürün Listesi – UI verisi paramdan */}
           <View className="mb-4">
             {parsedSalesData.map((item, index) => (
               <View key={index} className="mb-3">
@@ -231,7 +280,7 @@ export default function ConfirmSales() {
 
           <Divider className="my-4" />
 
-          {/* Hesaplamalar */}
+          {/* Hesaplamalar – backend calculate sonucuna göre */}
           <View className="space-y-2">
             <View className="flex-row justify-between items-center">
               <Typography
@@ -246,25 +295,28 @@ export default function ConfirmSales() {
                 weight="semibold"
                 className="text-stock-dark"
               >
-                ₺{calculateSubTotal().toLocaleString()}
+                ₺
+                {(
+                  summary?.subtotalPrice ?? calcSubTotalLocal()
+                ).toLocaleString()}
               </Typography>
             </View>
 
-            {brokerDiscount > 0 && (
+            {(summary?.discountPrice ?? 0) > 0 && (
               <View className="flex-row justify-between items-center">
                 <Typography
                   variant="body"
                   weight="medium"
                   className="text-stock-red"
                 >
-                  İskonto (%{brokerDiscount}):
+                  İskonto (%{summary?.discountRate ?? brokerDiscount}):
                 </Typography>
                 <Typography
                   variant="body"
                   weight="semibold"
                   className="text-stock-red"
                 >
-                  -₺{calculateDiscountAmount().toLocaleString()}
+                  -₺{(summary?.discountPrice ?? 0).toLocaleString()}
                 </Typography>
               </View>
             )}
@@ -280,7 +332,12 @@ export default function ConfirmSales() {
                 Toplam:
               </Typography>
               <Typography variant="h3" weight="bold" className="text-stock-red">
-                ₺{calculateTotalAmount().toLocaleString()}
+                ₺
+                {(
+                  summary?.totalPriceWithTax ??
+                  summary?.totalPrice ??
+                  calcSubTotalLocal()
+                ).toLocaleString()}
               </Typography>
             </View>
           </View>
@@ -336,7 +393,7 @@ export default function ConfirmSales() {
               weight="semibold"
               className="text-yellow-700"
             >
-              ₺{brokerDebt.toLocaleString()}
+              ₺{Number(brokerDebt).toLocaleString()}
             </Typography>
           </View>
           <View className="flex-row justify-between items-center">
@@ -348,41 +405,50 @@ export default function ConfirmSales() {
               weight="bold"
               className="text-yellow-800"
             >
-              ₺{(brokerDebt + calculateTotalAmount()).toLocaleString()}
+              ₺
+              {(
+                Number(brokerDebt) + (summary?.totalPriceWithTax ?? 0)
+              ).toLocaleString()}
             </Typography>
           </View>
         </Card>
 
         {/* Aksiyon Butonları */}
         <View className="space-y-3 mb-6">
-          {/* İptal Butonu */}
+          {/* İptal */}
           <Button
             variant="outline"
             size="lg"
             fullWidth
             className="border-stock-red"
             onPress={handleCancel}
+            loading={isProcessing && cancelMutation.isPending}
             leftIcon={
-              <Icon
-                family="MaterialIcons"
-                name="cancel"
-                size={20}
-                color="#E3001B"
-              />
+              !(isProcessing && cancelMutation.isPending) ? (
+                <Icon
+                  family="MaterialIcons"
+                  name="cancel"
+                  size={20}
+                  color="#E3001B"
+                />
+              ) : undefined
             }
           >
             <Typography className="text-stock-red" weight="bold">
-              İPTAL ET
+              {isProcessing && cancelMutation.isPending
+                ? "İŞLEM YAPILIYOR..."
+                : "İPTAL ET"}
             </Typography>
           </Button>
 
-          {/* Düzenle Butonu */}
+          {/* Düzenle */}
           <Button
             variant="secondary"
             size="lg"
             fullWidth
             className="bg-stock-gray"
             onPress={handleEdit}
+            disabled={isProcessing}
             leftIcon={
               <Icon
                 family="MaterialIcons"
@@ -397,16 +463,16 @@ export default function ConfirmSales() {
             </Typography>
           </Button>
 
-          {/* Onayla Butonu */}
+          {/* Onayla */}
           <Button
             variant="primary"
             size="lg"
             fullWidth
             className="bg-stock-red"
             onPress={handleConfirm}
-            loading={isProcessing}
+            loading={isProcessing && confirmMutation.isPending}
             leftIcon={
-              !isProcessing ? (
+              !(isProcessing && confirmMutation.isPending) ? (
                 <Icon
                   family="MaterialIcons"
                   name="check-circle"
@@ -417,7 +483,9 @@ export default function ConfirmSales() {
             }
           >
             <Typography className="text-white" weight="bold">
-              {isProcessing ? "İŞLEM YAPILIYOR..." : "ONAYLA VE TAMAMLA"}
+              {isProcessing && confirmMutation.isPending
+                ? "İŞLEM YAPILIYOR..."
+                : "ONAYLA VE TAMAMLA"}
             </Typography>
           </Button>
         </View>
