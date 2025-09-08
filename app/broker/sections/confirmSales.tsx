@@ -21,7 +21,7 @@ import {
   useSalesConfirm,
   useSalesCancel,
 } from "@/src/hooks/api/useSales";
-import type { SalesSummary } from "@/src/validations/salesValidations";
+import type { SalesSummary } from "@/src/types/sales";
 
 interface SalesItemParam {
   id: string;
@@ -29,6 +29,9 @@ interface SalesItemParam {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  taxRate?: number;
+  taxPrice?: number;
+  totalPriceWithTax?: number;
 }
 
 export default function ConfirmSales() {
@@ -264,13 +267,25 @@ export default function ConfirmSales() {
                         {item.quantity} adet × ₺
                         {item.unitPrice.toLocaleString()}
                       </Typography>
+                      {item.taxRate != null && (
+                        <Typography
+                          variant="caption"
+                          className="text-stock-text"
+                        >
+                          KDV %{item.taxRate} = ₺
+                          {(item.taxPrice ?? 0).toLocaleString()}
+                        </Typography>
+                      )}
                     </View>
                     <Typography
                       variant="body"
                       weight="bold"
                       className="text-stock-dark"
                     >
-                      ₺{item.totalPrice.toLocaleString()}
+                      ₺
+                      {(
+                        item.totalPriceWithTax ?? item.totalPrice
+                      ).toLocaleString()}
                     </Typography>
                   </View>
                 </Card>
@@ -295,10 +310,7 @@ export default function ConfirmSales() {
                 weight="semibold"
                 className="text-stock-dark"
               >
-                ₺
-                {(
-                  summary?.subtotalPrice ?? calcSubTotalLocal()
-                ).toLocaleString()}
+                ₺{(summary?.totalPriceWithTax ?? 0).toLocaleString()}
               </Typography>
             </View>
 
@@ -320,6 +332,41 @@ export default function ConfirmSales() {
                 </Typography>
               </View>
             )}
+            {/* İskontodan sonraki ara toplam (KDV hariç) */}
+            <View className="flex-row justify-between items-center">
+              <Typography
+                variant="body"
+                weight="medium"
+                className="text-stock-dark"
+              >
+                Ara Toplam (KDV hariç):
+              </Typography>
+              <Typography
+                variant="body"
+                weight="semibold"
+                className="text-stock-dark"
+              >
+                ₺{(summary?.totalPrice ?? 0).toLocaleString()}
+              </Typography>
+            </View>
+
+            {/* Toplam KDV */}
+            <View className="flex-row justify-between items-center">
+              <Typography
+                variant="body"
+                weight="medium"
+                className="text-stock-dark"
+              >
+                KDV Toplamı:
+              </Typography>
+              <Typography
+                variant="body"
+                weight="semibold"
+                className="text-stock-dark"
+              >
+                ₺{(summary?.totalTaxPrice ?? 0).toLocaleString()}
+              </Typography>
+            </View>
 
             <Divider className="my-2" />
 
@@ -329,7 +376,7 @@ export default function ConfirmSales() {
                 weight="bold"
                 className="text-stock-black"
               >
-                Toplam:
+                Genel Toplam (KDV dahil):
               </Typography>
               <Typography variant="h3" weight="bold" className="text-stock-red">
                 ₺
