@@ -1,3 +1,4 @@
+// app/index.tsx
 import React, { useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { useTranslation } from "react-i18next";

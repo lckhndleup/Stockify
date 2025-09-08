@@ -1,4 +1,4 @@
-// src/hooks/api/useProducts.ts - Pasif ürünler hook'u eklendi
+// src/hooks/api/useProducts.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";

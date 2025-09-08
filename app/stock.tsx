@@ -16,7 +16,7 @@ import {
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 
-// API Hooks - Mock data yerine gerçek API kullanacağız
+// API Hooks
 import {
   useInventoryAll,
   useInventoryCritical,

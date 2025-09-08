@@ -59,6 +59,7 @@ export const queryKeys = {
     report: (type: string, period?: string) =>
       [...queryKeys.stock.reports(), type, period] as const,
   },
+
   // Inventory related
   inventory: {
     all: ["inventory"] as const,
@@ -72,13 +73,15 @@ export const queryKeys = {
     available: () => [...queryKeys.inventory.all, "available"] as const,
     updates: () => [...queryKeys.inventory.all, "update"] as const,
   },
+
   // Payment related
   payments: {
     all: ["payments"] as const,
     broker: (brokerId: string) =>
       [...queryKeys.payments.all, "broker", brokerId] as const,
   },
-  // Sales related products
+
+  // Sales related (SalesController)
   sales: {
     all: ["sales"] as const,
     products: () => [...queryKeys.sales.all, "products"] as const,
@@ -86,7 +89,23 @@ export const queryKeys = {
     invoices: () => [...queryKeys.sales.all, "invoices"] as const,
     history: (brokerId?: string) =>
       [...queryKeys.sales.all, "history", brokerId] as const,
+
+    // NEW: mutations / calculation states per broker
+    calculate: (brokerId: string | number) =>
+      [...queryKeys.sales.all, "calculate", String(brokerId)] as const,
+    confirm: (brokerId: string | number) =>
+      [...queryKeys.sales.all, "confirm", String(brokerId)] as const,
+    cancel: (brokerId: string | number) =>
+      [...queryKeys.sales.all, "cancel", String(brokerId)] as const,
   },
+
+  // Basket related (per broker)
+  basket: {
+    all: ["basket"] as const,
+    byBroker: (brokerId: string | number) =>
+      [...queryKeys.basket.all, String(brokerId)] as const,
+  },
+
   // Transaction related
   transactions: {
     all: ["transactions"] as const,

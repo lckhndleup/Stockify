@@ -1,115 +1,96 @@
-// src/validations/salesValidation.ts
+// src/validations/saleValidations.ts
+// SalesController validasyonları: /sales/products, /sales/calculate, /sales/confirm, /sales/cancel
 import { z } from "zod";
 
-export const salesQuantitySchema = z.object({
-  quantity: z
-    .string()
-    .min(1, "Adet girilmesi zorunludur")
-    .refine((val) => !isNaN(Number(val)), "Geçerli bir sayı giriniz")
-    .refine((val) => Number(val) > 0, "Adet 0'dan büyük olmalıdır")
-    .refine((val) => Number.isInteger(Number(val)), "Adet tam sayı olmalıdır")
-    .refine((val) => Number(val) <= 10000, "Adet 10.000'den küçük olmalıdır"),
+/* ----------------------------- Ortak alanlar ----------------------------- */
+export const brokerIdSchema = z.coerce
+  .number()
+  .int("brokerId tam sayı olmalıdır")
+  .positive("brokerId 0'dan büyük olmalıdır");
+
+export const createInvoiceSchema = z.coerce
+  .boolean()
+  .refine((val) => val !== undefined, {
+    message: "createInvoice zorunludur",
+  })
+  .refine((val) => typeof val === "boolean", {
+    message: "createInvoice boolean olmalıdır",
+  });
+
+/* ---------------------- Body: calculate/confirm/cancel ------------------- */
+// Gövde hepsi için aynı: { brokerId, createInvoice }
+export const salesActionSchema = z.object({
+  brokerId: brokerIdSchema,
+  createInvoice: createInvoiceSchema,
 });
 
-export const salesProductSchema = z.object({
-  productId: z.string().min(1, "Ürün seçimi zorunludur"),
-  quantity: z.number().min(1, "Adet 1'den büyük olmalıdır"),
+// Alias (hepsi aynı gövdeyi kullanıyor)
+export const salesCalculateSchema = salesActionSchema;
+export const salesConfirmSchema = salesActionSchema;
+export const salesCancelSchema = salesActionSchema;
+
+export type SalesActionInput = z.infer<typeof salesActionSchema>;
+export type SalesCalculateInput = z.infer<typeof salesCalculateSchema>;
+export type SalesConfirmInput = z.infer<typeof salesConfirmSchema>;
+export type SalesCancelInput = z.infer<typeof salesCancelSchema>;
+
+/* ----------------------- GET /sales/products (response) ------------------ */
+// Daha önce yazdığın products validasyonu burada:
+export const salesProductItemSchema = z.object({
+  productId: z.number().int(),
+  productName: z.string().min(1),
+  productCount: z.number().int().nonnegative(),
+  price: z.number().nonnegative(),
+  taxRate: z.number().min(0).max(100),
 });
 
-export const editQuantitySchema = z.object({
-  quantity: z
-    .string()
-    .min(1, "Adet girilmesi zorunludur")
-    .refine((val) => !isNaN(Number(val)), "Geçerli bir sayı giriniz")
-    .refine((val) => Number(val) > 0, "Adet 0'dan büyük olmalıdır")
-    .refine((val) => Number.isInteger(Number(val)), "Adet tam sayı olmalıdır"),
+export const salesProductsResponseSchema = z.array(salesProductItemSchema);
+export type SalesProductItem = z.infer<typeof salesProductItemSchema>;
+export type SalesProductsResponse = z.infer<typeof salesProductsResponseSchema>;
+
+/* --------------------------- Sales summary (response) -------------------- */
+// (Swagger şemasına göre – confirm/calculate döner)
+export const salesItemSchema = z.object({
+  salesId: z.number().int().optional(),
+  productId: z.number().int(),
+  productName: z.string(),
+  productCount: z.number().int(),
+  unitPrice: z.number(),
+  totalPrice: z.number(),
+  taxRate: z.number(),
+  taxPrice: z.number(),
+  totalPriceWithTax: z.number(),
 });
 
-// YENİ: Kategori Validasyon Şemaları
-export const categorySchema = z.object({
-  name: z
-    .string()
-    .min(1, "Kategori adı girilmesi zorunludur")
-    .min(2, "Kategori adı en az 2 karakter olmalıdır")
-    .max(50, "Kategori adı en fazla 50 karakter olabilir")
-    .refine((val) => val.trim().length > 0, "Kategori adı boş olamaz"),
-  taxRate: z
-    .string()
-    .min(1, "KDV oranı girilmesi zorunludur")
-    .refine((val) => !isNaN(Number(val)), "Geçerli bir sayı giriniz")
-    .refine((val) => Number(val) >= 0, "KDV oranı 0'dan küçük olamaz")
-    .refine((val) => Number(val) <= 100, "KDV oranı 100'den büyük olamaz")
-    .refine(
-      (val) =>
-        Number(val) % 1 === 0 ||
-        Number(val).toString().split(".")[1]?.length <= 2,
-      "KDV oranı en fazla 2 ondalık basamak olabilir"
-    ),
+export const salesSummarySchema = z.object({
+  documentNumber: z.string().optional(),
+  salesItems: z.array(salesItemSchema),
+  subtotalPrice: z.number(),
+  discountPrice: z.number(),
+  discountRate: z.number(),
+  totalPrice: z.number(),
+  taxPrice: z.number(),
+  totalPriceWithTax: z.number(),
+  downloadUrl: z.string().url().optional(),
 });
+export type SalesItem = z.infer<typeof salesItemSchema>;
+export type SalesSummary = z.infer<typeof salesSummarySchema>;
 
-export const editCategorySchema = z.object({
-  name: z
-    .string()
-    .min(1, "Kategori adı girilmesi zorunludur")
-    .min(2, "Kategori adı en az 2 karakter olmalıdır")
-    .max(50, "Kategori adı en fazla 50 karakter olabilir")
-    .refine((val) => val.trim().length > 0, "Kategori adı boş olamaz"),
-  taxRate: z
-    .string()
-    .min(1, "KDV oranı girilmesi zorunludur")
-    .refine((val) => !isNaN(Number(val)), "Geçerli bir sayı giriniz")
-    .refine((val) => Number(val) >= 0, "KDV oranı 0'dan küçük olamaz")
-    .refine((val) => Number(val) <= 100, "KDV oranı 100'den büyük olamaz")
-    .refine(
-      (val) =>
-        Number(val) % 1 === 0 ||
-        Number(val).toString().split(".")[1]?.length <= 2,
-      "KDV oranı en fazla 2 ondalık basamak olabilir"
-    ),
-});
+/* ----------------------------- Parse yardımcıları ------------------------ */
+export const parseSalesAction = (input: unknown): SalesActionInput => {
+  const r = salesActionSchema.safeParse(input);
+  if (!r.success) throw r.error;
+  return r.data;
+};
 
-// Ürün validasyon şemasına kategori zorunluluğu eklendi
-export const productSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Ürün adı girilmesi zorunludur")
-    .min(2, "Ürün adı en az 2 karakter olmalıdır")
-    .max(100, "Ürün adı en fazla 100 karakter olabilir")
-    .refine((val) => val.trim().length > 0, "Ürün adı boş olamaz"),
-  categoryId: z.string().min(1, "Kategori seçimi zorunludur"),
-  stock: z
-    .string()
-    .min(1, "Stok adedi girilmesi zorunludur")
-    .refine((val) => !isNaN(Number(val)), "Geçerli bir sayı giriniz")
-    .refine((val) => Number(val) >= 0, "Stok adedi 0'dan küçük olamaz")
-    .refine(
-      (val) => Number.isInteger(Number(val)),
-      "Stok adedi tam sayı olmalıdır"
-    )
-    .refine(
-      (val) => Number(val) <= 100000,
-      "Stok adedi 100.000'den küçük olmalıdır"
-    ),
-  price: z
-    .string()
-    .min(1, "Fiyat girilmesi zorunludur")
-    .refine((val) => !isNaN(Number(val)), "Geçerli bir sayı giriniz")
-    .refine((val) => Number(val) > 0, "Fiyat 0'dan büyük olmalıdır")
-    .refine(
-      (val) => Number(val) <= 1000000,
-      "Fiyat 1.000.000'den küçük olmalıdır"
-    )
-    .refine(
-      (val) =>
-        Number(val) % 1 === 0 ||
-        Number(val).toString().split(".")[1]?.length <= 2,
-      "Fiyat en fazla 2 ondalık basamak olabilir"
-    ),
-});
+export const parseSalesProducts = (input: unknown): SalesProductsResponse => {
+  const r = salesProductsResponseSchema.safeParse(input);
+  if (!r.success) throw r.error;
+  return r.data;
+};
 
-export type SalesQuantityInput = z.infer<typeof salesQuantitySchema>;
-export type SalesProductInput = z.infer<typeof salesProductSchema>;
-export type EditQuantityInput = z.infer<typeof editQuantitySchema>;
-export type CategoryInput = z.infer<typeof categorySchema>;
-export type EditCategoryInput = z.infer<typeof editCategorySchema>;
-export type ProductInput = z.infer<typeof productSchema>;
+export const parseSalesSummary = (input: unknown): SalesSummary => {
+  const r = salesSummarySchema.safeParse(input);
+  if (!r.success) throw r.error;
+  return r.data;
+};

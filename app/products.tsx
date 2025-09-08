@@ -1,3 +1,4 @@
+// app/products.tsx
 import React, { useState } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
