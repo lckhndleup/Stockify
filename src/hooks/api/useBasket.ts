@@ -8,6 +8,7 @@ import {
   BasketAddRequest,
   BasketItemDisplay,
   BasketRemoveRequest,
+  BasketUpdateRequest,
 } from "@/src/types/basket";
 
 // GET /sales/basket/{brokerId}
@@ -50,6 +51,21 @@ export const useRemoveFromBasket = () => {
     BasketRemoveRequest
   >({
     mutationFn: (payload) => apiService.removeFromBasket(payload),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: queryKeys.basket.byBroker(v.brokerId) });
+    },
+  });
+};
+
+// POST /basket/update
+export const useUpdateBasket = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    { success: true; message: string },
+    unknown,
+    BasketUpdateRequest
+  >({
+    mutationFn: (payload) => apiService.updateBasket(payload),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: queryKeys.basket.byBroker(v.brokerId) });
     },

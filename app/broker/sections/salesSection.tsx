@@ -32,6 +32,7 @@ import {
   useBasket,
   useAddToBasket,
   useRemoveFromBasket,
+  useUpdateBasket,
 } from "@/src/hooks/api/useBasket";
 
 import { apiService } from "@/src/services/api";
@@ -81,6 +82,7 @@ export default function SalesSection() {
   // BACKEND: basket mutations
   const addToBasketMutation = useAddToBasket();
   const removeFromBasketMutation = useRemoveFromBasket();
+  const updateBasketMutation = useUpdateBasket();
 
   // BACKEND: calculate
   const calcMutation = useSalesCalculate();
@@ -133,6 +135,13 @@ export default function SalesSection() {
     : brokersError
     ? getLocalBrokerDiscount(brokerId as string)
     : 0;
+
+  // ---- Helpers (yukarıda olsun ki aşağıda kullanılabilsin) ----
+  function getTaxRate(p: unknown): number | undefined {
+    if (!p || typeof p !== "object") return undefined;
+    const v = (p as any).taxRate;
+    return typeof v === "number" ? v : undefined;
+  }
 
   // Header cancel (UI aynı)
   useEffect(() => {
@@ -197,14 +206,15 @@ export default function SalesSection() {
   );
 
   const productOptions: SelectBoxOption[] = (availableProducts || []).map(
-    (product: any) => ({
-      label: `${product.name} (Stok: ${product.stock}, ₺${
-        product.unitPrice ?? product.price
-      }/adet${
-        getTaxRate(product) != null ? ` + KDV %${getTaxRate(product)}` : ""
-      })`,
-      value: String(product.id ?? product.productId),
-    })
+    (product: any) => {
+      const rate = getTaxRate(product);
+      return {
+        label: `${product.name} (Stok: ${product.stock}, ₺${
+          product.unitPrice ?? product.price
+        }/adet${rate != null ? ` + KDV %${rate}` : ""})`,
+        value: String(product.id ?? product.productId),
+      };
+    }
   );
 
   // Seçilen ürün bilgisi
@@ -393,8 +403,13 @@ export default function SalesSection() {
   const handleSaveEdit = async () => {
     if (!editingProduct || !editQuantity || !!editQuantityError) return;
     const qty = parseInt(editQuantity, 10);
+
     try {
-      await updateBasketQuantity(Number(editingProduct.id), qty);
+      await updateBasketMutation.mutateAsync({
+        brokerId: brokerIdNum,
+        productId: Number(editingProduct.id),
+        productCount: qty,
+      });
       setEditModalVisible(false);
       setEditingProduct(null);
       setEditQuantity("");
@@ -472,14 +487,6 @@ export default function SalesSection() {
       }
     }
   };
-
-  const getTaxRate = (p: unknown): number | undefined =>
-    p &&
-    typeof p === "object" &&
-    "taxRate" in p &&
-    typeof (p as any).taxRate === "number"
-      ? (p as any).taxRate
-      : undefined;
 
   const handleCloseDiscountModal = () => {
     setDiscountModalVisible(false);
@@ -744,16 +751,27 @@ export default function SalesSection() {
                     )}
                   </View>
 
-                  <Typography
-                    variant="body"
-                    weight="bold"
-                    className="text-stock-dark"
-                  >
-                    ₺
-                    {(
-                      product.totalPriceWithTax ?? product.totalPrice
-                    ).toLocaleString()}
-                  </Typography>
+                  {/* ✅ Aksiyon ikonları */}
+                  <View className="flex-row items-center">
+                    <Icon
+                      family="MaterialIcons"
+                      name="edit"
+                      size={20}
+                      color="#67686A"
+                      pressable
+                      onPress={() => handleEditProduct(product.id)}
+                      containerClassName="mr-3 p-1"
+                    />
+                    <Icon
+                      family="MaterialIcons"
+                      name="cancel"
+                      size={20}
+                      color="#E3001B"
+                      pressable
+                      onPress={() => handleRemoveProduct(product.id)} // /basket/remove
+                      containerClassName="p-1"
+                    />
+                  </View>
                 </View>
               </Card>
             ))}

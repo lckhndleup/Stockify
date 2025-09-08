@@ -12,6 +12,13 @@ export interface BasketRemoveRequest {
   productId: number;
 }
 
+// Basket update
+export interface BasketUpdateRequest {
+  brokerId: number;
+  productId: number;
+  productCount: number;
+}
+
 // ---------- Response DTOs ----------
 export interface BackendBasketItem {
   productId: number;

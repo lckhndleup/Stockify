@@ -13,7 +13,6 @@ import {
 import { useAppStore } from "@/src/stores/appStore";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 
-// Tipler – alias takılırsa local tipleri kullanıyoruz
 type SalesItem = {
   salesId?: number;
   productId: number;
@@ -31,9 +30,9 @@ type SalesSummary = {
   subtotalPrice: number;
   discountRate: number;
   discountPrice: number;
-  totalPrice: number;
-  totalTaxPrice?: number;
-  totalPriceWithTax: number;
+  totalPrice: number; // iskonto sonrası ara toplam (KDV hariç)
+  totalTaxPrice?: number; // toplam KDV
+  totalPriceWithTax: number; // KDV dahil genel toplam
   downloadUrl?: string;
 };
 
@@ -51,7 +50,7 @@ export default function ResultSales() {
     createInvoice,
     documentNumber,
     downloadUrl,
-    summaryJSON, // opsiyonel – confirmSales'ten gönderirsen ürün kalemleri listelenir
+    summaryJSON, // opsiyonel – confirmSales'ten gönderilirse ürün kalemleri listelenir
   } = params;
 
   const isSuccess = String(success) === "true";
@@ -69,20 +68,19 @@ export default function ResultSales() {
       backendBrokers.find((b: any) => String(b.brokerId) === String(brokerId)),
     [backendBrokers, brokerId]
   );
-
   const storeBroker = useMemo(
     () => storeBrokers.find((b: any) => String(b.id) === String(brokerId)),
     [storeBrokers, brokerId]
   );
 
-  // Görünen isim ve bakiye kaynakları
+  // Görünen isim
   const displayName = backendBroker
     ? `${backendBroker.firstName} ${backendBroker.lastName}`
     : storeBroker
     ? `${storeBroker.name} ${storeBroker.surname}`
     : `Aracı #${brokerId}`;
 
-  // Mevcut bakiye: backend varsa backend.currentBalance, yoksa store hesaplaması
+  // Mevcut bakiye
   const currentBalance =
     typeof backendBroker?.currentBalance === "number"
       ? backendBroker.currentBalance
@@ -152,7 +150,7 @@ export default function ResultSales() {
     }
   };
 
-  // Sadece broker yüklenirken kısa bir loader (UI'ı bozmaz)
+  // Sadece broker yüklenirken kısa bir loader
   if (brokersLoading && !backendBroker && !storeBroker) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
@@ -276,7 +274,19 @@ export default function ResultSales() {
                               {it.productCount} adet × ₺
                               {it.unitPrice.toLocaleString()}
                             </Typography>
+
+                            {/* Kalem KDV bilgisi */}
+                            {typeof it.taxRate === "number" && (
+                              <Typography
+                                variant="caption"
+                                className="text-green-700"
+                              >
+                                KDV %{it.taxRate} = ₺
+                                {(it.taxPrice ?? 0).toLocaleString()}
+                              </Typography>
+                            )}
                           </View>
+
                           <Typography
                             variant="body"
                             weight="bold"
@@ -335,10 +345,27 @@ export default function ResultSales() {
                   </View>
                 )}
 
+                {/* Ara Toplam (KDV hariç) */}
+                {summary?.totalPrice !== undefined && (
+                  <View className="flex-row justify-between items-center">
+                    <Typography variant="body" className="text-green-700">
+                      Ara Toplam (KDV hariç):
+                    </Typography>
+                    <Typography
+                      variant="body"
+                      weight="bold"
+                      className="text-green-800"
+                    >
+                      ₺{summary.totalPrice.toLocaleString()}
+                    </Typography>
+                  </View>
+                )}
+
+                {/* Toplam KDV */}
                 {summary?.totalTaxPrice !== undefined && (
                   <View className="flex-row justify-between items-center">
                     <Typography variant="body" className="text-green-700">
-                      Toplam KDV:
+                      KDV Toplamı:
                     </Typography>
                     <Typography
                       variant="body"
@@ -358,7 +385,7 @@ export default function ResultSales() {
                     weight="bold"
                     className="text-green-800"
                   >
-                    Genel Toplam:
+                    Genel Toplam (KDV dahil):
                   </Typography>
                   <Typography
                     variant="h3"

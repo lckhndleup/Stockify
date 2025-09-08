@@ -736,6 +736,31 @@ class ApiService {
     }
   }
 
+  /** POST /basket/update */
+  async updateBasket(payload: {
+    brokerId: number;
+    productId: number;
+    productCount: number;
+  }): Promise<{ success: true; message: string }> {
+    try {
+      console.log("🧺✏️ API: Update basket:", payload);
+
+      const result = await this.request<{ success: true; message: string }>(
+        "/basket/update",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log("✅ API: Basket updated");
+      return result;
+    } catch (error) {
+      console.log("🧺✏️ API: Update basket error:", error);
+      throw error;
+    }
+  }
+
   /** POST /sales/calculate */
   async calculateSale(payload: {
     brokerId: number;
