@@ -142,7 +142,7 @@ export default function StockDetailPage() {
   if (isLoading) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
-        <Loading text="Stok detayı yükleniyor..." />
+        <Loading size="large" />
       </Container>
     );
   }
@@ -486,18 +486,15 @@ export default function StockDetailPage() {
               size="lg"
               fullWidth
               onPress={handleUpdate}
+              loading={updateInventoryMutation.isPending}
               disabled={updateInventoryMutation.isPending}
               className="bg-stock-red"
             >
-              {updateInventoryMutation.isPending ? (
-                <Typography className="text-white" weight="bold">
-                  Güncelleniyor...
-                </Typography>
-              ) : (
-                <Typography className="text-white" weight="bold">
-                  GÜNCELLE
-                </Typography>
-              )}
+              <Typography className="text-white" weight="bold">
+                {updateInventoryMutation.isPending
+                  ? "Güncelleniyor..."
+                  : "GÜNCELLE"}
+              </Typography>
             </Button>
 
             <Button

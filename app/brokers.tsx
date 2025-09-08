@@ -282,14 +282,9 @@ export default function BrokersPage() {
   // Loading state
   if (brokersLoading && !brokersError) {
     return (
-      <Container className="bg-white" padding="sm" safeTop={false}>
-        <View className="items-center justify-center flex-1">
-          <Loading size="large" />
-          <Typography variant="body" className="text-stock-text mt-4">
-            Aracılar yükleniyor...
-          </Typography>
-        </View>
-      </Container>
+      <View className="items-center justify-center flex-1">
+        <Loading size="large" />
+      </View>
     );
   }
 
@@ -435,6 +430,7 @@ export default function BrokersPage() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleSaveBroker}
+              loading={createBrokerMutation.isPending}
               disabled={createBrokerMutation.isPending}
             >
               <Typography className="text-white">
@@ -500,6 +496,7 @@ export default function BrokersPage() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleEditSaveBroker}
+              loading={updateBrokerMutation.isPending}
               disabled={updateBrokerMutation.isPending} // ✅ DÜZELTME: Update mutation loading state'i
             >
               <Typography className="text-white">

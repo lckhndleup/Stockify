@@ -543,9 +543,6 @@ export default function SalesSection() {
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
           <Loading size="large" />
-          <Typography variant="body" className="text-stock-text mt-4">
-            Yükleniyor...
-          </Typography>
         </View>
       </Container>
     );
@@ -1016,6 +1013,7 @@ export default function SalesSection() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleSaveDiscount}
+              loading={updateDiscountRateMutation.isPending}
               disabled={
                 !discountValue ||
                 !!discountError ||

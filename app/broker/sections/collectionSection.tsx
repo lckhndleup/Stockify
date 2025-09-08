@@ -196,9 +196,6 @@ export default function CollectionSection() {
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
           <Loading size="large" />
-          <Typography variant="body" className="text-stock-text mt-4">
-            Aracı bilgileri yükleniyor...
-          </Typography>
         </View>
       </Container>
     );
@@ -355,6 +352,7 @@ export default function CollectionSection() {
             fullWidth
             className="bg-stock-red"
             onPress={handleCollection}
+            loading={createPaymentMutation.isPending}
             disabled={
               !paymentType ||
               !amount ||
@@ -362,18 +360,11 @@ export default function CollectionSection() {
               createPaymentMutation.isPending
             }
           >
-            {createPaymentMutation.isPending ? (
-              <View className="flex-row items-center">
-                <Loading size="small" color="white" />
-                <Typography className="text-white ml-2" weight="bold">
-                  TAHSİL EDİLİYOR...
-                </Typography>
-              </View>
-            ) : (
-              <Typography className="text-white" weight="bold">
-                TAHSİLATI TAMAMLA
-              </Typography>
-            )}
+            <Typography className="text-white" weight="bold">
+              {createPaymentMutation.isPending
+                ? "TAHSİL EDİLİYOR..."
+                : "TAHSİLATI TAMAMLA"}
+            </Typography>
           </Button>
         </Card>
 

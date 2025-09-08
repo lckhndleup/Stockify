@@ -279,12 +279,9 @@ export default function CategoriesPage() {
   // Loading state
   if (categoriesLoading) {
     return (
-      <Container className="bg-white" padding="sm" safeTop={false}>
-        <View className="flex-1 justify-center items-center">
-          <Loading size="large" />
-          <Typography className="mt-4 text-gray-600">Yükleniyor...</Typography>
-        </View>
-      </Container>
+      <View className="flex-1 justify-center items-center">
+        <Loading size="large" />
+      </View>
     );
   }
 
@@ -476,8 +473,11 @@ export default function CategoriesPage() {
               className="bg-stock-red mb-3"
               onPress={handleConfirmAddCategory}
               loading={createCategoryMutation.isPending}
+              disabled={createCategoryMutation.isPending}
             >
-              <Typography className="text-white">Ekle</Typography>
+              <Typography className="text-white">
+                {createCategoryMutation.isPending ? "Ekleniyor..." : "Ekle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"
