@@ -289,7 +289,6 @@ export default function HomePage() {
               />
             </View>
           </Card>
-          <Loading size="large" />
         </View>
       </ScrollView>
     </Container>
