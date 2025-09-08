@@ -689,7 +689,7 @@ export default function ProductsPage() {
   if (isLoading) {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
-        <View className="flex-1 justify-center items-center">
+        <View className="flex-1 justify-center items-center -mt-20">
           <Loading size="large" />
         </View>
       </Container>

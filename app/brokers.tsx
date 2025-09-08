@@ -283,7 +283,7 @@ export default function BrokersPage() {
   if (brokersLoading && !brokersError) {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
-        <View className="flex-1 justify-center items-center">
+        <View className="flex-1 justify-center items-center -mt-16">
           <Loading size="large" />
         </View>
       </Container>

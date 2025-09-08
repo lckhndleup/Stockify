@@ -127,7 +127,7 @@ export default function StockPage() {
   if (error) {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
-        <View className="flex-1 justify-center items-center">
+        <View className="flex-1 justify-center items-center -mt-16">
           <Icon
             family="MaterialIcons"
             name="error-outline"
@@ -162,7 +162,7 @@ export default function StockPage() {
   if (isLoading) {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
-        <View className="flex-1 justify-center items-center">
+        <View className="flex-1 justify-center items-center -mt-16">
           <Loading size="large" />
         </View>
       </Container>
@@ -359,8 +359,7 @@ export default function StockPage() {
                               className="text-stock-dark"
                               weight="medium"
                             >
-                              {item.productCount.toLocaleString("tr-TR")}{" "}
-                              adet
+                              {item.productCount.toLocaleString("tr-TR")} adet
                             </Typography>
                             <Typography
                               variant="caption"
