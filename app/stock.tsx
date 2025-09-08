@@ -284,7 +284,7 @@ export default function StockPage() {
         </View>
 
         {/* Loading State */}
-        {isLoading && <Loading text="Stok verileri yükleniyor..." />}
+        {isLoading && <Loading size="large" />}
 
         {/* Content */}
         {!isLoading && (
