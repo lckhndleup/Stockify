@@ -717,9 +717,9 @@ export default function SalesSection() {
               EKLENEN ÜRÜNLER
             </Typography>
 
-            {addedProducts.map((product) => (
+            {addedProducts.map((product, index) => (
               <Card
-                key={product.id}
+                key={`${product.id}-${index}`}
                 variant="default"
                 padding="md"
                 className="border border-stock-border mb-3"
@@ -895,7 +895,7 @@ export default function SalesSection() {
           <View className="items-center py-8">
             <Icon
               family="MaterialIcons"
-              name="shopping_cart"
+              name="shopping-cart"
               size={48}
               color="#ECECEC"
               containerClassName="mb-4"
