@@ -126,8 +126,8 @@ export default function StockPage() {
 
   if (error) {
     return (
-      <Container className="bg-white" padding="sm" safeTop={false}>
-        <View className="flex-1 justify-center items-center">
+      <Container className="bg-white flex-1" padding="none" safeTop={false}>
+        <View className="flex-1 justify-center items-center -mt-16">
           <Icon
             family="MaterialIcons"
             name="error-outline"
@@ -154,6 +154,16 @@ export default function StockPage() {
           >
             Tekrar Dene
           </Button>
+        </View>
+      </Container>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Container className="bg-white flex-1" padding="none" safeTop={false}>
+        <View className="flex-1 justify-center items-center -mt-16">
+          <Loading size="large" />
         </View>
       </Container>
     );
@@ -283,165 +293,157 @@ export default function StockPage() {
           />
         </View>
 
-        {/* Loading State */}
-        {isLoading && <Loading size="large" />}
-
         {/* Content */}
-        {!isLoading && (
-          <>
-            {filteredInventory.length > 0 ? (
-              <View className="space-y-3 mb-6">
-                {filteredInventory.map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    onPress={() => handleProductPress(item)}
-                    activeOpacity={0.7}
-                  >
-                    <Card
-                      variant="default"
-                      padding="md"
-                      className="border border-stock-border"
-                      radius="md"
-                    >
+        {filteredInventory.length > 0 ? (
+          <View className="space-y-3 mb-6">
+            {filteredInventory.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => handleProductPress(item)}
+                activeOpacity={0.7}
+              >
+                <Card
+                  variant="default"
+                  padding="md"
+                  className="border border-stock-border"
+                  radius="md"
+                >
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1 mr-3">
+                      {/* Ürün Bilgileri */}
+                      <View className="flex-row items-center mb-2">
+                        <Typography
+                          variant="body"
+                          weight="semibold"
+                          className="text-stock-dark flex-1"
+                        >
+                          {item.productName}
+                        </Typography>
+                        <View
+                          className={`px-2 py-1 rounded-full ${
+                            item.isOutOfStock
+                              ? "bg-red-100"
+                              : item.isCritical
+                              ? "bg-yellow-100"
+                              : "bg-green-100"
+                          }`}
+                        >
+                          <Typography
+                            variant="caption"
+                            className={
+                              item.isOutOfStock
+                                ? "text-red-700"
+                                : item.isCritical
+                                ? "text-yellow-700"
+                                : "text-green-700"
+                            }
+                            weight="medium"
+                          >
+                            {item.statusText}
+                          </Typography>
+                        </View>
+                      </View>
+
+                      {/* Alt Bilgiler */}
                       <View className="flex-row items-center justify-between">
-                        <View className="flex-1 mr-3">
-                          {/* Ürün Bilgileri */}
-                          <View className="flex-row items-center mb-2">
+                        <View className="flex-1">
+                          <Typography
+                            variant="caption"
+                            className="text-stock-text"
+                          >
+                            {item.categoryName} • {item.inventoryCode}
+                          </Typography>
+                          <View className="flex-row items-center mt-1">
                             <Typography
-                              variant="body"
-                              weight="semibold"
-                              className="text-stock-dark flex-1"
+                              variant="caption"
+                              className="text-stock-dark"
+                              weight="medium"
                             >
-                              {item.productName}
+                              {item.productCount.toLocaleString("tr-TR")} adet
                             </Typography>
-                            <View
-                              className={`px-2 py-1 rounded-full ${
-                                item.isOutOfStock
-                                  ? "bg-red-100"
-                                  : item.isCritical
-                                  ? "bg-yellow-100"
-                                  : "bg-green-100"
-                              }`}
+                            <Typography
+                              variant="caption"
+                              className="text-stock-text mx-1"
                             >
-                              <Typography
-                                variant="caption"
-                                className={
-                                  item.isOutOfStock
-                                    ? "text-red-700"
-                                    : item.isCritical
-                                    ? "text-yellow-700"
-                                    : "text-green-700"
-                                }
-                                weight="medium"
-                              >
-                                {item.statusText}
-                              </Typography>
-                            </View>
-                          </View>
-
-                          {/* Alt Bilgiler */}
-                          <View className="flex-row items-center justify-between">
-                            <View className="flex-1">
-                              <Typography
-                                variant="caption"
-                                className="text-stock-text"
-                              >
-                                {item.categoryName} • {item.inventoryCode}
-                              </Typography>
-                              <View className="flex-row items-center mt-1">
-                                <Typography
-                                  variant="caption"
-                                  className="text-stock-dark"
-                                  weight="medium"
-                                >
-                                  {item.productCount.toLocaleString("tr-TR")}{" "}
-                                  adet
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  className="text-stock-text mx-1"
-                                >
-                                  •
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  className="text-green-600"
-                                  weight="medium"
-                                >
-                                  {item.price.toLocaleString("tr-TR", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}{" "}
-                                  TL
-                                </Typography>
-                              </View>
-                            </View>
-
-                            {/* Toplam Değer */}
-                            <View className="items-end">
-                              <Typography
-                                variant="caption"
-                                className="text-stock-text"
-                              >
-                                Toplam Değer
-                              </Typography>
-                              <Typography
-                                variant="body"
-                                weight="bold"
-                                className="text-stock-red"
-                              >
-                                {item.totalPrice.toLocaleString("tr-TR", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}{" "}
-                                TL
-                              </Typography>
-                            </View>
+                              •
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              className="text-green-600"
+                              weight="medium"
+                            >
+                              {item.price.toLocaleString("tr-TR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              TL
+                            </Typography>
                           </View>
                         </View>
 
-                        {/* Arrow Icon */}
-                        <Icon
-                          family="MaterialIcons"
-                          name="arrow-forward-ios"
-                          size={16}
-                          color="#73767A"
-                        />
+                        {/* Toplam Değer */}
+                        <View className="items-end">
+                          <Typography
+                            variant="caption"
+                            className="text-stock-text"
+                          >
+                            Toplam Değer
+                          </Typography>
+                          <Typography
+                            variant="body"
+                            weight="bold"
+                            className="text-stock-red"
+                          >
+                            {item.totalPrice.toLocaleString("tr-TR", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            TL
+                          </Typography>
+                        </View>
                       </View>
-                    </Card>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <Card
-                variant="default"
-                padding="lg"
-                className="border border-stock-border"
-                radius="md"
+                    </View>
+
+                    {/* Arrow Icon */}
+                    <Icon
+                      family="MaterialIcons"
+                      name="arrow-forward-ios"
+                      size={16}
+                      color="#73767A"
+                    />
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <Card
+            variant="default"
+            padding="lg"
+            className="border border-stock-border"
+            radius="md"
+          >
+            <View className="items-center">
+              <Icon
+                family="MaterialCommunityIcons"
+                name="package-variant-closed"
+                size={48}
+                color="#73767A"
+              />
+              <Typography
+                variant="body"
+                className="text-stock-text text-center mt-3"
               >
-                <View className="items-center">
-                  <Icon
-                    family="MaterialCommunityIcons"
-                    name="package-variant-closed"
-                    size={48}
-                    color="#73767A"
-                  />
-                  <Typography
-                    variant="body"
-                    className="text-stock-text text-center mt-3"
-                  >
-                    {searchText
-                      ? "Arama kriterlerine uygun ürün bulunamadı."
-                      : activeTab === "critical"
-                      ? "Kritik seviyede ürün bulunamadı."
-                      : activeTab === "outofstock"
-                      ? "Tükenen ürün bulunamadı."
-                      : "Ürün bulunamadı."}
-                  </Typography>
-                </View>
-              </Card>
-            )}
-          </>
+                {searchText
+                  ? "Arama kriterlerine uygun ürün bulunamadı."
+                  : activeTab === "critical"
+                  ? "Kritik seviyede ürün bulunamadı."
+                  : activeTab === "outofstock"
+                  ? "Tükenen ürün bulunamadı."
+                  : "Ürün bulunamadı."}
+              </Typography>
+            </View>
+          </Card>
         )}
       </ScrollView>
     </Container>
