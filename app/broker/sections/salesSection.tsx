@@ -201,9 +201,7 @@ export default function SalesSection() {
       label: `${product.name} (Stok: ${product.stock}, ₺${
         product.unitPrice ?? product.price
       }/adet${
-        "taxRate" in product && typeof product.taxRate === "number"
-          ? ` + KDV %${product.taxRate}`
-          : ""
+        getTaxRate(product) != null ? ` + KDV %${getTaxRate(product)}` : ""
       })`,
       value: String(product.id ?? product.productId),
     })
@@ -669,7 +667,11 @@ export default function SalesSection() {
                 error={quantityError}
                 helperText={
                   !quantityError && selectedProductData
-                    ? `Mevcut stok: ${selectedProductData.stock} adet / KDV %${selectedProductData.taxRate}`
+                    ? `Mevcut stok: ${selectedProductData.stock} adet${
+                        getTaxRate(selectedProductData) != null
+                          ? ` / KDV %${getTaxRate(selectedProductData)}`
+                          : ""
+                      }`
                     : ""
                 }
                 className="mb-4"
