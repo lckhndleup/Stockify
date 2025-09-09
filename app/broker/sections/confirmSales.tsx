@@ -209,9 +209,19 @@ export default function ConfirmSales() {
           >
             {`${broker.name} ${broker.surname}`}
           </Typography>
+          <Typography
+            variant="body"
+            weight="semibold"
+            className={`${
+              brokerDebt >= 0 ? "text-stock-red" : "text-stock-green"
+            } text-center mt-0`}
+          >
+            Bakiye: {brokerDebt >= 0 ? "" : "-"}₺
+            {Math.abs(brokerDebt).toLocaleString()}
+          </Typography>
         </View>
         {/* 2) BAKİYE SATIRI (| ile iki sütun) */}
-        <View className="border border-stock-border rounded-lg bg-white mb-4 overflow-hidden">
+        {/* <View className="border border-stock-border rounded-lg bg-white mb-4 overflow-hidden">
           <View className="flex-row">
             <View className="flex-1 px-4 py-3">
               <Typography className="text-stock-text">
@@ -229,7 +239,7 @@ export default function ConfirmSales() {
               </Typography>
             </View>
           </View>
-        </View>
+        </View> */}
         {/* 3) FATURA BİLGİ ŞERİDİ */}
         {willCreateInvoice && (
           <View className="border border-stock-border rounded-lg px-4 py-3 bg-white mb-4">
@@ -239,7 +249,7 @@ export default function ConfirmSales() {
           </View>
         )}
         {/* 4) ÜRÜNLER BAŞLIĞI */}
-        <Typography className="text-stock-text mb-4" weight="medium">
+        <Typography className="text-stock-text mb-4 ml-2" weight="medium">
           ÜRÜNLER
         </Typography>
         {/* 5) ÜRÜN SATIRLARI (kutu kutu) */}

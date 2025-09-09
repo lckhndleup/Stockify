@@ -135,7 +135,7 @@ export default function ResultSales() {
       : summaryToShow?.discountPrice ?? 0;
 
   // Yeni bakiye – yalnızca backend currentBalance varsa onu göster, yoksa fallback
-  const newBalance =
+  const Balance =
     typeof (backendBroker as any)?.currentBalance === "number"
       ? (backendBroker as any).currentBalance
       : broker
@@ -178,9 +178,9 @@ export default function ResultSales() {
       parsedTotalAmount: parsedParam,
       summaryTotalWithTax: summaryToShow?.totalPriceWithTax,
       summaryDiscount: summaryToShow?.discountPrice,
-      computedNewBalance: newBalance,
+      computedNewBalance: Balance,
     });
-  }, [totalAmount, summaryToShow, newBalance]);
+  }, [totalAmount, summaryToShow, Balance]);
 
   // Android back – ana sayfaya sorarak dön
   useEffect(() => {
@@ -244,10 +244,15 @@ export default function ResultSales() {
             {displayName || "Aracı"}
           </Typography>
           <Typography
-            variant="caption"
-            className="text-stock-text mt-1 text-center"
+            variant="body"
+            weight="semibold"
+            className={`${
+              Balance >= 0 ? "text-stock-red" : "text-stock-green"
+            } text-center mt-0`}
           >
-            Yeni Bakiye: ₺{Number(newBalance).toLocaleString()}
+            {/* Bakiye: ₺{Number(Balance).toLocaleString()} */}
+            Bakiye: {Balance >= 0 ? "" : "-"}₺
+            {Math.abs(Balance).toLocaleString()}
           </Typography>
         </View>
 
@@ -258,7 +263,7 @@ export default function ResultSales() {
               ref={successAnimationRef}
               size={80}
               autoPlay
-              loop={false}
+              loop={true}
               speed={1.2}
             />
           ) : (
