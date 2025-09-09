@@ -344,7 +344,7 @@ export default function ResultSales() {
 
             <View className="flex-row justify-between items-center">
               <Typography
-                variant="h4"
+                variant="body"
                 weight="bold"
                 className="text-stock-black"
               >

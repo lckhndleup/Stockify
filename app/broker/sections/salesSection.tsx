@@ -851,7 +851,7 @@ export default function SalesSection() {
 
               <View className="flex-row justify-between items-center">
                 <Typography
-                  variant="h4"
+                  variant="body"
                   weight="bold"
                   className="text-stock-black"
                 >
@@ -872,7 +872,7 @@ export default function SalesSection() {
               variant="primary"
               size="lg"
               fullWidth
-              className="bg-stock-red"
+              className="bg-stock-red mb-16"
               onPress={handleCompleteSale}
               leftIcon={
                 <Icon

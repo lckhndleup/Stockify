@@ -9,16 +9,52 @@ import { BottomNavigation, Icon } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
 import "../global.css";
 
-// Custom Header Left Component
-const CustomHeaderLeft = () => (
-  <TouchableOpacity
-    onPress={() => router.push("/")}
-    style={{ marginLeft: -5 }}
-    activeOpacity={0.7}
-  >
-    <Icon family="MaterialIcons" name="arrow-back" size={24} color="#000" />
-  </TouchableOpacity>
-);
+// ✅ GELİŞTİRİLMİŞ Custom Header Left Component
+interface CustomHeaderLeftProps {
+  targetRoute?: string;
+  routeParams?: Record<string, any>;
+  title?: string;
+  iconName?: string;
+  iconColor?: string;
+  onPress?: () => void; // Custom action için
+}
+
+const CustomHeaderLeft = ({
+  targetRoute = "/",
+  routeParams = {},
+  title = "Geri",
+  iconName = "arrow-back",
+  iconColor = "#000",
+  onPress,
+}: CustomHeaderLeftProps) => {
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+      return;
+    }
+
+    if (Object.keys(routeParams).length > 0) {
+      router.push({ pathname: targetRoute as any, params: routeParams });
+    } else {
+      router.push(targetRoute as any);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      style={{ marginLeft: -5 }}
+      activeOpacity={0.7}
+    >
+      <Icon
+        family="MaterialIcons"
+        name={iconName as any}
+        size={24}
+        color={iconColor}
+      />
+    </TouchableOpacity>
+  );
+};
 
 export default function RootLayout() {
   const { isAuthenticated, initializeAuth } = useAuthStore();
@@ -66,12 +102,11 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, pathname, isNavigationReady]);
 
-  // Login sayfasında BottomNavigation gösterme
   // Login sayfasında ve sections altında BottomNavigation gösterme
   const shouldShowBottomNav =
     isAuthenticated &&
     pathname !== "/login" &&
-    !pathname.includes("/broker/sections/"); // Sections altındaki tüm sayfalar
+    !pathname.includes("/broker/sections/");
 
   console.log("🎯 RootLayout render:", {
     pathname,
@@ -114,7 +149,7 @@ export default function RootLayout() {
             options={{
               title: "Ürünler",
               headerShown: true,
-              headerLeft: CustomHeaderLeft,
+              headerLeft: () => <CustomHeaderLeft targetRoute="/" />,
             }}
           />
           <Stack.Screen
@@ -122,7 +157,7 @@ export default function RootLayout() {
             options={{
               title: "Aracılar",
               headerShown: true,
-              headerLeft: CustomHeaderLeft,
+              headerLeft: () => <CustomHeaderLeft targetRoute="/" />,
             }}
           />
           <Stack.Screen
@@ -130,14 +165,16 @@ export default function RootLayout() {
             options={{
               title: "Stok Takip",
               headerShown: true,
-              headerLeft: CustomHeaderLeft,
+              headerLeft: () => <CustomHeaderLeft targetRoute="/" />,
             }}
           />
+          {/* ✅ GÜNCELLENECEK: brokerDetail için /brokers'a gidecek */}
           <Stack.Screen
             name="broker/brokerDetail"
             options={{
               title: "Aracı Detayı",
               headerShown: true,
+              headerLeft: () => <CustomHeaderLeft targetRoute="/brokers" />,
             }}
           />
           <Stack.Screen
@@ -152,30 +189,53 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="broker/sections/collectionSection"
-            options={{
+            options={({ route }) => ({
               title: "Tahsilat İşlemleri",
               headerShown: true,
-            }}
+              // ✅ collectionSection'da brokerDetail'a geri dön
+              headerLeft: () => (
+                <CustomHeaderLeft
+                  targetRoute="/broker/brokerDetail"
+                  routeParams={{ brokerId: (route.params as any)?.brokerId }}
+                />
+              ),
+            })}
           />
           <Stack.Screen
             name="broker/sections/statementSection"
-            options={{
+            options={({ route }) => ({
               title: "Ekstreler",
               headerShown: true,
-            }}
+              // ✅ statementSection'da brokerDetail'a geri dön
+              headerLeft: () => (
+                <CustomHeaderLeft
+                  targetRoute="/broker/brokerDetail"
+                  routeParams={{ brokerId: (route.params as any)?.brokerId }}
+                />
+              ),
+            })}
           />
           <Stack.Screen
             name="broker/sections/invoiceSection"
-            options={{
+            options={({ route }) => ({
               title: "Faturalar",
               headerShown: true,
-            }}
+              // ✅ invoiceSection'da brokerDetail'a geri dön
+              headerLeft: () => (
+                <CustomHeaderLeft
+                  targetRoute="/broker/brokerDetail"
+                  routeParams={{ brokerId: (route.params as any)?.brokerId }}
+                />
+              ),
+            })}
           />
           <Stack.Screen
             name="categories"
             options={{
               title: "Kategori Yönetimi",
               headerShown: true,
+              // ✅ categories sayfasından products'a geri dön
+              headerLeft: () => <CustomHeaderLeft targetRoute="/products" />,
             }}
           />
           <Stack.Screen
@@ -183,9 +243,9 @@ export default function RootLayout() {
             options={{
               title: "Satış Onayı",
               headerShown: true,
-              headerBackVisible: false, // Geri butonu gizle
-              gestureEnabled: false, // iOS'ta swipe ile geri gitmeyi engelle
-              headerLeft: () => null, // Header sol tarafını tamamen temizle
+              headerBackVisible: false,
+              gestureEnabled: false,
+              headerLeft: () => null,
             }}
           />
           <Stack.Screen
@@ -193,6 +253,8 @@ export default function RootLayout() {
             options={{
               title: "Stok Detayı",
               headerShown: true,
+              // ✅ stockDetail'dan stock'a geri dön
+              headerLeft: () => <CustomHeaderLeft targetRoute="/stock" />,
             }}
           />
           <Stack.Screen
@@ -200,9 +262,9 @@ export default function RootLayout() {
             options={{
               title: "Satış Tamamlandı",
               headerShown: true,
-              headerBackVisible: false, // Geri butonu gizle
-              gestureEnabled: false, // iOS'ta swipe ile geri gitmeyi engelle
-              headerLeft: () => null, // Header sol tarafını tamamen temizle
+              headerBackVisible: false,
+              gestureEnabled: false,
+              headerLeft: () => null,
             }}
           />
         </Stack>

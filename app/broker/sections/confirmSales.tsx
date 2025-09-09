@@ -326,7 +326,11 @@ export default function ConfirmSales() {
           <Divider className="my-3" />
 
           <View className="flex-row justify-between items-center">
-            <Typography variant="h4" weight="bold" className="text-stock-black">
+            <Typography
+              variant="body"
+              weight="bold"
+              className="text-stock-black"
+            >
               Genel Toplam (KDV dahil):
             </Typography>
             <Typography variant="h3" weight="bold" className="text-stock-red">
