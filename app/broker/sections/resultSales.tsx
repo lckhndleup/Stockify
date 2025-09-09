@@ -51,7 +51,7 @@ export default function ResultSales() {
     createInvoice,
     documentNumber,
     downloadUrl,
-    summaryJSON, // opsiyonel – confirmSales'ten gönderilirse ürün kalemleri listelenir
+    summaryJSON,
   } = params;
 
   const isSuccess = String(success) === "true";
@@ -63,8 +63,7 @@ export default function ResultSales() {
   const { data: backendBrokers = [], isLoading: brokersLoading } =
     useActiveBrokers();
 
-  // Broker'ı hem backend'ten hem store'dan bul
-  // TODOMali: any kullanılmayacak. Düzenlenece !!!!
+  // Broker (backend/store)
   const backendBroker: any = useMemo(
     () =>
       backendBrokers.find((b: any) => String(b.brokerId) === String(brokerId)),
@@ -75,14 +74,12 @@ export default function ResultSales() {
     [storeBrokers, brokerId]
   );
 
-  // Görünen isim
   const displayName = backendBroker
     ? `${backendBroker.firstName} ${backendBroker.lastName}`
     : storeBroker
     ? `${storeBroker.name} ${storeBroker.surname}`
-    : `Aracı #${brokerId}`;
+    : `Aracı`;
 
-  // Mevcut bakiye
   const currentBalance =
     typeof backendBroker?.currentBalance === "number"
       ? backendBroker.currentBalance
@@ -90,7 +87,7 @@ export default function ResultSales() {
       ? getBrokerTotalDebt(storeBroker.id)
       : 0;
 
-  // Confirm'den gelen özet (varsa)
+  // Confirm’den gelen özet (opsiyonel)
   const summary: SalesSummary | null = useMemo(() => {
     try {
       return summaryJSON
@@ -101,7 +98,7 @@ export default function ResultSales() {
     }
   }, [summaryJSON]);
 
-  // Toplamlar – parametre veya summary’den
+  // Toplamlar (parametre/summary)
   const totalWithTax =
     typeof totalAmount === "string"
       ? Number(totalAmount) || 0
@@ -119,7 +116,7 @@ export default function ResultSales() {
         "Sayfadan Ayrıl",
         "Ana sayfaya dönmek istediğinizden emin misiniz?",
         [
-          { text: "Kalın", style: "cancel" },
+          { text: "Kal", style: "cancel" },
           { text: "Ana Sayfa", onPress: () => router.push("/") },
         ]
       );
@@ -131,9 +128,7 @@ export default function ResultSales() {
   // Aksiyonlar
   const handleGoToBrokerDetail = () =>
     router.replace({ pathname: "/broker/brokerDetail", params: { brokerId } });
-
   const handleGoToHome = () => router.replace("/");
-
   const handleNewSale = () =>
     router.replace({
       pathname: "/broker/sections/salesSection",
@@ -152,7 +147,7 @@ export default function ResultSales() {
     }
   };
 
-  // Sadece broker yüklenirken kısa bir loader
+  // Loading
   if (brokersLoading && !backendBroker && !storeBroker) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
@@ -166,350 +161,193 @@ export default function ResultSales() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Header */}
-        <View className="mb-6 items-center">
-          <View className="mb-4 items-center justify-center">
-            {isSuccess ? (
-              <SuccessAnimation
-                ref={successAnimationRef}
-                size={80}
-                autoPlay
-                loop={false}
-                speed={1.2}
-              />
-            ) : (
-              <Icon
-                family="MaterialIcons"
-                name="error"
-                size={64}
-                color="#EF4444"
-                containerClassName="items-center"
-              />
-            )}
-          </View>
-
+        {/* ÜST BİLGİLER: ARACI ADI + BAKİYE */}
+        <View className="items-center mb-2">
           <Typography
-            variant="h2"
+            variant="h1"
+            size="3xl"
             weight="bold"
-            size="2xl"
-            className={`${
-              isSuccess ? "text-green-600" : "text-red-600"
-            } text-center mb-2`}
+            className="text-stock-black text-center"
           >
-            {isSuccess ? "SATIŞ TAMAMLANDI!" : "SATIŞ BAŞARISIZ!"}
-          </Typography>
-
-          <Typography variant="body" className="text-stock-text text-center">
             {displayName}
+          </Typography>
+          <Typography
+            variant="caption"
+            className="text-stock-text mt-1 text-center"
+          >
+            Bakiye: ₺{Number(currentBalance).toLocaleString()}
           </Typography>
         </View>
 
+        {/* BAŞARI/BAŞARISIZ GÖRSEL + BAŞLIK */}
+        <View className="items-center mt-3 mb-2">
+          {isSuccess ? (
+            <SuccessAnimation
+              ref={successAnimationRef}
+              size={80}
+              autoPlay
+              loop={false}
+              speed={1.2}
+            />
+          ) : (
+            <Icon
+              family="MaterialIcons"
+              name="error"
+              size={64}
+              color="#EF4444"
+              containerClassName="items-center"
+            />
+          )}
+        </View>
+
+        <Typography
+          variant="h2"
+          weight="bold"
+          size="2xl"
+          className={`${
+            isSuccess ? "text-green-600" : "text-red-600"
+          } text-center mb-6`}
+        >
+          {isSuccess ? "SATIŞ TAMAMLANDI!" : "SATIŞ BAŞARISIZ!"}
+        </Typography>
+
+        {/* === TOPLAM KARTI (confirmSales ile birebir) === */}
         {isSuccess && (
-          <>
-            {/* Satış Özeti */}
-            <Card
-              variant="default"
-              padding="lg"
-              className="bg-green-50 border border-green-200 mb-4"
-              radius="md"
-            >
-              <View className="flex-row items-center mb-4">
-                <Icon
-                  family="MaterialIcons"
-                  name="receipt"
-                  size={24}
-                  color="#059669"
-                  containerClassName="mr-3"
-                />
-                <Typography
-                  variant="h4"
-                  weight="semibold"
-                  className="text-green-800"
-                >
-                  Satış Detayları
+          <Card
+            variant="default"
+            padding="lg"
+            radius="md"
+            className="border border-stock-border bg-stock-gray mb-4"
+          >
+            <View className="flex-row justify-between py-1">
+              <Typography className="text-stock-dark">Alt Toplam:</Typography>
+              <Typography weight="semibold" className="text-stock-dark">
+                ₺{(summary?.totalPriceWithTax ?? totalWithTax).toLocaleString()}
+              </Typography>
+            </View>
+
+            {(summary?.discountPrice ?? discountValue) > 0 && (
+              <View className="flex-row justify-between py-1">
+                <Typography className="text-stock-red">
+                  İskonto
+                  {summary?.discountRate ? ` (%${summary.discountRate})` : ""}:
+                </Typography>
+                <Typography weight="semibold" className="text-stock-red">
+                  -₺{(summary?.discountPrice ?? discountValue).toLocaleString()}
                 </Typography>
               </View>
-
-              {(summary?.documentNumber || documentNumber) && (
-                <View className="flex-row justify-between items-center mb-3">
-                  <Typography variant="body" className="text-green-700">
-                    Belge No:
-                  </Typography>
-                  <Typography
-                    variant="body"
-                    weight="bold"
-                    className="text-green-800"
-                  >
-                    {summary?.documentNumber ?? (documentNumber as string)}
-                  </Typography>
-                </View>
-              )}
-
-              {!!summary?.salesItems?.length && (
-                <>
-                  <Divider className="my-2" />
-                  <View className="mb-3">
-                    {summary.salesItems.map((it, idx) => (
-                      <Card
-                        key={`${it.productId}-${idx}`}
-                        variant="default"
-                        padding="sm"
-                        className="bg-white border border-green-100 mb-2"
-                        radius="md"
-                      >
-                        <View className="flex-row items-center justify-between">
-                          <View className="flex-1">
-                            <Typography
-                              variant="body"
-                              weight="semibold"
-                              className="text-green-900 mb-1"
-                            >
-                              {it.productName}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              className="text-green-700"
-                            >
-                              {it.productCount} adet × ₺
-                              {it.unitPrice.toLocaleString()}
-                            </Typography>
-
-                            {/* Kalem KDV bilgisi */}
-                            {typeof it.taxRate === "number" && (
-                              <Typography
-                                variant="caption"
-                                className="text-green-700"
-                              >
-                                KDV %{it.taxRate} = ₺
-                                {(it.taxPrice ?? 0).toLocaleString()}
-                              </Typography>
-                            )}
-                          </View>
-
-                          <Typography
-                            variant="body"
-                            weight="bold"
-                            className="text-green-900"
-                          >
-                            ₺
-                            {(
-                              it.totalPriceWithTax ?? it.totalPrice
-                            ).toLocaleString()}
-                          </Typography>
-                        </View>
-                      </Card>
-                    ))}
-                  </View>
-                </>
-              )}
-
-              <Divider className="my-2" />
-
-              {/* Tutarlar */}
-              <View className="space-y-2">
-                {summary?.subtotalPrice !== undefined && (
-                  <View className="flex-row justify-between items-center">
-                    <Typography variant="body" className="text-green-700">
-                      Alt Toplam:
-                    </Typography>
-                    <Typography
-                      variant="body"
-                      weight="bold"
-                      className="text-green-800"
-                    >
-                      ₺{summary.subtotalPrice.toLocaleString()}
-                    </Typography>
-                  </View>
-                )}
-
-                {(summary?.discountPrice ?? discountValue) > 0 && (
-                  <View className="flex-row justify-between items-center">
-                    <Typography variant="body" className="text-green-700">
-                      İskonto
-                      {summary?.discountRate
-                        ? ` (%${summary.discountRate})`
-                        : ""}
-                      :
-                    </Typography>
-                    <Typography
-                      variant="body"
-                      weight="bold"
-                      className="text-green-800"
-                    >
-                      -₺
-                      {(
-                        summary?.discountPrice ?? discountValue
-                      ).toLocaleString()}
-                    </Typography>
-                  </View>
-                )}
-
-                {/* Ara Toplam (KDV hariç) */}
-                {summary?.totalPrice !== undefined && (
-                  <View className="flex-row justify-between items-center">
-                    <Typography variant="body" className="text-green-700">
-                      Ara Toplam (KDV hariç):
-                    </Typography>
-                    <Typography
-                      variant="body"
-                      weight="bold"
-                      className="text-green-800"
-                    >
-                      ₺{summary.totalPrice.toLocaleString()}
-                    </Typography>
-                  </View>
-                )}
-
-                {/* Toplam KDV */}
-                {summary?.totalTaxPrice !== undefined && (
-                  <View className="flex-row justify-between items-center">
-                    <Typography variant="body" className="text-green-700">
-                      KDV Toplamı:
-                    </Typography>
-                    <Typography
-                      variant="body"
-                      weight="bold"
-                      className="text-green-800"
-                    >
-                      ₺{summary.totalTaxPrice.toLocaleString()}
-                    </Typography>
-                  </View>
-                )}
-
-                <Divider className="my-2" />
-
-                <View className="flex-row justify-between items-center">
-                  <Typography
-                    variant="h4"
-                    weight="bold"
-                    className="text-green-800"
-                  >
-                    Genel Toplam (KDV dahil):
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    weight="bold"
-                    className="text-green-800"
-                  >
-                    ₺
-                    {(
-                      summary?.totalPriceWithTax ?? totalWithTax
-                    ).toLocaleString()}
-                  </Typography>
-                </View>
-              </View>
-
-              {((typeof downloadUrl === "string" && downloadUrl) ||
-                summary?.downloadUrl) && (
-                <View className="mt-4">
-                  <Button
-                    variant="secondary"
-                    size="md"
-                    fullWidth
-                    className="bg-white border border-green-300"
-                    onPress={handleOpenInvoice}
-                    leftIcon={
-                      <Icon
-                        family="MaterialIcons"
-                        name="download"
-                        size={20}
-                        color="#059669"
-                      />
-                    }
-                  >
-                    <Typography className="text-green-800" weight="bold">
-                      PDF/Belgeyi İndir
-                    </Typography>
-                  </Button>
-                </View>
-              )}
-            </Card>
-
-            {/* Fatura Bilgisi */}
-            {willCreateInvoice && (
-              <Card
-                variant="default"
-                padding="md"
-                className="bg-blue-50 border border-blue-200 mb-4"
-                radius="md"
-              >
-                <View className="flex-row items-center">
-                  <Icon
-                    family="MaterialIcons"
-                    name="description"
-                    size={20}
-                    color="#3B82F6"
-                    containerClassName="mr-3"
-                  />
-                  <View className="flex-1">
-                    <Typography
-                      variant="body"
-                      className="text-blue-700"
-                      weight="medium"
-                    >
-                      Fatura oluşturuldu
-                    </Typography>
-                    <Typography variant="caption" className="text-blue-600">
-                      Faturanız elektronik ortamda iletilecektir
-                    </Typography>
-                  </View>
-                </View>
-              </Card>
             )}
 
-            {/* Bilgi Notu */}
-            <Card
-              variant="default"
-              padding="md"
-              className="bg-yellow-50 border border-yellow-200 mb-6"
-              radius="md"
-            >
-              <View className="flex-row items-start">
-                <Icon
-                  family="MaterialIcons"
-                  name="info"
-                  size={20}
-                  color="#F59E0B"
-                  containerClassName="mr-3 mt-0.5"
-                />
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    className="text-yellow-700"
-                    weight="medium"
-                  >
-                    Satış işlemi başarıyla tamamlandı!
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    className="text-yellow-600 mt-1"
-                  >
-                    Ürün stokları güncellendi ve aracının bakiyesine eklendi.
-                  </Typography>
-                </View>
-              </View>
-            </Card>
-          </>
+            <View className="flex-row justify-between py-1">
+              <Typography className="text-stock-dark">
+                Ara Toplam (KDV hariç):
+              </Typography>
+              <Typography weight="semibold" className="text-stock-dark">
+                ₺{(summary?.totalPrice ?? 0).toLocaleString()}
+              </Typography>
+            </View>
+
+            <View className="flex-row justify-between py-1">
+              <Typography className="text-stock-dark">KDV Toplamı:</Typography>
+              <Typography weight="semibold" className="text-stock-dark">
+                ₺{(summary?.totalTaxPrice ?? 0).toLocaleString()}
+              </Typography>
+            </View>
+
+            <Divider className="my-3" />
+
+            <View className="flex-row justify-between items-center">
+              <Typography
+                variant="h4"
+                weight="bold"
+                className="text-stock-black"
+              >
+                Genel Toplam (KDV dahil):
+              </Typography>
+              <Typography variant="h3" weight="bold" className="text-stock-red">
+                ₺{(summary?.totalPriceWithTax ?? totalWithTax).toLocaleString()}
+              </Typography>
+            </View>
+          </Card>
         )}
 
-        {/* Aksiyonlar */}
-        <View className="space-y-3 mb-6">
+        {/* PDF / BELGE İNDİR – TOPLAM KARTININ HEMEN ALTINDA AYRI BLOK */}
+        {isSuccess &&
+          ((typeof downloadUrl === "string" && downloadUrl) ||
+            summary?.downloadUrl) && (
+            <View className="mb-8">
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
+                className="bg-white border border-stock-border"
+                onPress={handleOpenInvoice}
+                leftIcon={
+                  <Icon
+                    family="MaterialIcons"
+                    name="download"
+                    size={20}
+                    color="#16A34A"
+                  />
+                }
+              >
+                <Typography className="text-stock-dark" weight="bold">
+                  PDF/Belgeyi İndir
+                </Typography>
+              </Button>
+            </View>
+          )}
+
+        {/* FATURA OLUŞTURULDU BİLGİSİ */}
+        {isSuccess && willCreateInvoice && (
+          <Card
+            variant="default"
+            padding="md"
+            radius="md"
+            className="bg-blue-50 border border-blue-200 mb-8"
+          >
+            <View className="flex-row items-center">
+              <Icon
+                family="MaterialIcons"
+                name="description"
+                size={20}
+                color="#3B82F6"
+                containerClassName="mr-3"
+              />
+              <View className="flex-1">
+                <Typography
+                  variant="body"
+                  className="text-blue-700"
+                  weight="medium"
+                >
+                  Fatura oluşturuldu
+                </Typography>
+                <Typography variant="caption" className="text-blue-600">
+                  Faturanız elektronik ortamda iletilecektir
+                </Typography>
+              </View>
+            </View>
+          </Card>
+        )}
+
+        {/* AKSİYON BUTONLARI (aynı akış) */}
+        <View className="space-y-3 mb-10">
           <Button
             variant="outline"
             size="lg"
             fullWidth
-            className="border-stock-border"
+            className="border-stock-red"
             onPress={handleGoToHome}
             leftIcon={
               <Icon
                 family="MaterialIcons"
                 name="home"
                 size={20}
-                color="#67686A"
+                color="#E3001B"
               />
             }
           >
-            <Typography className="text-stock-dark" weight="bold">
+            <Typography className="text-stock-red" weight="bold">
               ANA SAYFAYA GİT
             </Typography>
           </Button>
