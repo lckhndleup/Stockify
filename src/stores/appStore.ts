@@ -24,7 +24,7 @@ export interface Product {
 export interface Broker {
   id: string;
   name: string;
-  surname: string; // YENİ EKLENEN - UI uyumluluğu için
+  surname: string;
   email: string;
   phone: string;
   address: string;

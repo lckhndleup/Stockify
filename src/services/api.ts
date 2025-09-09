@@ -5,12 +5,17 @@ const API_BASE_URL = "https://stockify-gcsq.onrender.com";
 export interface LoginRequest {
   username: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface LoginResponse {
   token: string;
 }
 
+export interface LogoutResponse {
+  success: boolean;
+  message: string;
+}
 export interface ApiError {
   message: string;
   status: number;
@@ -163,11 +168,27 @@ class ApiService {
     console.log("🔐 API Login called with:", {
       username: credentials.username,
       passwordLength: credentials.password.length,
+      rememberMe: credentials.rememberMe, // 👈 YENİ
     });
 
     return this.request<LoginResponse>("/auth/login", {
       method: "POST",
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(credentials), // rememberMe da gönderilecek
+    });
+  }
+
+  // 👈 YENİ: Logout API method
+  async logout(): Promise<LogoutResponse> {
+    console.log("🚪 API Logout called");
+
+    if (!this.token) {
+      console.log("⚠️ No token available for logout");
+      return { success: true, message: "Zaten çıkış yapılmış" };
+    }
+
+    return this.request<LogoutResponse>("/auth/logout", {
+      method: "DELETE",
+      // Authorization header otomatik olarak ekleniyor
     });
   }
 

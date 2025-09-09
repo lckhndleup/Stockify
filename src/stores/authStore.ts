@@ -25,7 +25,7 @@ interface AuthStore {
     password: string,
     rememberMe: boolean
   ) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   clearError: () => void;
   initializeAuth: () => void;
@@ -46,7 +46,12 @@ const middleware = persist<AuthStore>(
       try {
         console.log("🔐 Login attempt:", { username, rememberMe });
 
-        const credentials: LoginRequest = { username, password };
+        const credentials: LoginRequest = {
+          username,
+          password,
+          rememberMe, // 👈 YENİ: rememberMe field'i API'ye gönderiliyor
+        };
+
         const response = await apiService.login(credentials);
 
         console.log("✅ Login response:", response);
@@ -91,14 +96,12 @@ const middleware = persist<AuthStore>(
           return false;
         }
       } catch (error) {
-        // Console'da göster ama sessizce - kullanıcıya toast gösterme
         console.log("❌ Login error (handled quietly):", error);
 
         const apiError = error as ApiError;
         let errorMessage = "Giriş başarısız.";
 
         if (apiError.status === 401 || apiError.status === 500) {
-          // Backend hem 401 hem de 500 ile auth error dönebiliyor
           if (
             apiError.message?.toLowerCase().includes("bad credentials") ||
             apiError.message?.toLowerCase().includes("unauthorized")
@@ -132,22 +135,38 @@ const middleware = persist<AuthStore>(
       }
     },
 
-    logout: () => {
+    // 👈 YENİ: Async logout with API call
+    logout: async () => {
       console.log("🚪 Logout triggered");
 
-      // API service'den token'ı temizle
-      apiService.clearToken();
+      try {
+        // Önce API'ye logout request'i gönder
+        if (get().token) {
+          console.log("📡 Sending logout request to API...");
+          const logoutResponse = await apiService.logout();
+          console.log("✅ Logout API response:", logoutResponse);
+        }
+      } catch (error) {
+        // Logout API hatası olsa bile local state'i temizle
+        console.log(
+          "⚠️ Logout API error (proceeding with local logout):",
+          error
+        );
+      } finally {
+        // Her durumda local state'i ve token'ı temizle
+        apiService.clearToken();
 
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        rememberMe: false,
-        isLoading: false,
-        error: null,
-      });
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          rememberMe: false,
+          isLoading: false,
+          error: null,
+        });
 
-      console.log("✅ Logout completed - all state cleared");
+        console.log("✅ Logout completed - all state cleared");
+      }
     },
 
     setLoading: (loading: boolean) => {
@@ -189,6 +208,7 @@ const middleware = persist<AuthStore>(
           rememberMe: state.rememberMe,
           isLoading: false,
           error: null,
+          // Functions serialization için gerekli
           login: state.login,
           logout: state.logout,
           setLoading: state.setLoading,
@@ -203,6 +223,7 @@ const middleware = persist<AuthStore>(
         rememberMe: false,
         isLoading: false,
         error: null,
+        // Functions serialization için gerekli
         login: state.login,
         logout: state.logout,
         setLoading: state.setLoading,
