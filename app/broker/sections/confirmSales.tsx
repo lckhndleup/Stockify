@@ -65,7 +65,9 @@ export default function ConfirmSales() {
   const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
 
   const brokerDebt = broker
-    ? "balance" in broker
+    ? typeof (broker as any).currentBalance === "number"
+      ? (broker as any).currentBalance
+      : "balance" in broker
       ? (broker as any).balance
       : getBrokerTotalDebt(broker.id)
     : 0;
@@ -150,6 +152,8 @@ export default function ConfirmSales() {
           createInvoice: String(willCreateInvoice),
           documentNumber: res?.documentNumber ?? "",
           downloadUrl: res?.downloadUrl ?? "",
+          // ✅ eklenen alan: resultSales’te ara toplam ve KDV’nin 0 gelmemesi için
+          summaryJSON: JSON.stringify(res),
         },
       });
     } catch {
@@ -221,11 +225,7 @@ export default function ConfirmSales() {
             <View className="flex-1 px-4 py-3">
               <Typography className="text-stock-text">yeni bakiye :</Typography>
               <Typography weight="bold" className="text-stock-dark mt-0.5">
-                ₺
-                {(
-                  Number(brokerDebt) +
-                  (summary?.totalPriceWithTax ?? subTotalLocal)
-                ).toLocaleString()}
+                ₺{Number(brokerDebt).toLocaleString()}
               </Typography>
             </View>
           </View>
