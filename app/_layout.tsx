@@ -1,33 +1,38 @@
 // app/_layout.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View, TouchableOpacity } from "react-native";
-import { router, usePathname, useRouter } from "expo-router";
+import { router, usePathname } from "expo-router";
 import Providers from "@/src/components/common/Providers";
 import { BottomNavigation, Icon } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
+import { useAuthErrorHandler } from "@/src/hooks/api";
 import "../global.css";
 
-// ✅ GELİŞTİRİLMİŞ Custom Header Left Component
+// ✅ Type-safe route params
+interface RouteParams {
+  brokerId?: string;
+  [key: string]: any;
+}
+
+// ✅ Optimize edilmiş Custom Header Left Component
 interface CustomHeaderLeftProps {
   targetRoute?: string;
-  routeParams?: Record<string, any>;
-  title?: string;
+  routeParams?: RouteParams;
   iconName?: string;
   iconColor?: string;
-  onPress?: () => void; // Custom action için
+  onPress?: () => void;
 }
 
 const CustomHeaderLeft = ({
   targetRoute = "/",
   routeParams = {},
-  title = "Geri",
   iconName = "arrow-back",
   iconColor = "#000",
   onPress,
 }: CustomHeaderLeftProps) => {
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     if (onPress) {
       onPress();
       return;
@@ -38,7 +43,7 @@ const CustomHeaderLeft = ({
     } else {
       router.push(targetRoute as any);
     }
-  };
+  }, [targetRoute, routeParams, onPress]);
 
   return (
     <TouchableOpacity
@@ -57,63 +62,116 @@ const CustomHeaderLeft = ({
 };
 
 export default function RootLayout() {
-  const { isAuthenticated, initializeAuth } = useAuthStore();
+  const authStore = useAuthStore();
+  const { isAuthenticated, initializeAuth } = authStore;
+  const { initializeErrorHandler } = useAuthErrorHandler();
   const pathname = usePathname();
-  const router = useRouter();
   const [isNavigationReady, setIsNavigationReady] = useState(false);
 
-  // Navigation hazır olduğunda auth kontrolü yap
+  // 👈 DÜZELTİLDİ: Error handler initialization flag
+  const errorHandlerInitialized = useRef(false);
+  const authInitialized = useRef(false);
+
+  // ✅ Navigation ready setup - SADECE BİR KERE
   useEffect(() => {
-    console.log("📱 RootLayout mounted");
-    // Navigation'ın mount olması için kısa bir gecikme
+    const isDevMode = process.env.NODE_ENV === "development";
+    if (isDevMode) console.log("📱 RootLayout mounted");
+
     const timer = setTimeout(() => {
       setIsNavigationReady(true);
-      console.log("✅ Navigation ready");
+      if (isDevMode) console.log("✅ Navigation ready");
     }, 100);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Auth initialization - token'ı API service'e restore et
+  // ✅ Error handler setup - SADECE BİR KERE
   useEffect(() => {
-    if (isNavigationReady) {
-      console.log("🔄 Starting auth initialization...");
+    if (!errorHandlerInitialized.current && isNavigationReady) {
+      const isDevMode = process.env.NODE_ENV === "development";
+      if (isDevMode) console.log("🔧 Setting up global auth error handler...");
+
+      initializeErrorHandler(authStore);
+      errorHandlerInitialized.current = true;
+
+      if (isDevMode)
+        console.log("✅ Global auth error handler setup completed");
+    }
+  }, [isNavigationReady]); // 👈 authStore dependency kaldırıldı
+
+  // ✅ Auth initialization - SADECE BİR KERE
+  useEffect(() => {
+    if (isNavigationReady && !authInitialized.current) {
+      const isDevMode = process.env.NODE_ENV === "development";
+      if (isDevMode) console.log("🔄 Starting auth initialization...");
+
       initializeAuth();
+      authInitialized.current = true;
     }
   }, [isNavigationReady, initializeAuth]);
 
-  // Auth kontrolü - sadece navigation hazır olduğunda
+  // ✅ Auth kontrolü - Route değişikliklerinde
   useEffect(() => {
     if (!isNavigationReady) return;
 
-    console.log("🔍 Auth check:", {
-      pathname,
-      isAuthenticated,
-      shouldRedirect: pathname !== "/login" && !isAuthenticated,
-    });
+    const isDevMode = process.env.NODE_ENV === "development";
+    if (isDevMode) {
+      console.log("🔍 Auth check:", {
+        pathname,
+        isAuthenticated,
+        shouldRedirect: pathname !== "/login" && !isAuthenticated,
+      });
+    }
 
     // Login sayfasındaysa hiçbir şey yapma
     if (pathname === "/login") return;
 
     // Eğer giriş yapmamışsa login sayfasına yönlendir
     if (!isAuthenticated) {
-      console.log("🔄 Redirecting to login...");
+      if (isDevMode) console.log("🔄 Redirecting to login...");
       router.replace("/login");
     }
   }, [isAuthenticated, pathname, isNavigationReady]);
 
-  // Login sayfasında ve sections altında BottomNavigation gösterme
-  const shouldShowBottomNav =
-    isAuthenticated &&
-    pathname !== "/login" &&
-    !pathname.includes("/broker/sections/");
+  // ✅ Bottom navigation visibility logic
+  const shouldShowBottomNav = useMemo(() => {
+    return (
+      isAuthenticated &&
+      pathname !== "/login" &&
+      !pathname.includes("/broker/sections/")
+    );
+  }, [isAuthenticated, pathname]);
 
-  console.log("🎯 RootLayout render:", {
-    pathname,
-    isAuthenticated,
-    shouldShowBottomNav,
-    isNavigationReady,
-  });
+  // ✅ Optimized logging - sadece development mode'da
+  if (process.env.NODE_ENV === "development") {
+    console.log("🎯 RootLayout render:", {
+      pathname,
+      isAuthenticated,
+      shouldShowBottomNav,
+      isNavigationReady,
+    });
+  }
+
+  // ✅ Memoized header components - Performance optimization
+  const brokerDetailHeaderLeft = useCallback(
+    () => <CustomHeaderLeft targetRoute="/brokers" />,
+    []
+  );
+
+  const homeHeaderLeft = useCallback(
+    () => <CustomHeaderLeft targetRoute="/" />,
+    []
+  );
+
+  const productsHeaderLeft = useCallback(
+    () => <CustomHeaderLeft targetRoute="/products" />,
+    []
+  );
+
+  const stockHeaderLeft = useCallback(
+    () => <CustomHeaderLeft targetRoute="/stock" />,
+    []
+  );
 
   return (
     <Providers>
@@ -130,6 +188,7 @@ export default function RootLayout() {
             },
           }}
         >
+          {/* Auth Screens */}
           <Stack.Screen
             name="login"
             options={{
@@ -137,6 +196,8 @@ export default function RootLayout() {
               headerShown: false,
             }}
           />
+
+          {/* Main Screens */}
           <Stack.Screen
             name="index"
             options={{
@@ -144,39 +205,63 @@ export default function RootLayout() {
               headerShown: false,
             }}
           />
+
           <Stack.Screen
             name="products"
             options={{
               title: "Ürünler",
               headerShown: true,
-              headerLeft: () => <CustomHeaderLeft targetRoute="/" />,
+              headerLeft: homeHeaderLeft,
             }}
           />
+
           <Stack.Screen
             name="brokers"
             options={{
               title: "Aracılar",
               headerShown: true,
-              headerLeft: () => <CustomHeaderLeft targetRoute="/" />,
+              headerLeft: homeHeaderLeft,
             }}
           />
+
           <Stack.Screen
             name="stock"
             options={{
               title: "Stok Takip",
               headerShown: true,
-              headerLeft: () => <CustomHeaderLeft targetRoute="/" />,
+              headerLeft: homeHeaderLeft,
             }}
           />
-          {/* ✅ GÜNCELLENECEK: brokerDetail için /brokers'a gidecek */}
+
+          <Stack.Screen
+            name="categories"
+            options={{
+              title: "Kategori Yönetimi",
+              headerShown: true,
+              headerLeft: productsHeaderLeft,
+            }}
+          />
+
+          <Stack.Screen
+            name="stockDetail"
+            options={{
+              title: "Stok Detayı",
+              headerShown: true,
+              headerLeft: stockHeaderLeft,
+            }}
+          />
+
+          {/* Broker Detail */}
           <Stack.Screen
             name="broker/brokerDetail"
             options={{
               title: "Aracı Detayı",
               headerShown: true,
-              headerLeft: () => <CustomHeaderLeft targetRoute="/brokers" />,
+              headerLeft: brokerDetailHeaderLeft,
             }}
           />
+
+          {/* Broker Sections */}
           <Stack.Screen
             name="broker/sections/salesSection"
             options={{
@@ -187,57 +272,55 @@ export default function RootLayout() {
               headerLeft: () => null,
             }}
           />
+
           <Stack.Screen
             name="broker/sections/collectionSection"
             options={({ route }) => ({
               title: "Tahsilat İşlemleri",
               headerShown: true,
-              // ✅ collectionSection'da brokerDetail'a geri dön
               headerLeft: () => (
                 <CustomHeaderLeft
                   targetRoute="/broker/brokerDetail"
-                  routeParams={{ brokerId: (route.params as any)?.brokerId }}
+                  routeParams={{
+                    brokerId: (route.params as RouteParams)?.brokerId,
+                  }}
                 />
               ),
             })}
           />
+
           <Stack.Screen
             name="broker/sections/statementSection"
             options={({ route }) => ({
               title: "Ekstreler",
               headerShown: true,
-              // ✅ statementSection'da brokerDetail'a geri dön
               headerLeft: () => (
                 <CustomHeaderLeft
                   targetRoute="/broker/brokerDetail"
-                  routeParams={{ brokerId: (route.params as any)?.brokerId }}
+                  routeParams={{
+                    brokerId: (route.params as RouteParams)?.brokerId,
+                  }}
                 />
               ),
             })}
           />
+
           <Stack.Screen
             name="broker/sections/invoiceSection"
             options={({ route }) => ({
               title: "Faturalar",
               headerShown: true,
-              // ✅ invoiceSection'da brokerDetail'a geri dön
               headerLeft: () => (
                 <CustomHeaderLeft
                   targetRoute="/broker/brokerDetail"
-                  routeParams={{ brokerId: (route.params as any)?.brokerId }}
+                  routeParams={{
+                    brokerId: (route.params as RouteParams)?.brokerId,
+                  }}
                 />
               ),
             })}
           />
-          <Stack.Screen
-            name="categories"
-            options={{
-              title: "Kategori Yönetimi",
-              headerShown: true,
-              // ✅ categories sayfasından products'a geri dön
-              headerLeft: () => <CustomHeaderLeft targetRoute="/products" />,
-            }}
-          />
+
           <Stack.Screen
             name="broker/sections/confirmSales"
             options={{
@@ -248,15 +331,7 @@ export default function RootLayout() {
               headerLeft: () => null,
             }}
           />
-          <Stack.Screen
-            name="stockDetail"
-            options={{
-              title: "Stok Detayı",
-              headerShown: true,
-              // ✅ stockDetail'dan stock'a geri dön
-              headerLeft: () => <CustomHeaderLeft targetRoute="/stock" />,
-            }}
-          />
+
           <Stack.Screen
             name="broker/sections/resultSales"
             options={{
@@ -269,7 +344,7 @@ export default function RootLayout() {
           />
         </Stack>
 
-        {/* BottomNavigation sadece login olmamış kullanıcılarda göster */}
+        {/* ✅ Bottom Navigation */}
         {shouldShowBottomNav && (
           <BottomNavigation className="absolute bottom-10 left-2 right-2" />
         )}

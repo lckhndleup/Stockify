@@ -1,6 +1,7 @@
 // src/hooks/api/index.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/services/api";
+import { router } from "expo-router";
 import { queryKeys } from "./queryKeys";
 export * from "./usePayments";
 export * from "./useSales"; // NEW
@@ -40,15 +41,68 @@ export type MutationHook<TData, TVariables = void> = (
   options?: UseMutationOptions<TData, ApiError, TVariables>
 ) => ReturnType<typeof useMutation<TData, ApiError, TVariables>>;
 
-// Common error handler
-export const handleApiError = (error: ApiError) => {
-  console.log("API Error:", error);
+// 👈 YENİ: Type Guard - ApiError olup olmadığını kontrol et
+const isApiError = (error: unknown): error is ApiError => {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    "message" in error &&
+    typeof (error as any).status === "number" &&
+    typeof (error as any).message === "string"
+  );
+};
 
-  // Global error handling
+// Global error handler - Auth Store'u import etmeden
+let authStore: any = null;
+
+// Auth store'u set etmek için helper
+export const setAuthStore = (store: any) => {
+  authStore = store;
+};
+// Common error handler
+export const handleApiError = async (error: ApiError) => {
+  console.log("🚨 Global API Error Handler:", error);
+
+  // 401 Unauthorized - Token expired veya invalid
   if (error.status === 401) {
-    // Token expired, logout user
-    // Bu kısmı auth store ile bağlayabiliriz
-    console.log("Unauthorized - redirecting to login");
+    console.log("🔒 Unauthorized error - forcing logout");
+
+    try {
+      // Auth store varsa logout çağır
+      if (authStore?.logout) {
+        await authStore.logout();
+        console.log("✅ Forced logout completed");
+      }
+
+      // Login sayfasına yönlendir
+      router.replace("/login");
+
+      // Kullanıcıya bilgi ver (opsiyonel - toast olarak gösterilebilir)
+      console.log("📱 Redirected to login due to auth error");
+    } catch (logoutError) {
+      console.log("❌ Error during forced logout:", logoutError);
+      // Yine de login sayfasına git
+      router.replace("/login");
+    }
+  }
+
+  // 403 Forbidden - Yetkisiz erişim
+  else if (error.status === 403) {
+    console.log("🚫 Forbidden - insufficient permissions");
+    // Kullanıcıya yetki hatası göster
+  }
+
+  // 500 Server Error
+  else if (error.status >= 500) {
+    console.log("🔥 Server error:", error.message);
+    // Server hatası toast'ı göster
+  }
+
+  // Network hatası
+  else if (error.status === 0) {
+    console.log("🌐 Network error - server unreachable");
+    // Network hatası toast'ı göster
   }
 
   return error;
@@ -75,12 +129,29 @@ export const createQueryHook = <TData, TParams = void>(
         params !== undefined
           ? queryFn(params as TParams)
           : (queryFn as () => Promise<TData>)(),
+      retry: (failureCount, error) => {
+        console.log("🔄 Query retry check:", { failureCount, error });
+
+        // 👈 DÜZELTİLDİ: Type guard kullan
+        if (isApiError(error)) {
+          // 401/403 hatalarında retry yapma
+          if (error.status === 401 || error.status === 403) {
+            console.log("🚫 No retry for auth errors:", error.status);
+            return false;
+          }
+        }
+
+        // Diğer hatalar için max 3 retry
+        const shouldRetry = failureCount < 3;
+        console.log("🔄 Retry decision:", { shouldRetry, failureCount });
+        return shouldRetry;
+      },
       ...options,
     });
   }) as QueryHook<TData, TParams>;
 };
 
-// Base mutation hook
+// Enhanced mutation hook
 export const createMutationHook = <TData, TVariables = void>(
   mutationFn: (variables: TVariables) => Promise<TData>
 ): MutationHook<TData, TVariables> => {
@@ -89,20 +160,39 @@ export const createMutationHook = <TData, TVariables = void>(
 
     return useMutation({
       mutationFn,
-      onError: (error, variables) => {
-        handleApiError(error);
+      onError: async (error, variables) => {
+        console.log("🚨 Mutation error:", error);
+
+        // 👈 DÜZELTİLDİ: Type guard kullan
+        if (isApiError(error)) {
+          // Global error handling sadece ApiError için
+          await handleApiError(error);
+        } else {
+          // Diğer error tiplerini logla
+          console.log("❓ Non-API error:", error);
+        }
+
+        // User-defined error handler
         options?.onError?.(error, variables);
       },
       onSuccess: (data, variables) => {
         options?.onSuccess?.(data, variables);
       },
       onSettled: (data, error, variables) => {
-        options?.onSettled?.(data, error ?? null, variables);
+        options?.onSettled?.(data, error, variables);
       },
     });
   };
 };
 
+export const useAuthErrorHandler = () => {
+  // Bu hook component'ta çağrılarak auth store bağlanabilir
+  const initializeErrorHandler = (authStoreInstance: any) => {
+    setAuthStore(authStoreInstance);
+  };
+
+  return { initializeErrorHandler };
+};
 // Commonly used invalidation helper
 export const useInvalidateQueries = () => {
   const queryClient = useQueryClient();
