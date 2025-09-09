@@ -42,9 +42,29 @@ export default function HomePage() {
         {
           text: "Çıkış Yap",
           style: "destructive",
-          onPress: () => {
-            logout();
-            router.replace("/login");
+          onPress: async () => {
+            try {
+              console.log("🔄 Starting logout process...");
+
+              // Logout işlemini başlat (artık async)
+              await logout();
+
+              console.log("✅ Logout completed, redirecting...");
+
+              // Login sayfasına yönlendir
+              router.replace("/login");
+            } catch (error) {
+              console.log("❌ Logout error:", error);
+
+              // Hata olsa bile login sayfasına yönlendir
+              router.replace("/login");
+
+              // Kullanıcıya bilgi ver
+              Alert.alert(
+                "Uyarı",
+                "Çıkış yaparken bir sorun oluştu, ancak oturumunuz sonlandırıldı."
+              );
+            }
           },
         },
       ]

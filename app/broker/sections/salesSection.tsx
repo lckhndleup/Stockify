@@ -649,55 +649,79 @@ export default function SalesSection() {
           </View>
         </View>
 
-        {/* Ürün seçimi */}
-        <View className="mb-4">
-          <SelectBox
-            label="Ürün Seçiniz"
-            placeholder="Satılacak ürünü seçiniz..."
-            options={productOptions}
-            value={selectedProduct}
-            onSelect={handleProductSelect}
-            className="mb-4"
-          />
+        {/* Ürün seçimi - Sadece mevcut ürün varsa göster */}
+        {availableProducts.length > 0 && (
+          <View className="mb-4">
+            <SelectBox
+              label="Ürün Seçiniz"
+              placeholder="Satılacak ürünü seçiniz..."
+              options={productOptions}
+              value={selectedProduct}
+              onSelect={handleProductSelect}
+              className="mb-4"
+            />
 
-          {selectedProduct && (
-            <>
-              <Input
-                label="Adet Giriniz"
-                placeholder="Kaç adet?"
-                value={quantity}
-                onChangeText={handleQuantityChange}
-                numericOnly
-                error={quantityError}
-                helperText={
-                  !quantityError && selectedProductData
-                    ? `Mevcut stok: ${selectedProductData.stock} adet${
-                        getTaxRate(selectedProductData) != null
-                          ? ` / KDV %${getTaxRate(selectedProductData)}`
-                          : ""
-                      }`
-                    : ""
-                }
-                className="mb-4"
+            {selectedProduct && (
+              <>
+                <Input
+                  label="Adet Giriniz"
+                  placeholder="Kaç adet?"
+                  value={quantity}
+                  onChangeText={handleQuantityChange}
+                  numericOnly
+                  error={quantityError}
+                  helperText={
+                    !quantityError && selectedProductData
+                      ? `Mevcut stok: ${selectedProductData.stock} adet${
+                          getTaxRate(selectedProductData) != null
+                            ? ` / KDV %${getTaxRate(selectedProductData)}`
+                            : ""
+                        }`
+                      : ""
+                  }
+                  className="mb-4"
+                />
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="bg-stock-red"
+                  onPress={handleAddProduct}
+                  disabled={
+                    !quantity || !!quantityError || parseInt(quantity, 10) <= 0
+                  }
+                >
+                  <Typography className="text-white" weight="semibold">
+                    EKLE
+                  </Typography>
+                </Button>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Tüm ürünler sepete eklendiğinde gösterilecek mesaj */}
+        {availableProducts.length === 0 && addedProducts.length > 0 && (
+          <View className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+            <View className="flex-row items-center justify-center">
+              <Icon
+                family="Ionicons"
+                name="checkmark-circle"
+                size={20}
+                color="#22C55E"
+                containerClassName="mr-2"
               />
-
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                className="bg-stock-red"
-                onPress={handleAddProduct}
-                disabled={
-                  !quantity || !!quantityError || parseInt(quantity, 10) <= 0
-                }
+              <Typography
+                variant="body"
+                className="text-green-700 text-center"
+                weight="medium"
               >
-                <Typography className="text-white" weight="semibold">
-                  EKLE
-                </Typography>
-              </Button>
-            </>
-          )}
-        </View>
+                Tüm ürünler sepete eklendi
+              </Typography>
+            </View>
+          </View>
+        )}
 
         {/* Divider */}
         {addedProducts.length > 0 && (
@@ -851,7 +875,7 @@ export default function SalesSection() {
 
               <View className="flex-row justify-between items-center">
                 <Typography
-                  variant="h4"
+                  variant="body"
                   weight="bold"
                   className="text-stock-black"
                 >
@@ -872,7 +896,7 @@ export default function SalesSection() {
               variant="primary"
               size="lg"
               fullWidth
-              className="bg-stock-red"
+              className="bg-stock-red mb-16"
               onPress={handleCompleteSale}
               leftIcon={
                 <Icon
