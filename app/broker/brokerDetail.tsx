@@ -418,7 +418,7 @@ export default function BrokerDetailPage() {
               totalDebt >= 0 ? "text-stock-red" : "text-stock-green"
             } text-center mt-0`}
           >
-            Bakiye: {totalDebt >= 0 ? "" : "+"}₺
+            Bakiye: {totalDebt >= 0 ? "" : "-"}₺
             {Math.abs(totalDebt).toLocaleString()}
           </Typography>
         </View>
