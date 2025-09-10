@@ -25,8 +25,6 @@ import {
 } from "@/src/hooks/api/useCategories";
 import { CategoryFormData, CategoryUpdateData } from "@/src/types/category";
 
-import { categorySchema } from "@/src/validations/salesValidation";
-
 // Basit validation - kategori adı ve vergi oranı için
 const validateCategoryForm = (name: string, taxRate: string) => {
   const errors: Record<string, string> = {};

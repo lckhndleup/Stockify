@@ -11,7 +11,6 @@ import {
   Divider,
   Loading,
 } from "@/src/components/ui";
-import { useAppStore } from "@/src/stores/appStore";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useSalesCalculate } from "@/src/hooks/api/useSales";
 
@@ -59,28 +58,21 @@ export default function ResultSales() {
   const willCreateInvoice = String(createInvoice) === "true";
   const successAnimationRef = useRef<SuccessAnimationRef>(null);
 
-  // Store + Backend brokerları (diğer sayfalardakiyle aynı desen)
-  const { brokers: storeBrokers, getBrokerTotalDebt } = useAppStore();
+  // Backend brokers
   const {
     data: backendBrokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
 
-  // Backend > Local fallback: aynı id eşlemesi (b.id)
-  const backendBroker = useMemo(
+  // Backend broker
+  const broker = useMemo(
     () =>
       (backendBrokers || []).find(
         (b: any) => String(b.id) === String(brokerId)
       ),
     [backendBrokers, brokerId]
   );
-  const localBroker = useMemo(
-    () =>
-      (storeBrokers || []).find((b: any) => String(b.id) === String(brokerId)),
-    [storeBrokers, brokerId]
-  );
-  const broker = backendBroker || localBroker; // görüntülemede öncelik backend
 
   // Ad Soyad – API > Local
   const displayName = broker
@@ -134,15 +126,10 @@ export default function ResultSales() {
       ? Number(discountAmount) || 0
       : summaryToShow?.discountPrice ?? 0;
 
-  // Yeni bakiye – yalnızca backend currentBalance varsa onu göster, yoksa fallback
-  const Balance =
-    typeof (backendBroker as any)?.currentBalance === "number"
-      ? (backendBroker as any).currentBalance
-      : broker
-      ? "balance" in broker
-        ? (broker as any).balance
-        : getBrokerTotalDebt(broker.id)
-      : 0;
+  // Broker balance - sadece backend'den
+  const Balance = broker
+    ? (broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0
+    : 0;
 
   /* =========================
      LOGS (isteğin doğrultusunda)
@@ -150,25 +137,14 @@ export default function ResultSales() {
   useEffect(() => {
     console.log("🧾 [ResultSales] Broker resolve", {
       brokerId,
-      source: backendBroker ? "backendAPI" : "localStore",
-      backendFound: !!backendBroker,
-      localFound: !!localBroker,
+      source: "backendAPI",
+      brokerFound: !!broker,
       name: broker?.name,
       surname: broker?.surname,
-      backend_currentBalance:
-        typeof (backendBroker as any)?.currentBalance === "number"
-          ? (backendBroker as any).currentBalance
-          : undefined,
-      backend_balance:
-        typeof (backendBroker as any)?.balance === "number"
-          ? (backendBroker as any).balance
-          : undefined,
-      local_balance:
-        typeof (localBroker as any)?.balance === "number"
-          ? (localBroker as any).balance
-          : undefined,
+      currentBalance: (broker as any)?.currentBalance,
+      balance: (broker as any)?.balance,
     });
-  }, [brokerId, backendBroker, localBroker, broker]);
+  }, [brokerId, broker]);
 
   useEffect(() => {
     const parsedParam =

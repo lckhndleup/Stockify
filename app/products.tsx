@@ -1,5 +1,5 @@
 // app/products.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 
@@ -17,8 +17,10 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
-import { useAppStore, Product, Category } from "@/src/stores/appStore";
-import { useActiveCategories } from "@/src/hooks/api/useCategories";
+import {
+  useActiveCategories,
+  useCreateCategory,
+} from "@/src/hooks/api/useCategories";
 
 // Backend hooks - UPDATED: usePassiveProducts eklendi
 import {
@@ -29,12 +31,12 @@ import {
   useDeleteProduct,
   useSearchProducts,
 } from "@/src/hooks/api/useProducts";
-import { ProductFormData, ProductUpdateData } from "@/src/types/product";
-
 import {
-  categorySchema,
-  editCategorySchema,
-} from "@/src/validations/salesValidation";
+  ProductFormData,
+  ProductUpdateData,
+  ProductDisplayItem,
+} from "@/src/types/product";
+import { CategoryDisplayItem } from "@/src/types/category";
 
 // Basit validation - sadece kategori ve ürün adı için
 const validateProductForm = (categoryId: string, name: string) => {
@@ -245,13 +247,15 @@ export default function ProductsPage() {
   const [isProductModalVisible, setIsProductModalVisible] = useState(false);
   const [isEditProductModalVisible, setIsEditProductModalVisible] =
     useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] =
+    useState<ProductDisplayItem | null>(null);
 
   // Category Modal States
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [isEditCategoryModalVisible, setIsEditCategoryModalVisible] =
     useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] =
+    useState<CategoryDisplayItem | null>(null);
 
   // Product Form States - sadece kategori ve ürün adı
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
@@ -259,7 +263,7 @@ export default function ProductsPage() {
 
   // Category Form States
   const [categoryName, setCategoryName] = useState("");
-  const [categoryTaxRate, setCategoryTaxRate] = useState("");
+  const [taxRate, setTaxRate] = useState("");
 
   // Validation Error States
   const [validationErrors, setValidationErrors] = useState<
@@ -308,25 +312,20 @@ export default function ProductsPage() {
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
-
-  // Global Store - LOCAL PRODUCTS (eski - compatibility için kalsın)
-  const {
-    products,
-    categories, // Local categories (artık kullanılmıyor)
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    getActiveProducts,
-    addCategory,
-    updateCategory,
-    deleteCategory,
-    getActiveCategories, // Local function (artık kullanılmıyor)
-    getCategoryById, // Local function (güncellendi)
-    getProductsByCategoryId,
-  } = useAppStore();
+  const createCategoryMutation = useCreateCategory();
 
   // Toast
   const { toast, showSuccess, showError, hideToast } = useToast();
+
+  // LOG ACTIVE PRODUCTS FROM BACKEND API
+  useEffect(() => {
+    if (backendActiveProducts && backendActiveProducts.length > 0) {
+      console.log(
+        "🛍️ Backend Active Products:",
+        JSON.stringify(backendActiveProducts, null, 2)
+      );
+    }
+  }, [backendActiveProducts]);
 
   // Tab tanımları
   const tabs = [
@@ -456,7 +455,7 @@ export default function ProductsPage() {
     );
   };
 
-  const handleEditProduct = (product: Product) => {
+  const handleEditProduct = (product: ProductDisplayItem) => {
     setEditingProduct(product);
     setSelectedCategoryId(product.categoryId);
     setProductName(product.name);
@@ -526,7 +525,7 @@ export default function ProductsPage() {
     );
   };
 
-  const handleDeleteProduct = (product: Product) => {
+  const handleDeleteProduct = (product: ProductDisplayItem) => {
     Alert.alert(
       "Ürün Sil",
       `"${product.name}" ürününü silmek istediğinizden emin misiniz?\n\nBu işlem ürünü pasif duruma getirecektir.`,
@@ -595,26 +594,23 @@ export default function ProductsPage() {
   const handleCategoryModalClose = () => {
     setIsCategoryModalVisible(false);
     setCategoryName("");
-    setCategoryTaxRate("");
+    setTaxRate("");
     setValidationErrors({});
   };
 
   const validateCategoryForm = () => {
-    try {
-      categorySchema.parse({
-        name: categoryName,
-        taxRate: categoryTaxRate,
-      });
-      setValidationErrors({});
-      return true;
-    } catch (error: any) {
-      const errors: Record<string, string> = {};
-      error.errors?.forEach((err: any) => {
-        errors[err.path[0]] = err.message;
-      });
-      setValidationErrors(errors);
-      return false;
+    const errors: Record<string, string> = {};
+
+    if (!categoryName.trim()) {
+      errors.name = "Kategori adı zorunludur";
     }
+
+    if (!taxRate.trim() || isNaN(Number(taxRate))) {
+      errors.taxRate = "Geçerli bir KDV oranı giriniz";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleConfirmAddCategory = () => {
@@ -623,7 +619,7 @@ export default function ProductsPage() {
       return;
     }
 
-    const taxRate = parseFloat(categoryTaxRate);
+    const taxRateNumber = parseFloat(taxRate);
 
     Alert.alert(
       "Kategori Ekle",
@@ -635,9 +631,9 @@ export default function ProductsPage() {
           style: "default",
           onPress: () => {
             try {
-              addCategory({
+              createCategoryMutation.mutate({
                 name: categoryName,
-                taxRate: taxRate,
+                taxRate: taxRateNumber,
               });
 
               handleCategoryModalClose();
@@ -1056,8 +1052,8 @@ export default function ProductsPage() {
 
           <Input
             label="KDV Oranı (%) *"
-            value={categoryTaxRate}
-            onChangeText={setCategoryTaxRate}
+            value={taxRate}
+            onChangeText={setTaxRate}
             placeholder="0-100 arası değer (örn: 18)"
             variant="outlined"
             keyboardType="numeric"

@@ -17,7 +17,6 @@ import {
   Loading,
 } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
-import { useAppStore } from "@/src/stores/appStore";
 
 // Backend hooks
 import {
@@ -46,15 +45,6 @@ export default function BrokerDetailPage() {
   const deleteBrokerMutation = useDeleteBroker();
   const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
 
-  // ✅ LOCAL STORE
-  const {
-    brokers: localBrokers,
-    deleteBroker: localDeleteBroker,
-    updateBroker: localUpdateBroker,
-    getBrokerTotalDebt,
-    showGlobalToast,
-  } = useAppStore();
-
   // ✅ STATE'LER - HOOKS'LARDAN SONRA
   const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] =
     useState(false);
@@ -68,22 +58,17 @@ export default function BrokerDetailPage() {
   console.log("📝 BrokerDetailPage state initialized:", {
     brokerId,
     backendBrokersCount: backendBrokers.length,
-    localBrokersCount: localBrokers.length,
     isEditModalVisible: isEditBrokerModalVisible,
   });
 
-  // Backend broker'ları öncelikle kullan, fallback olarak local
-  const brokers = brokersError ? localBrokers : backendBrokers;
+  // Backend broker'ları kullan
+  const brokers = backendBrokers;
 
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);
 
-  // Balance hesaplama
-  const totalDebt = broker
-    ? "balance" in broker
-      ? (broker as any).balance
-      : getBrokerTotalDebt(broker.id)
-    : 0;
+  // Balance hesaplama - Backend'den gelen balance kullan
+  const totalDebt = broker ? broker.balance : 0;
 
   console.log("🔎 Broker lookup result:", {
     brokerId,
@@ -210,46 +195,33 @@ export default function BrokerDetailPage() {
           text: "Güncelle",
           onPress: async () => {
             try {
-              if (!brokersError) {
-                // ✅ AKILLI ENDPOINT SEÇİMİ
-                if (!isNameChanged && isDiscountChanged) {
-                  // Sadece discount rate değişmişse özel endpoint kullan
-                  console.log(
-                    "💰 Only discount rate changed, using discount endpoint"
-                  );
-                  await updateDiscountRateMutation.mutateAsync({
-                    brokerId: broker.id,
-                    discountRate: discountRate,
-                  });
-                  console.log("✅ Discount rate updated via backend");
-                } else {
-                  // İsim de değişmişse normal update endpoint
-                  console.log("🔄 Name changed, using full update endpoint");
-                  await updateBrokerMutation.mutateAsync({
-                    brokerId: broker.id,
-                    brokerData: {
-                      firstName: brokerName.trim(),
-                      lastName: brokerSurname.trim(),
-                      discountRate: discountRate,
-                    },
-                  });
-                  console.log("✅ Broker updated via backend");
-                }
-
-                handleCloseEditBrokerModal();
-                showSuccess("Aracı başarıyla güncellendi!");
-              } else {
-                // Local fallback
-                console.log("🔄 Updating broker via local store");
-                localUpdateBroker(broker.id, {
-                  name: brokerName,
-                  surname: brokerSurname,
+              // ✅ AKILLI ENDPOINT SEÇİMİ
+              if (!isNameChanged && isDiscountChanged) {
+                // Sadece discount rate değişmişse özel endpoint kullan
+                console.log(
+                  "💰 Only discount rate changed, using discount endpoint"
+                );
+                await updateDiscountRateMutation.mutateAsync({
+                  brokerId: broker.id,
                   discountRate: discountRate,
                 });
-                console.log("✅ Broker updated via local store");
-                handleCloseEditBrokerModal();
-                showSuccess("Aracı başarıyla güncellendi!");
+                console.log("✅ Discount rate updated via backend");
+              } else {
+                // İsim de değişmişse normal update endpoint
+                console.log("🔄 Name changed, using full update endpoint");
+                await updateBrokerMutation.mutateAsync({
+                  brokerId: broker.id,
+                  brokerData: {
+                    firstName: brokerName.trim(),
+                    lastName: brokerSurname.trim(),
+                    discountRate: discountRate,
+                  },
+                });
+                console.log("✅ Broker updated via backend");
               }
+
+              handleCloseEditBrokerModal();
+              showSuccess("Aracı başarıyla güncellendi!");
             } catch (error: any) {
               console.error("❌ Update broker error:", error);
 
@@ -264,23 +236,7 @@ export default function BrokerDetailPage() {
                 return;
               }
 
-              // Diğer hatalar için local fallback
-              try {
-                console.log("🔄 Falling back to local store for update...");
-                localUpdateBroker(broker.id, {
-                  name: brokerName,
-                  surname: brokerSurname,
-                  discountRate: discountRate,
-                });
-                handleCloseEditBrokerModal();
-                showSuccess("Aracı başarıyla güncellendi! (Local)");
-              } catch (localError) {
-                console.error(
-                  "❌ Local broker update also failed:",
-                  localError
-                );
-                showError("Aracı güncellenirken bir hata oluştu.");
-              }
+              showError("Aracı güncellenirken bir hata oluştu.");
             }
           },
         },
@@ -304,45 +260,18 @@ export default function BrokerDetailPage() {
             try {
               const brokerName = `${broker.name} ${broker.surname}`;
 
-              if (!brokersError) {
-                console.log("🗑️ Step 1: Delete broker via backend");
-                await deleteBrokerMutation.mutateAsync(broker.id);
-                console.log("✅ Broker deleted via backend");
-              } else {
-                console.log("🗑️ Step 1: Delete broker via local store");
-                localDeleteBroker(broker.id);
-                console.log("✅ Broker deleted via local store");
-              }
+              console.log("🗑️ Delete broker via backend");
+              await deleteBrokerMutation.mutateAsync(broker.id);
+              console.log("✅ Broker deleted via backend");
 
-              console.log("🚀 Step 2: Navigate to brokers");
+              console.log(" Navigate to brokers");
               router.push("/brokers");
 
-              console.log("🎉 Step 3: Show global toast after navigation");
-              setTimeout(() => {
-                showGlobalToast(`${brokerName} başarıyla silindi!`, "success");
-              }, 500);
+              console.log("🎉 Show success message");
+              showSuccess(`${brokerName} başarıyla silindi!`);
             } catch (error) {
               console.error("❌ Delete broker error:", error);
-
-              try {
-                console.log("🔄 Falling back to local store for delete...");
-                const brokerName = `${broker.name} ${broker.surname}`;
-                localDeleteBroker(broker.id);
-
-                router.push("/brokers");
-                setTimeout(() => {
-                  showGlobalToast(
-                    `${brokerName} başarıyla silindi! (Local)`,
-                    "success"
-                  );
-                }, 500);
-              } catch (localError) {
-                console.error(
-                  "❌ Local broker delete also failed:",
-                  localError
-                );
-                showError("Aracı silinirken bir hata oluştu.");
-              }
+              showError("Aracı silinirken bir hata oluştu.");
             }
           },
         },

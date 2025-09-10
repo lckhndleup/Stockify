@@ -18,7 +18,6 @@ import {
   type SelectBoxOption,
   Toast,
 } from "@/src/components/ui";
-import { useAppStore } from "@/src/stores/appStore";
 import { useToast } from "@/src/hooks/useToast";
 import { useNavigation } from "@react-navigation/native";
 
@@ -88,15 +87,6 @@ export default function SalesSection() {
   const calcMutation = useSalesCalculate();
   const [summary, setSummary] = useState<SalesSummary | null>(null);
 
-  // LOCAL STORE – sadece fallback için
-  const {
-    brokers: localBrokers,
-    getActiveProducts,
-    getBrokerTotalDebt,
-    getBrokerDiscount: getLocalBrokerDiscount,
-    updateBrokerDiscount: updateLocalBrokerDiscount,
-  } = useAppStore();
-
   const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
 
   // UI State
@@ -121,20 +111,15 @@ export default function SalesSection() {
     Record<string, string>
   >({});
 
-  // Broker seçimi (backend > local)
-  const brokers = brokersError ? localBrokers : backendBrokers;
-  const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
+  // Broker seçimi (sadece backend)
+  const broker = backendBrokers.find(
+    (b: any) => String(b.id) === String(brokerId)
+  );
   const brokerDebt = broker
-    ? "balance" in broker
-      ? (broker as any).balance
-      : getBrokerTotalDebt(broker.id)
+    ? (broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0
     : 0;
 
-  const brokerDiscount = broker
-    ? broker.discountRate || 0
-    : brokersError
-    ? getLocalBrokerDiscount(brokerId as string)
-    : 0;
+  const brokerDiscount = broker?.discountRate || 0;
 
   // ---- Helpers (yukarıda olsun ki aşağıda kullanılabilsin) ----
   function getTaxRate(p: unknown): number | undefined {
@@ -194,9 +179,7 @@ export default function SalesSection() {
 
   // Ürün seçenekleri (sepette olanları gizle)
   const addedIds = new Set(addedProducts.map((p) => p.id));
-  const activeProducts = salesProductsError
-    ? getActiveProducts()
-    : salesProducts;
+  const activeProducts = salesProducts || [];
   const availableProducts = useMemo(
     () =>
       (activeProducts || []).filter(
@@ -460,14 +443,10 @@ export default function SalesSection() {
     }
     const discount = parseFloat(discountValue);
     try {
-      if (!brokersError) {
-        await updateDiscountRateMutation.mutateAsync({
-          brokerId: brokerId as string,
-          discountRate: discount,
-        });
-      } else {
-        updateLocalBrokerDiscount(brokerId as string, discount);
-      }
+      await updateDiscountRateMutation.mutateAsync({
+        brokerId: brokerId as string,
+        discountRate: discount,
+      });
       setDiscountModalVisible(false);
       setDiscountValue("");
       setDiscountError("");
@@ -475,16 +454,7 @@ export default function SalesSection() {
       showSuccess("İskonto oranı güncellendi!");
       await recalcTotals();
     } catch {
-      try {
-        updateLocalBrokerDiscount(brokerId as string, discount);
-        setDiscountModalVisible(false);
-        setDiscountValue("");
-        setDiscountError("");
-        setValidationErrors({});
-        showSuccess("İskonto oranı güncellendi! (Local)");
-      } catch {
-        showError("İskonto oranı güncellenirken bir hata oluştu.");
-      }
+      showError("İskonto oranı güncellenirken bir hata oluştu.");
     }
   };
 
