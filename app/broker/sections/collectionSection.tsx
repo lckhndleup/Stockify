@@ -34,7 +34,7 @@ export default function CollectionSection() {
 
   // Backend hooks
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
@@ -45,9 +45,6 @@ export default function CollectionSection() {
   const [paymentType, setPaymentType] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [amountError, setAmountError] = useState<string>("");
-
-  // Backend broker'ları kullan
-  const brokers = backendBrokers;
 
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);

@@ -36,7 +36,7 @@ export default function BrokerDetailPage() {
 
   // ✅ BACKEND HOOKS - DOĞRU SIRADA
   const {
-    data: backendBrokers = [],
+    data: allBrokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
@@ -57,12 +57,12 @@ export default function BrokerDetailPage() {
 
   console.log("📝 BrokerDetailPage state initialized:", {
     brokerId,
-    backendBrokersCount: backendBrokers.length,
+    brokersCount: allBrokers.length,
     isEditModalVisible: isEditBrokerModalVisible,
   });
 
   // Backend broker'ları kullan
-  const brokers = backendBrokers;
+  const brokers = allBrokers;
 
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);
@@ -76,7 +76,7 @@ export default function BrokerDetailPage() {
     brokerName: broker?.name,
     brokerSurname: broker?.surname,
     totalDebt,
-    isBackendBroker: !brokersError,
+    isApiBroker: !brokersError,
   });
 
   // ✅ EFFECT'LER - STATE'LERDEN SONRA

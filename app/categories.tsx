@@ -78,7 +78,7 @@ export default function CategoriesPage() {
   // BACKEND HOOKS
   // React Query Hook - BACKEND CATEGORIES
   const {
-    data: backendCategories = [],
+    data: categories = [],
     isLoading: categoriesLoading,
     isError: categoriesError,
     error: categoriesErrorMessage,
@@ -143,11 +143,11 @@ export default function CategoriesPage() {
 
               console.log("💾 Saving category to backend:", categoryFormData);
 
-              const backendResult = await createCategoryMutation.mutateAsync(
+              const result = await createCategoryMutation.mutateAsync(
                 categoryFormData
               );
 
-              if (backendResult) {
+              if (result) {
                 handleCategoryModalClose();
                 showSuccess("Kategori başarıyla eklendi!");
 
@@ -267,7 +267,7 @@ export default function CategoriesPage() {
 
   // Filtering
   const getFilteredCategories = () => {
-    return backendCategories.filter((category) =>
+    return categories.filter((category) =>
       category.name.toLowerCase().includes(searchText.toLowerCase())
     );
   };

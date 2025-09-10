@@ -273,7 +273,7 @@ export default function ProductsPage() {
   // BACKEND HOOKS
   // React Query Hook - BACKEND CATEGORIES
   const {
-    data: backendCategories = [],
+    data: categories = [],
     isLoading: categoriesLoading,
     isError: categoriesError,
     error: categoriesErrorMessage,
@@ -282,7 +282,7 @@ export default function ProductsPage() {
 
   // React Query Hook - BACKEND PRODUCTS - UPDATED: aktif ve pasif ayrı hook'lar
   const {
-    data: backendActiveProducts = [],
+    data: activeProducts = [],
     isLoading: activeProductsLoading,
     isError: activeProductsError,
     error: activeProductsErrorMessage,
@@ -290,7 +290,7 @@ export default function ProductsPage() {
   } = useActiveProducts();
 
   const {
-    data: backendPassiveProducts = [],
+    data: passiveProducts = [],
     isLoading: passiveProductsLoading,
     isError: passiveProductsError,
     error: passiveProductsErrorMessage,
@@ -319,13 +319,13 @@ export default function ProductsPage() {
 
   // LOG ACTIVE PRODUCTS FROM BACKEND API
   useEffect(() => {
-    if (backendActiveProducts && backendActiveProducts.length > 0) {
+    if (activeProducts && activeProducts.length > 0) {
       console.log(
         "🛍️ Backend Active Products:",
-        JSON.stringify(backendActiveProducts, null, 2)
+        JSON.stringify(activeProducts, null, 2)
       );
     }
-  }, [backendActiveProducts]);
+  }, [activeProducts]);
 
   // Tab tanımları
   const tabs = [
@@ -367,7 +367,7 @@ export default function ProductsPage() {
     }
 
     // Kategori yoksa uyarı göster
-    if (backendCategories.length === 0) {
+    if (categories.length === 0) {
       Alert.alert(
         "Kategori Gerekli",
         "Ürün eklemek için önce kategori eklemelisiniz. Kategori ekleme sayfasına gitmek ister misiniz?",
@@ -394,7 +394,7 @@ export default function ProductsPage() {
 
   // Backend kategoriden kategori bulma
   const getCategoryByIdFromAPI = (categoryId: string) => {
-    return backendCategories.find((cat) => cat.id === categoryId);
+    return categories.find((cat) => cat.id === categoryId);
   };
 
   const handleConfirmAddProduct = async () => {
@@ -432,11 +432,11 @@ export default function ProductsPage() {
 
               console.log("💾 Saving product to backend:", productFormData);
 
-              const backendResult = await createProductMutation.mutateAsync(
+              const result = await createProductMutation.mutateAsync(
                 productFormData
               );
 
-              if (backendResult && backendResult.productId) {
+              if (result && result.productId) {
                 handleProductModalClose();
                 showSuccess("Ürün başarıyla eklendi!");
 
@@ -648,7 +648,7 @@ export default function ProductsPage() {
   };
 
   // Filtering and Data - UPDATED: aktif/pasif tab'a göre farklı data source
-  const categoryOptions = backendCategories.map((category) => ({
+  const categoryOptions = categories.map((category) => ({
     label: `${category.name} (KDV: %${category.taxRate})`,
     value: category.id,
   }));
@@ -659,9 +659,9 @@ export default function ProductsPage() {
 
     // Tab'a göre veri kaynağını belirle
     if (activeTab === "active") {
-      sourceProducts = backendActiveProducts;
+      sourceProducts = activeProducts;
     } else {
-      sourceProducts = backendPassiveProducts;
+      sourceProducts = passiveProducts;
     }
 
     // Arama sonuçları varsa onları kullan
@@ -695,7 +695,7 @@ export default function ProductsPage() {
   // Error state için kategori yüklenirken
   if (
     categoriesError &&
-    !backendCategories.length &&
+    !categories.length &&
     (isProductModalVisible || isEditProductModalVisible)
   ) {
     return (
@@ -909,9 +909,7 @@ export default function ProductsPage() {
             label="Kategori *"
             value={selectedCategoryId}
             placeholder={
-              backendCategories.length === 0
-                ? "Kategori Ekle"
-                : "Kategori seçiniz..."
+              categories.length === 0 ? "Kategori Ekle" : "Kategori seçiniz..."
             }
             options={categoryOptions}
             onSelect={setSelectedCategoryId}

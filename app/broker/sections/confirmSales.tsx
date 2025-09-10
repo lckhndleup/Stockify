@@ -50,12 +50,11 @@ export default function ConfirmSales() {
   const { toast, showSuccess, showError } = useToast();
 
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
 
-  const brokers = backendBrokers;
   const broker = brokers.find((b) => String(b.id) === String(brokerId));
 
   const brokerBalance = broker ? broker.balance : 0;

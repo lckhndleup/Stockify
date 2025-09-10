@@ -85,8 +85,8 @@ export const useCreateBroker = () => {
       console.log("➕ Creating broker:", brokerData);
 
       try {
-        const backendData = adaptBrokerForBackend(brokerData);
-        const result = await apiService.saveBroker(backendData);
+        const data = adaptBrokerForBackend(brokerData);
+        const result = await apiService.saveBroker(data);
         console.log("✅ Broker created - RAW RESPONSE:", result);
         console.log("✅ Response type:", typeof result);
         console.log("✅ Response keys:", result ? Object.keys(result) : "null");
@@ -123,11 +123,8 @@ export const useUpdateBroker = () => {
 
       try {
         const brokerId = parseInt(params.brokerId);
-        const backendData = adaptBrokerUpdateForBackend(
-          brokerId,
-          params.brokerData
-        );
-        const result = await apiService.updateBroker(backendData);
+        const data = adaptBrokerUpdateForBackend(brokerId, params.brokerData);
+        const result = await apiService.updateBroker(data);
         console.log("✅ Broker updated - RAW RESPONSE:", result);
 
         return result;

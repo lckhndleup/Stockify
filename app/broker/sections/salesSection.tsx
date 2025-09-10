@@ -60,7 +60,7 @@ export default function SalesSection() {
 
   // BACKEND: brokers
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
@@ -112,9 +112,7 @@ export default function SalesSection() {
   >({});
 
   // Broker seçimi (sadece backend)
-  const broker = backendBrokers.find(
-    (b: any) => String(b.id) === String(brokerId)
-  );
+  const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
   const brokerDebt = broker
     ? (broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0
     : 0;

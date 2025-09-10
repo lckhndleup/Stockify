@@ -60,18 +60,15 @@ export default function ResultSales() {
 
   // Backend brokers
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
 
   // Backend broker
   const broker = useMemo(
-    () =>
-      (backendBrokers || []).find(
-        (b: any) => String(b.id) === String(brokerId)
-      ),
-    [backendBrokers, brokerId]
+    () => (brokers || []).find((b: any) => String(b.id) === String(brokerId)),
+    [brokers, brokerId]
   );
 
   // Ad Soyad – API > Local
@@ -137,7 +134,7 @@ export default function ResultSales() {
   useEffect(() => {
     console.log("🧾 [ResultSales] Broker resolve", {
       brokerId,
-      source: "backendAPI",
+      source: "API",
       brokerFound: !!broker,
       name: broker?.name,
       surname: broker?.surname,
