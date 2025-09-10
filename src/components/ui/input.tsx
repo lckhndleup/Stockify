@@ -1,21 +1,7 @@
 import React, { useState } from "react";
-import { View, TextInput, TextInputProps } from "react-native";
+import { View, TextInput } from "react-native";
 import Typography from "./typography";
-
-interface InputProps extends TextInputProps {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  variant?: "default" | "outlined" | "filled";
-  size?: "sm" | "md" | "lg";
-  fullWidth?: boolean;
-  numericOnly?: boolean; // YENİ: Sadece sayı girişi için
-  className?: string;
-  inputClassName?: string;
-  style?: any;
-}
+import type { InputProps } from "@/src/types/ui";
 
 export default function Input({
   label,

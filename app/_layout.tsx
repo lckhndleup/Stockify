@@ -8,22 +8,11 @@ import Providers from "@/src/components/common/Providers";
 import { BottomNavigation, Icon } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
 import { useAuthErrorHandler } from "@/src/hooks/api";
+import type {
+  RouteParams,
+  CustomHeaderLeftProps,
+} from "@/src/types/navigation";
 import "../global.css";
-
-// ✅ Type-safe route params
-interface RouteParams {
-  brokerId?: string;
-  [key: string]: any;
-}
-
-// ✅ Optimize edilmiş Custom Header Left Component
-interface CustomHeaderLeftProps {
-  targetRoute?: string;
-  routeParams?: RouteParams;
-  iconName?: string;
-  iconColor?: string;
-  onPress?: () => void;
-}
 
 const CustomHeaderLeft = ({
   targetRoute = "/",

@@ -2,34 +2,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import apiService, { LoginRequest, ApiError } from "@/src/services/api";
-
-interface User {
-  id: string;
-  username: string;
-  email?: string;
-  loginTime: string;
-}
-
-interface AuthStore {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  rememberMe: boolean;
-  isLoading: boolean;
-  error: string | null;
-
-  // Actions
-  login: (
-    username: string,
-    password: string,
-    rememberMe: boolean
-  ) => Promise<boolean>;
-  logout: () => Promise<void>;
-  setLoading: (loading: boolean) => void;
-  clearError: () => void;
-  initializeAuth: () => void;
-}
+import apiService, { ApiError } from "@/src/services/api";
+import type { User, AuthStore } from "@/src/types/stores";
+import type { LoginRequest } from "@/src/types/apiTypes";
 
 const middleware = persist<AuthStore>(
   (set, get) => ({
@@ -177,6 +152,25 @@ const middleware = persist<AuthStore>(
       set({ error: null });
     },
 
+    checkTokenExpiry: () => {
+      // Token expiry check logic could be implemented here
+      console.log("🕐 Checking token expiry");
+      // This would typically decode JWT and check exp field
+    },
+
+    refreshToken: async () => {
+      console.log("🔄 Refreshing token");
+      try {
+        // Token refresh logic would be implemented here
+        // const newToken = await apiService.refreshToken();
+        // set({ token: newToken });
+      } catch (error) {
+        console.log("❌ Token refresh failed:", error);
+        // Force logout on refresh failure
+        get().logout();
+      }
+    },
+
     initializeAuth: () => {
       const state = get();
       console.log("🔄 Initializing auth:", {
@@ -213,6 +207,8 @@ const middleware = persist<AuthStore>(
           logout: state.logout,
           setLoading: state.setLoading,
           clearError: state.clearError,
+          checkTokenExpiry: state.checkTokenExpiry,
+          refreshToken: state.refreshToken,
           initializeAuth: state.initializeAuth,
         };
       }
@@ -228,6 +224,8 @@ const middleware = persist<AuthStore>(
         logout: state.logout,
         setLoading: state.setLoading,
         clearError: state.clearError,
+        checkTokenExpiry: state.checkTokenExpiry,
+        refreshToken: state.refreshToken,
         initializeAuth: state.initializeAuth,
       };
     },

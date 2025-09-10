@@ -1,15 +1,7 @@
 import React from "react";
 import { View, ViewProps, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-interface ContainerProps extends ViewProps {
-  children: React.ReactNode;
-  className?: string;
-  safeTop?: boolean;
-  safeBottom?: boolean;
-  center?: boolean;
-  padding?: "none" | "sm" | "md" | "lg" | "xl";
-}
+import type { ContainerProps } from "@/src/types/ui";
 
 export default function Container({
   children,

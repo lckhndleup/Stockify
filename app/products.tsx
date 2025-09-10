@@ -17,6 +17,7 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
+import type { DropdownProps } from "@/src/types/ui";
 import {
   useActiveCategories,
   useCreateCategory,
@@ -56,19 +57,6 @@ const validateProductForm = (categoryId: string, name: string) => {
 };
 
 // Dropdown Component - AYNEN KORUNDU
-interface DropdownProps {
-  label?: string;
-  value?: string;
-  placeholder?: string;
-  options: { label: string; value: string }[];
-  onSelect: (value: string) => void;
-  className?: string;
-  onAddCategory?: () => void;
-  showAddButton?: boolean;
-  loading?: boolean;
-  error?: string;
-}
-
 function Dropdown({
   label,
   value,

@@ -3,24 +3,7 @@ import React from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// Store interface - CLEANED: Only global toast functionality
-interface AppStore {
-  // Global Toast
-  globalToast: {
-    visible: boolean;
-    message: string;
-    type: "success" | "error" | "warning" | "info";
-  };
-  showGlobalToast: (
-    message: string,
-    type?: "success" | "error" | "warning" | "info"
-  ) => void;
-  hideGlobalToast: () => void;
-
-  // System Actions
-  resetStore: () => void;
-}
+import type { AppStore } from "@/src/types/stores";
 
 const middleware = persist<AppStore>(
   (set, get) => ({

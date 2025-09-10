@@ -2,16 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { View, StyleProp, ViewStyle } from "react-native";
 import LottieView from "lottie-react-native";
 import Typography from "./typography";
-
-interface LoadingProps {
-  size?: "small" | "large";
-  color?: string;
-  text?: string;
-  overlay?: boolean;
-  className?: string;
-  style?: StyleProp<ViewStyle>;
-  speed?: number;
-}
+import type { LoadingProps } from "@/src/types/ui";
 
 export default function Loading({
   size = "large",

@@ -2,11 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import Svg, { Path } from "react-native-svg";
 import { Dimensions, Animated, Easing } from "react-native";
-
-interface BackgroundSvgProps {
-  width?: number;
-  height?: number;
-}
+import type { BackgroundSvgProps } from "@/src/types/svg";
 
 const { width: screenWidth } = Dimensions.get("window");
 

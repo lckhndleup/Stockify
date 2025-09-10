@@ -1,11 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-
-interface LangStore {
-  lang?: string;
-  setLang: (lang: string) => void;
-}
+import type { LangStore } from "@/src/types/stores";
 
 const middleware = persist<LangStore>(
   (set) => ({

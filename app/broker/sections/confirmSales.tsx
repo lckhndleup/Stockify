@@ -20,17 +20,7 @@ import {
   useSalesCancel,
 } from "@/src/hooks/api/useSales";
 import type { SalesSummary } from "@/src/types/sales";
-
-type SalesItemParam = {
-  id: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  taxRate?: number;
-  taxPrice?: number;
-  totalPriceWithTax?: number;
-};
+import type { SalesItemParam } from "@/src/types/salesUI";
 
 export default function ConfirmSales() {
   // --- Params & state (LOGIC AYNI) ---

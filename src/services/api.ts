@@ -1,25 +1,12 @@
 // src/services/api.ts
+import type {
+  LoginRequest,
+  LoginResponse,
+  LogoutResponse,
+  ApiError,
+} from "@/src/types/apiTypes";
+
 const API_BASE_URL = "https://stockify-gcsq.onrender.com";
-
-// API Response types
-export interface LoginRequest {
-  username: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-export interface LoginResponse {
-  token: string;
-}
-
-export interface LogoutResponse {
-  success: boolean;
-  message: string;
-}
-export interface ApiError {
-  message: string;
-  status: number;
-}
 
 class ApiService {
   private baseURL: string;
@@ -860,3 +847,6 @@ class ApiService {
 // Singleton instance
 export const apiService = new ApiService(API_BASE_URL);
 export default apiService;
+
+// Re-export types for convenience
+export type { ApiError } from "@/src/types/apiTypes";

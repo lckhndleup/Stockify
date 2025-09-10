@@ -4,7 +4,6 @@ import {
   View,
   TouchableOpacity,
   Dimensions,
-  ModalProps as RNModalProps,
   Animated,
   PanResponder,
   Platform,
@@ -12,19 +11,9 @@ import {
 } from "react-native";
 import Typography from "./typography";
 import Icon from "./icon";
+import type { BottomSheetProps } from "@/src/types/ui";
 
 const { height: screenHeight } = Dimensions.get("window");
-
-interface BottomSheetProps extends RNModalProps {
-  children: React.ReactNode;
-  title?: string;
-  visible: boolean;
-  onClose: () => void;
-  height?: "small" | "medium" | "large" | "full";
-  showCloseButton?: boolean;
-  overlayClosable?: boolean;
-  className?: string;
-}
 
 export default function BottomSheet({
   children,

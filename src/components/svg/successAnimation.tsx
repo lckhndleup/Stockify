@@ -2,15 +2,11 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { StyleProp, ViewStyle } from "react-native";
 import LottieView from "lottie-react-native";
-
-// LottieView'un kendi prop tiplerinden türetelim:
-type LottieProps = React.ComponentProps<typeof LottieView>;
-
-export type SuccessAnimationRef = {
-  play: () => void;
-  pause: () => void;
-  reset: () => void;
-};
+import type {
+  LottieProps,
+  SuccessAnimationRef,
+  SuccessAnimationProps,
+} from "@/src/types/svg";
 
 type Props = {
   /** Boş bırakılırsa ./Checked.json kullanılır */

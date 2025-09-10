@@ -37,19 +37,7 @@ import {
 import { apiService } from "@/src/services/api";
 // tipler (swagger ile uyumlu)
 import type { SalesSummary } from "@/src/types/sales";
-
-// UI’da kullanılan ara tip
-interface AddedProduct {
-  id: string; // productId
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  /** Kart sağ tarafında gösterilecek toplam için KDV dahil tutarı da taşıyalım */
-  totalPrice: number; // geriye dönük; yoksa totalPriceWithTax kullanacağız
-  taxRate?: number;
-  taxPrice?: number;
-  totalPriceWithTax?: number;
-}
+import type { AddedProduct } from "@/src/types/salesUI";
 
 export default function SalesSection() {
   const { brokerId } = useLocalSearchParams();

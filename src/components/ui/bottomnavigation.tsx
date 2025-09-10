@@ -2,26 +2,11 @@ import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Link, usePathname } from "expo-router";
 import Icon from "./icon";
-
-interface BottomNavigationProps {
-  className?: string;
-}
-
-type AppRoute = "/" | "/stock" | "/brokers" | "/products";
-
-interface NavigationItem {
-  icon: {
-    family:
-      | "MaterialIcons"
-      | "MaterialCommunityIcons"
-      | "Feather"
-      | "AntDesign"
-      | "Ionicons";
-    name: string;
-  };
-  label: string;
-  path: AppRoute;
-}
+import type {
+  BottomNavigationProps,
+  AppRoute,
+  NavigationItem,
+} from "@/src/types/navigation";
 
 export default function BottomNavigation({
   className = "",

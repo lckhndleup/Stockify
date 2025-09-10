@@ -13,33 +13,9 @@ import {
 } from "@/src/components/ui";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useSalesCalculate } from "@/src/hooks/api/useSales";
-
-type SalesItem = {
-  salesId?: number;
-  productId: number;
-  productName: string;
-  productCount: number;
-  unitPrice: number;
-  totalPrice: number;
-  taxRate: number;
-  taxPrice: number;
-  totalPriceWithTax: number;
-};
-type SalesSummary = {
-  documentNumber?: string;
-  salesItems: SalesItem[];
-  subtotalPrice: number;
-  discountRate: number;
-  discountPrice: number;
-  totalPrice: number; // iskonto sonrası ara toplam (KDV hariç)
-  totalTaxPrice?: number; // toplam KDV
-  totalPriceWithTax: number; // KDV dahil genel toplam
-  downloadUrl?: string;
-};
-
-import SuccessAnimation, {
-  SuccessAnimationRef,
-} from "@/src/components/svg/successAnimation";
+import type { SalesItem, SalesSummaryResult } from "@/src/types/salesUI";
+import SuccessAnimation from "@/src/components/svg/successAnimation";
+import type { SuccessAnimationRef } from "@/src/types/svg";
 
 export default function ResultSales() {
   const params = useLocalSearchParams();
@@ -77,10 +53,10 @@ export default function ResultSales() {
     : "Aracı";
 
   // Confirm’den gelen özet (opsiyonel)
-  const summary: SalesSummary | null = useMemo(() => {
+  const summary: SalesSummaryResult | null = useMemo(() => {
     try {
       return summaryJSON
-        ? (JSON.parse(summaryJSON as string) as SalesSummary)
+        ? (JSON.parse(summaryJSON as string) as SalesSummaryResult)
         : null;
     } catch {
       return null;
@@ -88,7 +64,9 @@ export default function ResultSales() {
   }, [summaryJSON]);
 
   // ✅ Backend’den calculate sonucu da çek (confirm yoksa buradan göster)
-  const [calcSummary, setCalcSummary] = useState<SalesSummary | null>(null);
+  const [calcSummary, setCalcSummary] = useState<SalesSummaryResult | null>(
+    null
+  );
   const calcMutation = useSalesCalculate();
 
   useEffect(() => {
@@ -110,7 +88,7 @@ export default function ResultSales() {
   }, [isSuccess, brokerId, willCreateInvoice, summary]);
 
   // Ekranda kullanılacak özet: önce confirm’den gelen, yoksa backend calculate
-  const summaryToShow: SalesSummary | null = summary ?? calcSummary;
+  const summaryToShow: SalesSummaryResult | null = summary ?? calcSummary;
 
   // Toplamlar (parametre/summaryToShow)
   const totalWithTax =

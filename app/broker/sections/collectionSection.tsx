@@ -9,11 +9,10 @@ import {
   SelectBox,
   Input,
   Button,
-  Divider,
   Toast,
   Loading,
-  type SelectBoxOption,
 } from "@/src/components/ui";
+import type { SelectBoxOption } from "@/src/types/ui";
 import { useToast } from "@/src/hooks/useToast";
 
 // Backend hooks
