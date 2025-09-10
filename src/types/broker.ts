@@ -56,7 +56,7 @@ export const adaptBrokerForUI = (broker: Broker): BrokerDisplayItem => ({
 });
 
 // UI form'undan backend format'ına çevir
-export const adaptBrokerForBackend = (
+export const adaptBroker = (
   formData: BrokerFormData
 ): Omit<BrokerFormData, "id"> => ({
   firstName: formData.firstName.trim(),
@@ -65,7 +65,7 @@ export const adaptBrokerForBackend = (
 });
 
 // Update için backend format'ına çevir
-export const adaptBrokerUpdateForBackend = (
+export const adaptBrokerUpdate = (
   brokerId: number,
   formData: { firstName: string; lastName: string; discountRate: number }
 ): BrokerUpdateData => ({

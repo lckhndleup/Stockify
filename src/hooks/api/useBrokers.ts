@@ -9,8 +9,8 @@ import {
   BrokerUpdateData,
   BrokerDiscountRateUpdateData,
   adaptBrokerForUI,
-  adaptBrokerForBackend,
-  adaptBrokerUpdateForBackend,
+  adaptBroker,
+  adaptBrokerUpdate,
 } from "@/src/types/broker";
 
 // Types export
@@ -85,7 +85,7 @@ export const useCreateBroker = () => {
       console.log("➕ Creating broker:", brokerData);
 
       try {
-        const data = adaptBrokerForBackend(brokerData);
+        const data = adaptBroker(brokerData);
         const result = await apiService.saveBroker(data);
         console.log("✅ Broker created - RAW RESPONSE:", result);
         console.log("✅ Response type:", typeof result);
@@ -123,7 +123,7 @@ export const useUpdateBroker = () => {
 
       try {
         const brokerId = parseInt(params.brokerId);
-        const data = adaptBrokerUpdateForBackend(brokerId, params.brokerData);
+        const data = adaptBrokerUpdate(brokerId, params.brokerData);
         const result = await apiService.updateBroker(data);
         console.log("✅ Broker updated - RAW RESPONSE:", result);
 
