@@ -22,6 +22,7 @@ import { useAppStore } from "@/src/stores/appStore";
 // Backend hooks
 import {
   useActiveBrokers,
+  useBrokers,
   useCreateBroker,
   useUpdateBroker,
   BrokerDisplayItem,
@@ -57,13 +58,20 @@ export default function BrokersPage() {
     error: brokersError,
   } = useActiveBrokers();
 
+  // All brokers için ayrı hook (log amacıyla)
+  const {
+    data: allBrokers = [],
+    isLoading: allBrokersLoading,
+    error: allBrokersError,
+  } = useBrokers();
+
   // Backend data'sını logla
   useEffect(() => {
     if (brokers && brokers.length > 0) {
-      console.log("🔍 Backend'den gelen tüm broker data'sı:", brokers);
-      console.log("📊 Broker sayısı:", brokers.length);
-      console.log("📋 İlk broker örneği:", brokers[0]);
-      console.log("📋 Tüm broker'ların detayı:");
+      console.log("🔍 Backend'den gelen tüm ACTIVE broker data'sı:", brokers);
+      console.log("📊 Active Broker sayısı:", brokers.length);
+      console.log("📋 İlk active broker örneği:", brokers[0]);
+      console.log("📋 Tüm active broker'ların detayı:");
       brokers.forEach((broker, index) => {
         console.log(
           `  ${index + 1}. ${broker.name} ${broker.surname} - Balance: ${
@@ -72,9 +80,28 @@ export default function BrokersPage() {
         );
       });
     } else if (brokers && brokers.length === 0) {
-      console.log("⚠️ Backend'den broker data'sı geldi ama boş array");
+      console.log("⚠️ Backend'den ACTIVE broker data'sı geldi ama boş array");
     }
   }, [brokers]);
+
+  // All brokers log
+  useEffect(() => {
+    if (allBrokers && allBrokers.length > 0) {
+      console.log("🌍 Backend ALL BROKERS metodu ile gelen data:", allBrokers);
+      console.log("📊 ALL Broker sayısı:", allBrokers.length);
+      console.log("📋 İlk ALL broker örneği:", allBrokers[0]);
+      console.log("📋 Tüm ALL broker'ların detayı:");
+      allBrokers.forEach((broker, index) => {
+        console.log(
+          `  ${index + 1}. ${broker.firstName} ${broker.lastName} - Status: ${
+            broker.status
+          } - Balance: ${broker.currentBalance}`
+        );
+      });
+    } else if (allBrokers && allBrokers.length === 0) {
+      console.log("⚠️ Backend'den ALL broker data'sı geldi ama boş array");
+    }
+  }, [allBrokers]);
 
   const createBrokerMutation = useCreateBroker();
   const updateBrokerMutation = useUpdateBroker();

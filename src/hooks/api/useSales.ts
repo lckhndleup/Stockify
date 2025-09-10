@@ -4,7 +4,7 @@ import { apiService } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
 import {
   adaptSalesProductsForUI,
-  BackendSalesProduct,
+  SalesProduct,
   SalesProductDisplayItem,
   SalesCalculateRequest,
   SalesCancelRequest,
@@ -20,7 +20,7 @@ export const useSalesProducts = (options?: { enabled?: boolean }) =>
     queryKey: queryKeys.sales.products(),
     queryFn: async () => {
       const products = await apiService.getSalesProducts();
-      return adaptSalesProductsForUI(products as BackendSalesProduct[]);
+      return adaptSalesProductsForUI(products as SalesProduct[]);
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

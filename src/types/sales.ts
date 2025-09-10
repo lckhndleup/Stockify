@@ -2,14 +2,14 @@
 // SalesController: /sales/products, /sales/calculate, /sales/confirm, /sales/cancel
 
 /** GET /sales/products */
-export interface BackendSalesProduct {
+export interface SalesProduct {
   productId: number;
   productName: string;
   productCount: number; // stok
   price: number; // birim fiyat
   taxRate: number; // %
 }
-export type SalesProductsResponse = BackendSalesProduct[];
+export type SalesProductsResponse = SalesProduct[];
 
 /** UI-friendly ürün tipi */
 export interface SalesProductDisplayItem {
@@ -20,7 +20,7 @@ export interface SalesProductDisplayItem {
   taxRate: number;
 }
 export const adaptSalesProductForUI = (
-  p: BackendSalesProduct
+  p: SalesProduct
 ): SalesProductDisplayItem => ({
   id: p.productId,
   name: p.productName,
@@ -29,7 +29,7 @@ export const adaptSalesProductForUI = (
   taxRate: p.taxRate,
 });
 export const adaptSalesProductsForUI = (
-  list: BackendSalesProduct[]
+  list: SalesProduct[]
 ): SalesProductDisplayItem[] => list.map(adaptSalesProductForUI);
 
 // ---------- Request DTOs ----------
