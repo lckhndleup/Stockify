@@ -24,10 +24,7 @@ export interface Product {
 export interface Broker {
   id: string;
   name: string;
-  surname: string;
-  email: string;
-  phone: string;
-  address: string;
+  surname: string; // UI'da surname kullanılıyor
   discountRate: number;
   isActive: boolean;
 }

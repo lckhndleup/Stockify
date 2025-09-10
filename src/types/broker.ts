@@ -1,7 +1,7 @@
 // src/types/broker.ts
 
 // Backend'den gelen broker verisi
-export interface BackendBroker {
+export interface Broker {
   brokerId: number;
   firstName: string;
   lastName: string;
@@ -12,14 +12,11 @@ export interface BackendBroker {
   lastModifiedDate: number;
 }
 
-// UI'da kullanılan broker verisi (mevcut arayüz uyumlu)
+// UI'da kullanılan broker verisi (mevcut UI uyumlu)
 export interface BrokerDisplayItem {
   id: string;
   name: string;
-  surname: string; // Arayüzde surname kullanılıyor
-  email: string; // UI'da var ama backend'de yok, boş string olacak
-  phone: string; // UI'da var ama backend'de yok, boş string olacak
-  address: string; // UI'da var ama backend'de yok, boş string olacak
+  surname: string; // UI'da surname kullanılıyor
   discountRate: number;
   balance: number; // currentBalance'dan geliyor
   isActive: boolean;
@@ -48,13 +45,10 @@ export interface BrokerDiscountRateUpdateData {
 }
 
 // Backend'den gelen veriyi UI format'ına çevir
-export const adaptBrokerForUI = (broker: BackendBroker): BrokerDisplayItem => ({
+export const adaptBrokerForUI = (broker: Broker): BrokerDisplayItem => ({
   id: broker.brokerId.toString(),
   name: broker.firstName,
-  surname: broker.lastName,
-  email: "", // Backend'de email yok, boş string
-  phone: "", // Backend'de phone yok, boş string
-  address: "", // Backend'de address yok, boş string
+  surname: broker.lastName, // Backend lastName -> UI surname
   discountRate: broker.discountRate,
   balance: broker.currentBalance,
   isActive: broker.status === "ACTIVE",

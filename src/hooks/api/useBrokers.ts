@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
 import {
-  BackendBroker,
+  Broker,
   BrokerDisplayItem,
   BrokerFormData,
   BrokerUpdateData,
@@ -15,7 +15,7 @@ import {
 
 // Types export
 export type {
-  BackendBroker,
+  Broker,
   BrokerDisplayItem,
   BrokerFormData,
   BrokerUpdateData,
@@ -23,9 +23,7 @@ export type {
 };
 
 // Backend'den gelen data'yı UI format'ına çevir
-export const adaptBrokersForUI = (
-  brokers: BackendBroker[]
-): BrokerDisplayItem[] => {
+export const adaptBrokersForUI = (brokers: Broker[]): BrokerDisplayItem[] => {
   return brokers.map((broker) => adaptBrokerForUI(broker));
 };
 
@@ -39,7 +37,7 @@ export const useBrokers = (options?: { enabled?: boolean }) => {
       console.log("👥 Fetching brokers from API...");
       const brokers = await apiService.getBrokers();
       console.log("✅ Brokers fetched:", brokers);
-      return brokers as BackendBroker[];
+      return brokers as Broker[];
     },
     ...options,
   });
@@ -54,7 +52,7 @@ export const useActiveBrokers = (options?: { enabled?: boolean }) => {
       const brokers = await apiService.getBrokers();
       // Backend'den gelen tüm broker'ları aktif kabul ediyoruz (status: "ACTIVE" olanlar)
       const activeBrokers = brokers.filter(
-        (broker: BackendBroker) => broker.status === "ACTIVE"
+        (broker: Broker) => broker.status === "ACTIVE"
       );
       return adaptBrokersForUI(activeBrokers);
     },
