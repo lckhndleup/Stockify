@@ -1,7 +1,6 @@
 // app/index.tsx
 import React, { useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
-import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 
 import {
@@ -15,19 +14,15 @@ import {
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
-import { useAppStore } from "@/src/stores/appStore"; // Bu satır zaten var
-import DebugPanel from "@/src/components/ui/debugPanel";
 
 export default function HomePage() {
-  const { t } = useTranslation();
   const [searchText, setSearchText] = useState("");
   const { user, logout } = useAuthStore();
-  const { resetStore } = useAppStore(); // Reset fonksiyonu ekle
   const { toast, hideToast } = useToast();
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    console.log("Arama yapılıyor:", text);
+    // TODOMali : buraya arama işlevselliği eklenebilir
   };
 
   const handleLogout = () => {
@@ -46,20 +41,13 @@ export default function HomePage() {
             try {
               console.log("🔄 Starting logout process...");
 
-              // Logout işlemini başlat (artık async)
+              //logout fonksiyonunu çağır(async/await ile)
               await logout();
-
-              console.log("✅ Logout completed, redirecting...");
-
-              // Login sayfasına yönlendir
               router.replace("/login");
             } catch (error) {
               console.log("❌ Logout error:", error);
-
-              // Hata olsa bile login sayfasına yönlendir
-              router.replace("/login");
-
               // Kullanıcıya bilgi ver
+              router.replace("/login");
               Alert.alert(
                 "Uyarı",
                 "Çıkış yaparken bir sorun oluştu, ancak oturumunuz sonlandırıldı."
@@ -71,37 +59,15 @@ export default function HomePage() {
     );
   };
 
-  // YENİ: Geçici reset fonksiyonu - eski verileri temizlemek için
-  const handleResetStore = () => {
-    Alert.alert(
-      "Verileri Sıfırla",
-      "Tüm kategori, ürün ve aracı verilerini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.",
-      [
-        { text: "İptal", style: "cancel" },
-        {
-          text: "Sıfırla",
-          style: "destructive",
-          onPress: () => {
-            resetStore();
-            Alert.alert("Başarılı", "Tüm veriler sıfırlandı.");
-          },
-        },
-      ]
-    );
-  };
-
   const handleProducts = () => {
-    console.log("Ürünler sayfasına gidiliyor...");
     router.push("/products");
   };
 
   const handleBrokers = () => {
-    console.log("Aracılar sayfasına gidiliyor...");
     router.push("/brokers");
   };
 
   const handleStock = () => {
-    console.log("Stok Takip sayfasına gidiliyor...");
     router.push("/stock");
   };
 
@@ -116,7 +82,7 @@ export default function HomePage() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header with User Info and Logout - DEĞİŞTİ */}
+        {/* Header with User Info and Logout */}
         <View className="flex-row items-start justify-between mb-4 mt-1">
           <View className="flex-1">
             <Typography
@@ -134,20 +100,8 @@ export default function HomePage() {
             )}
           </View>
 
-          {/* Logout ve Reset Butonları - YENİ */}
+          {/* Logout Button */}
           <View className="flex-row items-center">
-            {/* Reset Button - Geçici */}
-            <Icon
-              family="MaterialIcons"
-              name="refresh"
-              size={18}
-              color="#E3001B"
-              pressable
-              onPress={handleResetStore}
-              containerClassName="p-1 mt-1 mr-2"
-            />
-
-            {/* Logout Button */}
             <Icon
               family="MaterialIcons"
               name="logout"
@@ -160,9 +114,6 @@ export default function HomePage() {
           </View>
         </View>
 
-        {/* Debug Panel */}
-        {/* <DebugPanel /> */}
-
         {/* SearchBar */}
         <SearchBar
           placeholder="Ara..."
@@ -170,7 +121,7 @@ export default function HomePage() {
           className="mb-4"
         />
 
-        {/* Ana Menü Kartları - Her karta margin-bottom ekledim */}
+        {/* Ana Menü Kartları */}
         <View>
           {/* ÜRÜN Kartı */}
           <Card
