@@ -99,7 +99,7 @@ export default function SalesSection() {
     Record<string, string>
   >({});
 
-  // Broker seçimi (sadece backend)
+  // Find broker from loaded backend data
   const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
   const brokerDebt = broker
     ? (broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0
