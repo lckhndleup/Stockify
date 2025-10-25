@@ -16,7 +16,6 @@ export { default as BottomNavigation } from "./bottomnavigation";
 export { default as Checkbox } from "./checkbox";
 export { default as Toast } from "./toast";
 export { default as SelectBox } from "./selectbox";
-export type { SelectBoxOption } from "./selectbox";
 
 // Type Exports (optional, useful for TypeScript users)
 export type { default as ContainerProps } from "./container";

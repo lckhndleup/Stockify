@@ -2,17 +2,7 @@ import React from "react";
 import { TouchableOpacity, View } from "react-native";
 import Icon from "./icon";
 import Typography from "./typography";
-
-interface CheckboxProps {
-  checked: boolean;
-  onToggle: (checked: boolean) => void;
-  label?: string;
-  size?: "sm" | "md" | "lg";
-  color?: string;
-  disabled?: boolean;
-  className?: string;
-  labelClassName?: string;
-}
+import type { CheckboxProps } from "@/src/types/ui";
 
 export default function Checkbox({
   checked,

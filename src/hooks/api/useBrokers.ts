@@ -3,19 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
 import {
-  BackendBroker,
+  Broker,
   BrokerDisplayItem,
   BrokerFormData,
   BrokerUpdateData,
   BrokerDiscountRateUpdateData,
   adaptBrokerForUI,
-  adaptBrokerForBackend,
-  adaptBrokerUpdateForBackend,
+  adaptBroker,
+  adaptBrokerUpdate,
 } from "@/src/types/broker";
 
 // Types export
 export type {
-  BackendBroker,
+  Broker,
   BrokerDisplayItem,
   BrokerFormData,
   BrokerUpdateData,
@@ -23,9 +23,7 @@ export type {
 };
 
 // Backend'den gelen data'yı UI format'ına çevir
-export const adaptBrokersForUI = (
-  brokers: BackendBroker[]
-): BrokerDisplayItem[] => {
+export const adaptBrokersForUI = (brokers: Broker[]): BrokerDisplayItem[] => {
   return brokers.map((broker) => adaptBrokerForUI(broker));
 };
 
@@ -39,7 +37,7 @@ export const useBrokers = (options?: { enabled?: boolean }) => {
       console.log("👥 Fetching brokers from API...");
       const brokers = await apiService.getBrokers();
       console.log("✅ Brokers fetched:", brokers);
-      return brokers as BackendBroker[];
+      return brokers as Broker[];
     },
     ...options,
   });
@@ -54,7 +52,7 @@ export const useActiveBrokers = (options?: { enabled?: boolean }) => {
       const brokers = await apiService.getBrokers();
       // Backend'den gelen tüm broker'ları aktif kabul ediyoruz (status: "ACTIVE" olanlar)
       const activeBrokers = brokers.filter(
-        (broker: BackendBroker) => broker.status === "ACTIVE"
+        (broker: Broker) => broker.status === "ACTIVE"
       );
       return adaptBrokersForUI(activeBrokers);
     },
@@ -87,8 +85,8 @@ export const useCreateBroker = () => {
       console.log("➕ Creating broker:", brokerData);
 
       try {
-        const backendData = adaptBrokerForBackend(brokerData);
-        const result = await apiService.saveBroker(backendData);
+        const data = adaptBroker(brokerData);
+        const result = await apiService.saveBroker(data);
         console.log("✅ Broker created - RAW RESPONSE:", result);
         console.log("✅ Response type:", typeof result);
         console.log("✅ Response keys:", result ? Object.keys(result) : "null");
@@ -125,11 +123,8 @@ export const useUpdateBroker = () => {
 
       try {
         const brokerId = parseInt(params.brokerId);
-        const backendData = adaptBrokerUpdateForBackend(
-          brokerId,
-          params.brokerData
-        );
-        const result = await apiService.updateBroker(backendData);
+        const data = adaptBrokerUpdate(brokerId, params.brokerData);
+        const result = await apiService.updateBroker(data);
         console.log("✅ Broker updated - RAW RESPONSE:", result);
 
         return result;

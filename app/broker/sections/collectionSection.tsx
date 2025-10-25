@@ -9,12 +9,10 @@ import {
   SelectBox,
   Input,
   Button,
-  Divider,
   Toast,
   Loading,
-  type SelectBoxOption,
 } from "@/src/components/ui";
-import { useAppStore } from "@/src/stores/appStore";
+import type { SelectBoxOption } from "@/src/types/ui";
 import { useToast } from "@/src/hooks/useToast";
 
 // Backend hooks
@@ -35,37 +33,23 @@ export default function CollectionSection() {
 
   // Backend hooks
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
 
   const createPaymentMutation = useCreatePayment();
 
-  // Local store
-  const {
-    brokers: localBrokers,
-    getBrokerTotalDebt,
-    collectFromBroker: localCollectFromBroker,
-  } = useAppStore();
-
   // State'ler
   const [paymentType, setPaymentType] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [amountError, setAmountError] = useState<string>("");
 
-  // Backend broker'ları öncelikle kullan, fallback olarak local
-  const brokers = brokersError ? localBrokers : backendBrokers;
-
   // Broker bilgilerini al
   const broker = brokers.find((b) => b.id === brokerId);
 
-  // Balance hesaplama
-  const brokerDebt = broker
-    ? "balance" in broker
-      ? (broker as any).balance
-      : getBrokerTotalDebt(broker.id)
-    : 0;
+  // Balance hesaplama - Backend'den gelen balance kullan
+  const brokerBalance = broker ? broker.balance : 0;
 
   // Miktar doğrulama
   const validateAmount = (value: string) => {
@@ -159,30 +143,7 @@ export default function CollectionSection() {
               setAmountError("");
             } catch (error) {
               console.error("❌ Backend payment creation failed:", error);
-
-              // Backend başarısız olursa local store'a fall back
-              try {
-                console.log("🔄 Falling back to local store...");
-                const result = localCollectFromBroker(
-                  brokerId as string,
-                  amountValue,
-                  paymentType
-                );
-
-                if (result.success) {
-                  showSuccess(
-                    `₺${amountValue.toLocaleString()} tutarında tahsilat başarıyla alındı! (Local)`
-                  );
-                  setPaymentType("");
-                  setAmount("");
-                  setAmountError("");
-                } else {
-                  showError(result.error || "Tahsilat işlemi başarısız oldu.");
-                }
-              } catch (localError) {
-                console.error("❌ Local collection also failed:", localError);
-                showError("Tahsilat işlemi başarısız oldu.");
-              }
+              showError("Tahsilat işlemi başarısız oldu.");
             }
           },
         },
@@ -248,11 +209,11 @@ export default function CollectionSection() {
             variant="body"
             weight="semibold"
             className={`${
-              brokerDebt >= 0 ? "text-stock-red" : "text-stock-green"
+              brokerBalance >= 0 ? "text-stock-red" : "text-stock-green"
             } text-center mt-0`}
           >
-            Bakiye: {brokerDebt >= 0 ? "" : "-"}₺
-            {Math.abs(brokerDebt).toLocaleString()}
+            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺
+            {Math.abs(brokerBalance).toLocaleString()}
           </Typography>
         </View>
 
@@ -291,8 +252,8 @@ export default function CollectionSection() {
             error={amountError}
             helperText={
               !amountError
-                ? `Mevcut bakiye: ${brokerDebt >= 0 ? "" : "-"}₺${Math.abs(
-                    brokerDebt
+                ? `Mevcut bakiye: ${brokerBalance >= 0 ? "" : "-"}₺${Math.abs(
+                    brokerBalance
                   ).toLocaleString()}`
                 : ""
             }
@@ -315,31 +276,33 @@ export default function CollectionSection() {
                 ile ₺{parseFloat(amount).toLocaleString()} tahsil edilecek.
               </Typography>
 
-              {brokerDebt > 0 && parseFloat(amount) > 0 && (
+              {brokerBalance > 0 && parseFloat(amount) > 0 && (
                 <Typography
                   variant="caption"
                   className="text-blue-700 mt-1"
                   weight="medium"
                 >
                   Yeni bakiye:{" "}
-                  {brokerDebt - parseFloat(amount) >= 0
-                    ? `₺${(brokerDebt - parseFloat(amount)).toLocaleString()}`
+                  {brokerBalance - parseFloat(amount) >= 0
+                    ? `₺${(
+                        brokerBalance - parseFloat(amount)
+                      ).toLocaleString()}`
                     : `-₺${Math.abs(
-                        brokerDebt - parseFloat(amount)
+                        brokerBalance - parseFloat(amount)
                       ).toLocaleString()}`}
-                  {brokerDebt - parseFloat(amount) < 0 &&
+                  {brokerBalance - parseFloat(amount) < 0 &&
                     " (Aracının alacağı olacak)"}
                 </Typography>
               )}
 
-              {brokerDebt <= 0 && (
+              {brokerBalance <= 0 && (
                 <Typography
                   variant="caption"
                   className="text-blue-700 mt-1"
                   weight="medium"
                 >
-                  Aracının zaten alacağı var: {brokerDebt >= 0 ? "" : "-"}₺
-                  {Math.abs(brokerDebt).toLocaleString()}
+                  Aracının zaten alacağı var: {brokerBalance >= 0 ? "" : "-"}₺
+                  {Math.abs(brokerBalance).toLocaleString()}
                 </Typography>
               )}
             </View>

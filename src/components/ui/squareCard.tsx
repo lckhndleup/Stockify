@@ -1,16 +1,8 @@
 import React from "react";
-import { View, TouchableOpacity, TouchableOpacityProps } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import Typography from "./typography";
 import Icon from "./icon";
-
-interface SquareCardProps extends TouchableOpacityProps {
-  title: string;
-  subtitle?: string;
-  amount: string;
-  onDelete?: () => void;
-  showDeleteIcon?: boolean;
-  className?: string;
-}
+import type { SquareCardProps } from "@/src/types/ui";
 
 export default function SquareCard({
   title,

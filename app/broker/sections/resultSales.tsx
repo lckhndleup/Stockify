@@ -11,36 +11,11 @@ import {
   Divider,
   Loading,
 } from "@/src/components/ui";
-import { useAppStore } from "@/src/stores/appStore";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useSalesCalculate } from "@/src/hooks/api/useSales";
-
-type SalesItem = {
-  salesId?: number;
-  productId: number;
-  productName: string;
-  productCount: number;
-  unitPrice: number;
-  totalPrice: number;
-  taxRate: number;
-  taxPrice: number;
-  totalPriceWithTax: number;
-};
-type SalesSummary = {
-  documentNumber?: string;
-  salesItems: SalesItem[];
-  subtotalPrice: number;
-  discountRate: number;
-  discountPrice: number;
-  totalPrice: number; // iskonto sonrası ara toplam (KDV hariç)
-  totalTaxPrice?: number; // toplam KDV
-  totalPriceWithTax: number; // KDV dahil genel toplam
-  downloadUrl?: string;
-};
-
-import SuccessAnimation, {
-  SuccessAnimationRef,
-} from "@/src/components/svg/successAnimation";
+import type { SalesItem, SalesSummaryResult } from "@/src/types/salesUI";
+import SuccessAnimation from "@/src/components/svg/successAnimation";
+import type { SuccessAnimationRef } from "@/src/types/svg";
 
 export default function ResultSales() {
   const params = useLocalSearchParams();
@@ -59,28 +34,18 @@ export default function ResultSales() {
   const willCreateInvoice = String(createInvoice) === "true";
   const successAnimationRef = useRef<SuccessAnimationRef>(null);
 
-  // Store + Backend brokerları (diğer sayfalardakiyle aynı desen)
-  const { brokers: storeBrokers, getBrokerTotalDebt } = useAppStore();
+  // Backend brokers
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
 
-  // Backend > Local fallback: aynı id eşlemesi (b.id)
-  const backendBroker = useMemo(
-    () =>
-      (backendBrokers || []).find(
-        (b: any) => String(b.id) === String(brokerId)
-      ),
-    [backendBrokers, brokerId]
+  // Backend broker
+  const broker = useMemo(
+    () => (brokers || []).find((b: any) => String(b.id) === String(brokerId)),
+    [brokers, brokerId]
   );
-  const localBroker = useMemo(
-    () =>
-      (storeBrokers || []).find((b: any) => String(b.id) === String(brokerId)),
-    [storeBrokers, brokerId]
-  );
-  const broker = backendBroker || localBroker; // görüntülemede öncelik backend
 
   // Ad Soyad – API > Local
   const displayName = broker
@@ -88,10 +53,10 @@ export default function ResultSales() {
     : "Aracı";
 
   // Confirm’den gelen özet (opsiyonel)
-  const summary: SalesSummary | null = useMemo(() => {
+  const summary: SalesSummaryResult | null = useMemo(() => {
     try {
       return summaryJSON
-        ? (JSON.parse(summaryJSON as string) as SalesSummary)
+        ? (JSON.parse(summaryJSON as string) as SalesSummaryResult)
         : null;
     } catch {
       return null;
@@ -99,7 +64,9 @@ export default function ResultSales() {
   }, [summaryJSON]);
 
   // ✅ Backend’den calculate sonucu da çek (confirm yoksa buradan göster)
-  const [calcSummary, setCalcSummary] = useState<SalesSummary | null>(null);
+  const [calcSummary, setCalcSummary] = useState<SalesSummaryResult | null>(
+    null
+  );
   const calcMutation = useSalesCalculate();
 
   useEffect(() => {
@@ -121,7 +88,7 @@ export default function ResultSales() {
   }, [isSuccess, brokerId, willCreateInvoice, summary]);
 
   // Ekranda kullanılacak özet: önce confirm’den gelen, yoksa backend calculate
-  const summaryToShow: SalesSummary | null = summary ?? calcSummary;
+  const summaryToShow: SalesSummaryResult | null = summary ?? calcSummary;
 
   // Toplamlar (parametre/summaryToShow)
   const totalWithTax =
@@ -134,15 +101,10 @@ export default function ResultSales() {
       ? Number(discountAmount) || 0
       : summaryToShow?.discountPrice ?? 0;
 
-  // Yeni bakiye – yalnızca backend currentBalance varsa onu göster, yoksa fallback
-  const Balance =
-    typeof (backendBroker as any)?.currentBalance === "number"
-      ? (backendBroker as any).currentBalance
-      : broker
-      ? "balance" in broker
-        ? (broker as any).balance
-        : getBrokerTotalDebt(broker.id)
-      : 0;
+  // Broker balance - sadece backend'den
+  const Balance = broker
+    ? (broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0
+    : 0;
 
   /* =========================
      LOGS (isteğin doğrultusunda)
@@ -150,25 +112,14 @@ export default function ResultSales() {
   useEffect(() => {
     console.log("🧾 [ResultSales] Broker resolve", {
       brokerId,
-      source: backendBroker ? "backendAPI" : "localStore",
-      backendFound: !!backendBroker,
-      localFound: !!localBroker,
+      source: "API",
+      brokerFound: !!broker,
       name: broker?.name,
       surname: broker?.surname,
-      backend_currentBalance:
-        typeof (backendBroker as any)?.currentBalance === "number"
-          ? (backendBroker as any).currentBalance
-          : undefined,
-      backend_balance:
-        typeof (backendBroker as any)?.balance === "number"
-          ? (backendBroker as any).balance
-          : undefined,
-      local_balance:
-        typeof (localBroker as any)?.balance === "number"
-          ? (localBroker as any).balance
-          : undefined,
+      currentBalance: (broker as any)?.currentBalance,
+      balance: (broker as any)?.balance,
     });
-  }, [brokerId, backendBroker, localBroker, broker]);
+  }, [brokerId, broker]);
 
   useEffect(() => {
     const parsedParam =

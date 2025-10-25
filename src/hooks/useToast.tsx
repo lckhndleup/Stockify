@@ -1,11 +1,6 @@
 // src/hooks/useToast.tsx
 import { useState, useCallback } from "react";
-
-interface ToastState {
-  visible: boolean;
-  message: string;
-  type: "success" | "error" | "warning" | "info";
-}
+import type { ToastState } from "@/src/types/ui";
 
 export const useToast = () => {
   const [toast, setToast] = useState<ToastState>({

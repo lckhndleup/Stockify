@@ -1,23 +1,8 @@
 import React from "react";
-import {
-  Modal as RNModal,
-  View,
-  TouchableOpacity,
-  ModalProps as RNModalProps,
-} from "react-native";
+import { Modal as RNModal, View, TouchableOpacity } from "react-native";
 import Typography from "./typography";
 import Icon from "./icon";
-
-interface ModalProps extends RNModalProps {
-  children: React.ReactNode;
-  title?: string;
-  visible: boolean;
-  onClose: () => void;
-  size?: "sm" | "md" | "lg" | "xl" | "full";
-  showCloseButton?: boolean;
-  overlayClosable?: boolean;
-  className?: string;
-}
+import type { ModalProps } from "@/src/types/ui";
 
 export default function Modal({
   children,

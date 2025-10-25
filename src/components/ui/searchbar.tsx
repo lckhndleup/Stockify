@@ -1,12 +1,7 @@
 import React from "react";
-import { View, TextInput, TextInputProps } from "react-native";
+import { View, TextInput } from "react-native";
 import Icon from "./icon";
-
-interface SearchBarProps extends TextInputProps {
-  placeholder?: string;
-  onSearch?: (text: string) => void;
-  className?: string;
-}
+import type { SearchBarProps } from "@/src/types/ui";
 
 export default function SearchBar({
   placeholder = "Ara...",

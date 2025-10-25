@@ -7,24 +7,7 @@ import {
   AntDesign,
   Ionicons,
 } from "@expo/vector-icons";
-
-type IconFamily =
-  | "MaterialIcons"
-  | "MaterialCommunityIcons"
-  | "Feather"
-  | "AntDesign"
-  | "Ionicons";
-
-interface IconProps {
-  family?: IconFamily;
-  name: string;
-  size?: number;
-  color?: string;
-  pressable?: boolean;
-  onPress?: () => void;
-  className?: string;
-  containerClassName?: string;
-}
+import type { IconFamily, IconProps } from "@/src/types/ui";
 
 export default function Icon({
   family = "MaterialIcons",

@@ -77,14 +77,12 @@ export const adaptProductForUI = (product: Product): ProductDisplayItem => ({
 });
 
 // UI'dan backend'e gönderim için adapter - sadece categoryId ve name
-export const adaptProductForBackend = (
-  formData: ProductFormData
-): ProductFormData => ({
+export const adaptProduct = (formData: ProductFormData): ProductFormData => ({
   categoryId: formData.categoryId,
   name: formData.name.trim(),
 });
 
-export const adaptProductUpdateForBackend = (
+export const adaptProductUpdate = (
   updateData: ProductUpdateData
 ): ProductUpdateData => ({
   productId: updateData.productId,

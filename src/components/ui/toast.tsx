@@ -1,14 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, Animated, Dimensions } from "react-native";
 import { Typography, Icon } from "@/src/components/ui";
-
-interface ToastProps {
-  visible: boolean;
-  message: string;
-  type?: "success" | "error" | "warning" | "info";
-  duration?: number;
-  onHide?: () => void;
-}
+import type { ToastProps } from "@/src/types/ui";
 
 const { width } = Dimensions.get("window");
 

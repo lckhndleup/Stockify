@@ -9,10 +9,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/montserrat";
 import * as SplashScreen from "expo-splash-screen";
-
-interface FontProviderProps {
-  children: React.ReactNode;
-}
+import type { FontProviderProps } from "@/src/types/providers";
 
 // Tüm Text componentleri için default font ayarla
 const TextAny = RNText as any;

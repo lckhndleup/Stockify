@@ -2,25 +2,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
-
-// Types
-export interface Category {
-  categoryId: number;
-  name: string;
-  taxRate: number;
-  createdDate: string;
-}
-
-export interface CategoryFormData {
-  name: string;
-  taxRate: number;
-}
-
-export interface CategoryUpdateData {
-  categoryId: number;
-  name: string;
-  taxRate: number;
-}
+import type {
+  Category,
+  CategoryFormData,
+  CategoryUpdateData,
+} from "@/src/types/category";
 
 // Backend'den gelen data'yı UI format'ına çevir
 export const adaptCategoryForUI = (category: Category) => ({
