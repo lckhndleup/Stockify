@@ -22,7 +22,7 @@ export default function HomePage() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    // TODOMali : buraya arama işlevselliği eklenebilir
+    // TODO: Mali - buraya arama işlevselliği eklenebilir
   };
 
   const handleLogout = () => {
