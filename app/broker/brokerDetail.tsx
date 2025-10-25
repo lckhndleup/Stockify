@@ -264,7 +264,7 @@ export default function BrokerDetailPage() {
               await deleteBrokerMutation.mutateAsync(broker.id);
               console.log("✅ Broker deleted via backend");
 
-              console.log(" Navigate to brokers");
+              console.log("🚀 Navigate to brokers");
               router.push("/brokers");
 
               console.log("🎉 Show success message");
