@@ -1,6 +1,6 @@
 // app/brokers.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { router } from "expo-router";
 
@@ -17,13 +17,15 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
-import { useAppStore, Broker } from "@/src/stores/appStore";
+import { useAppStore } from "@/src/stores/appStore";
 
-// Backend hooks - ✅ EKLENEN: useUpdateBroker hook'u da import edildi
+// Backend hooks
 import {
   useActiveBrokers,
+  useBrokers,
   useCreateBroker,
   useUpdateBroker,
+  BrokerDisplayItem,
 } from "@/src/hooks/api/useBrokers";
 import { BrokerFormData } from "@/src/types/broker";
 import { validateBrokerForm } from "@/src/validations/brokerValidation";
@@ -40,39 +42,75 @@ export default function BrokersPage() {
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
   const [brokerDiscount, setBrokerDiscount] = useState(""); // Yeni iskonto alanı
-  const [editingBroker, setEditingBroker] = useState<Broker | null>(null);
+  const [editingBroker, setEditingBroker] = useState<BrokerDisplayItem | null>(
+    null
+  );
 
   // Validation Error States
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
 
-  // BACKEND HOOKS - MEVCUT YAPIYA UYGUN
+  // Backend hooks
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
-    refetch: refetchBrokers,
   } = useActiveBrokers();
 
-  const createBrokerMutation = useCreateBroker();
-  const updateBrokerMutation = useUpdateBroker(); // ✅ EKLENEN: Update mutation
-
-  // LOCAL STORE - MEVCUT YAPIYA UYGUN
+  // All brokers için ayrı hook (log amacıyla)
   const {
-    brokers: localBrokers, // Local store'dan brokers (geçici)
-    addBroker,
-    updateBroker,
-    getBrokerTotalDebt,
-    globalToast,
-    hideGlobalToast,
-  } = useAppStore();
+    data: allBrokers = [],
+    isLoading: allBrokersLoading,
+    error: allBrokersError,
+  } = useBrokers();
+
+  // Backend data'sını logla
+  useEffect(() => {
+    if (brokers && brokers.length > 0) {
+      console.log("🔍 Backend'den gelen tüm ACTIVE broker data'sı:", brokers);
+      console.log("📊 Active Broker sayısı:", brokers.length);
+      console.log("📋 İlk active broker örneği:", brokers[0]);
+      console.log("📋 Tüm active broker'ların detayı:");
+      brokers.forEach((broker, index) => {
+        console.log(
+          `  ${index + 1}. ${broker.name} ${broker.surname} - Balance: ${
+            broker.balance
+          }`
+        );
+      });
+    } else if (brokers && brokers.length === 0) {
+      console.log("⚠️ Backend'den ACTIVE broker data'sı geldi ama boş array");
+    }
+  }, [brokers]);
+
+  // All brokers log
+  useEffect(() => {
+    if (allBrokers && allBrokers.length > 0) {
+      console.log("🌍 Backend ALL BROKERS metodu ile gelen data:", allBrokers);
+      console.log("📊 ALL Broker sayısı:", allBrokers.length);
+      console.log("📋 İlk ALL broker örneği:", allBrokers[0]);
+      console.log("📋 Tüm ALL broker'ların detayı:");
+      allBrokers.forEach((broker, index) => {
+        console.log(
+          `  ${index + 1}. ${broker.firstName} ${broker.lastName} - Status: ${
+            broker.status
+          } - Balance: ${broker.currentBalance}`
+        );
+      });
+    } else if (allBrokers && allBrokers.length === 0) {
+      console.log("⚠️ Backend'den ALL broker data'sı geldi ama boş array");
+    }
+  }, [allBrokers]);
+
+  const createBrokerMutation = useCreateBroker();
+  const updateBrokerMutation = useUpdateBroker();
+
+  // Global toast
+  const { globalToast, hideGlobalToast } = useAppStore();
 
   // Toast
   const { toast, showSuccess, showError, hideToast } = useToast();
-
-  // Backend broker'ları öncelikle kullan, fallback olarak local
-  const brokers = brokersError ? localBrokers : backendBrokers;
 
   const handleSearch = (text: string) => {
     setSearchText(text);
@@ -86,7 +124,7 @@ export default function BrokersPage() {
     setIsBrokerModalVisible(true);
   };
 
-  const handleEditBroker = (broker: Broker) => {
+  const handleEditBroker = (broker: BrokerDisplayItem) => {
     setEditingBroker(broker);
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
@@ -101,7 +139,7 @@ export default function BrokersPage() {
     return !isNaN(num) && num >= 0 && num <= 100;
   };
 
-  // BACKEND ENTEGRELİ BROKER EKLEME
+  // Backend entegreli broker ekleme
   const handleSaveBroker = async () => {
     // Form validation
     const validation = validateBrokerForm(
@@ -129,7 +167,6 @@ export default function BrokersPage() {
           text: "Ekle",
           onPress: async () => {
             try {
-              // Backend'e kaydet
               const brokerData: BrokerFormData = {
                 firstName: brokerName.trim(),
                 lastName: brokerSurname.trim(),
@@ -137,35 +174,14 @@ export default function BrokersPage() {
               };
 
               console.log("🎯 Creating broker with backend:", brokerData);
-
               await createBrokerMutation.mutateAsync(brokerData);
-
               console.log("✅ Broker created successfully via backend");
+
               handleCloseBrokerModal();
               showSuccess("Aracı başarıyla eklendi!");
             } catch (error) {
-              console.error("❌ Backend broker creation failed:", error);
-
-              // Backend başarısız olursa local store'a fall back
-              try {
-                console.log("🔄 Falling back to local store...");
-                const newBroker = addBroker({
-                  name: brokerName,
-                  surname: brokerSurname,
-                  email: "", // Backend'de olmayan alanlar boş
-                  phone: "",
-                  address: "",
-                  discountRate: discountRate,
-                });
-                handleCloseBrokerModal();
-                showSuccess("Aracı başarıyla eklendi! (Local)");
-              } catch (localError) {
-                console.error(
-                  "❌ Local broker creation also failed:",
-                  localError
-                );
-                showError("Aracı eklenirken bir hata oluştu.");
-              }
+              console.log("❌ Backend broker creation failed:", error);
+              showError("Aracı eklenirken bir hata oluştu.");
             }
           },
         },
@@ -173,7 +189,7 @@ export default function BrokersPage() {
     );
   };
 
-  // ✅ DÜZELTME: Backend entegrasyonu eklendi
+  // Backend entegreli broker güncelleme
   const handleEditSaveBroker = async () => {
     if (!editingBroker) return;
 
@@ -203,51 +219,22 @@ export default function BrokersPage() {
           text: "Güncelle",
           onPress: async () => {
             try {
-              if (!brokersError) {
-                // ✅ EKLENEN: Backend güncelleme
-                console.log("🔄 Updating broker via backend");
-                await updateBrokerMutation.mutateAsync({
-                  brokerId: editingBroker.id,
-                  brokerData: {
-                    firstName: brokerName.trim(),
-                    lastName: brokerSurname.trim(),
-                    discountRate: discountRate,
-                  },
-                });
-                console.log("✅ Broker updated via backend");
-              } else {
-                // Local fallback
-                console.log("🔄 Updating broker via local store");
-                updateBroker(editingBroker.id, {
-                  name: brokerName,
-                  surname: brokerSurname,
+              console.log("🔄 Updating broker via backend");
+              await updateBrokerMutation.mutateAsync({
+                brokerId: editingBroker.id,
+                brokerData: {
+                  firstName: brokerName.trim(),
+                  lastName: brokerSurname.trim(),
                   discountRate: discountRate,
-                });
-                console.log("✅ Broker updated via local store");
-              }
+                },
+              });
+              console.log("✅ Broker updated via backend");
 
               handleCloseEditBrokerModal();
               showSuccess("Aracı başarıyla güncellendi!");
             } catch (error) {
-              console.error("❌ Update broker error:", error);
-
-              // Backend başarısız olursa local'e fall back
-              try {
-                console.log("🔄 Falling back to local store for update...");
-                updateBroker(editingBroker.id, {
-                  name: brokerName,
-                  surname: brokerSurname,
-                  discountRate: discountRate,
-                });
-                handleCloseEditBrokerModal();
-                showSuccess("Aracı başarıyla güncellendi! (Local)");
-              } catch (localError) {
-                console.error(
-                  "❌ Local broker update also failed:",
-                  localError
-                );
-                showError("Aracı güncellenirken bir hata oluştu.");
-              }
+              console.log("❌ Update broker error:", error);
+              showError("Aracı güncellenirken bir hata oluştu.");
             }
           },
         },
@@ -311,7 +298,7 @@ export default function BrokersPage() {
       {brokersError && (
         <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
           <Typography variant="body" className="text-yellow-800 text-center">
-            ⚠️ Backend bağlantı hatası - Local veriler gösteriliyor
+            ⚠️ Backend bağlantı hatası - Veriler yüklenemedi
           </Typography>
         </View>
       )}
@@ -341,11 +328,8 @@ export default function BrokersPage() {
           style={{ gap: 10 }}
         >
           {filteredBrokers.map((broker) => {
-            // Backend broker'ları için balance, local için totalDebt hesapla
-            const totalDebt =
-              "balance" in broker
-                ? (broker as any).balance
-                : getBrokerTotalDebt(broker.id);
+            // Backend broker'ları için balance kullan
+            const totalDebt = broker.balance || 0;
 
             return (
               <SquareCard
@@ -356,7 +340,7 @@ export default function BrokersPage() {
                 onPress={() =>
                   router.push({
                     pathname: "/broker/brokerDetail",
-                    params: { brokerId: broker.id }, // ✅ MEVCUT YAPIDA brokerId kullanılıyor
+                    params: { brokerId: broker.id },
                   })
                 }
                 showDeleteIcon={false}

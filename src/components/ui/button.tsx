@@ -1,29 +1,7 @@
 import React from "react";
-import {
-  TouchableOpacity,
-  TouchableOpacityProps,
-  ActivityIndicator,
-  View,
-} from "react-native";
+import { TouchableOpacity, ActivityIndicator, View } from "react-native";
 import Typography from "./typography";
-
-interface ButtonProps extends TouchableOpacityProps {
-  children: React.ReactNode;
-  variant?:
-    | "primary"
-    | "secondary"
-    | "success"
-    | "danger"
-    | "warning"
-    | "outline"
-    | "ghost";
-  size?: "sm" | "md" | "lg" | "xl";
-  fullWidth?: boolean;
-  loading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  className?: string;
-}
+import type { ButtonProps } from "@/src/types/ui";
 
 export default function Button({
   children,

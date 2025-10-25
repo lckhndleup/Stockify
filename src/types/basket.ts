@@ -20,7 +20,7 @@ export interface BasketUpdateRequest {
 }
 
 // ---------- Response DTOs ----------
-export interface BackendBasketItem {
+export interface BasketItem {
   productId: number;
   productName: string;
   productCount: number;
@@ -30,7 +30,7 @@ export interface BackendBasketItem {
   taxPrice: number;
   totalPriceWithTax: number;
 }
-export type BasketResponse = BackendBasketItem[];
+export type BasketResponse = BasketItem[];
 
 // ---------- UI adapters ----------
 export interface BasketItemDisplay {
@@ -43,9 +43,7 @@ export interface BasketItemDisplay {
   tax: number;
   total: number;
 }
-export const adaptBasketItemForUI = (
-  i: BackendBasketItem
-): BasketItemDisplay => ({
+export const adaptBasketItemForUI = (i: BasketItem): BasketItemDisplay => ({
   id: String(i.productId),
   name: i.productName,
   quantity: i.productCount,
@@ -55,6 +53,5 @@ export const adaptBasketItemForUI = (
   tax: i.taxPrice,
   total: i.totalPriceWithTax,
 });
-export const adaptBasketForUI = (
-  list: BackendBasketItem[]
-): BasketItemDisplay[] => list.map(adaptBasketItemForUI);
+export const adaptBasketForUI = (list: BasketItem[]): BasketItemDisplay[] =>
+  list.map(adaptBasketItemForUI);

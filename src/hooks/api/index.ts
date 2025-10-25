@@ -1,31 +1,15 @@
 // src/hooks/api/index.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ApiError } from "@/src/services/api";
+import type {
+  ApiError,
+  UseQueryOptions,
+  UseMutationOptions,
+} from "@/src/types/apiTypes";
 import { router } from "expo-router";
 import { queryKeys } from "./queryKeys";
 export * from "./usePayments";
 export * from "./useSales"; // NEW
 export * from "./useBasket"; // NEW
-
-// Base hook types
-interface UseQueryOptions<T> {
-  enabled?: boolean;
-  staleTime?: number;
-  gcTime?: number;
-  retry?: number | boolean;
-  refetchOnMount?: boolean;
-  refetchOnWindowFocus?: boolean;
-}
-
-interface UseMutationOptions<TData, TError, TVariables> {
-  onSuccess?: (data: TData, variables: TVariables) => void;
-  onError?: (error: TError, variables: TVariables) => void;
-  onSettled?: (
-    data: TData | undefined,
-    error: TError | null,
-    variables: TVariables
-  ) => void;
-}
 
 // Hook factory'ler için base type'lar
 export type QueryHook<TData, TParams = void> = TParams extends void

@@ -1,13 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-
-interface DividerProps {
-  orientation?: "horizontal" | "vertical";
-  thickness?: number;
-  color?: string;
-  className?: string;
-  style?: any;
-}
+import type { DividerProps } from "@/src/types/ui";
 
 export default function Divider({
   orientation = "horizontal",

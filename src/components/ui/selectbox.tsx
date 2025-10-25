@@ -2,27 +2,7 @@ import React, { useState } from "react";
 import { View, TouchableOpacity, Modal, ScrollView } from "react-native";
 import Typography from "./typography";
 import Icon from "./icon";
-
-export interface SelectBoxOption {
-  label: string;
-  value: string;
-}
-
-interface SelectBoxProps {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  placeholder?: string;
-  options: SelectBoxOption[];
-  value?: string;
-  onSelect: (value: string) => void;
-  variant?: "default" | "outlined" | "filled";
-  size?: "sm" | "md" | "lg";
-  fullWidth?: boolean;
-  disabled?: boolean;
-  className?: string;
-  inputClassName?: string;
-}
+import type { SelectBoxOption, SelectBoxProps } from "@/src/types/ui";
 
 export default function SelectBox({
   label,

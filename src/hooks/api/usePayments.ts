@@ -20,13 +20,13 @@ export const useCreatePayment = () => {
       console.log("💰 Creating payment:", params);
 
       try {
-        const backendData: PaymentSaveRequest = {
+        const data: PaymentSaveRequest = {
           brokerId: parseInt(params.brokerId),
           paymentPrice: params.paymentData.amount,
           paymentType: params.paymentData.paymentType,
         };
 
-        const result = await apiService.savePayment(backendData);
+        const result = await apiService.savePayment(data);
         console.log("✅ Payment created - RAW RESPONSE:", result);
 
         return result as PaymentResponse;

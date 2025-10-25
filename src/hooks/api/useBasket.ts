@@ -4,7 +4,7 @@ import { apiService } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
 import {
   adaptBasketForUI,
-  BackendBasketItem,
+  BasketItem,
   BasketAddRequest,
   BasketItemDisplay,
   BasketRemoveRequest,
@@ -20,7 +20,7 @@ export const useBasket = (
     queryKey: queryKeys.basket.byBroker(brokerId),
     queryFn: async () => {
       const items = await apiService.getBasket(Number(brokerId));
-      return adaptBasketForUI(items as BackendBasketItem[]);
+      return adaptBasketForUI(items as BasketItem[]);
     },
     staleTime: 60_000,
     gcTime: 300_000,

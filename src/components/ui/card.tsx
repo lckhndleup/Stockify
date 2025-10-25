@@ -1,20 +1,6 @@
 import React from "react";
-import {
-  View,
-  ViewProps,
-  TouchableOpacity,
-  TouchableOpacityProps,
-} from "react-native";
-
-interface CardProps extends ViewProps {
-  children: React.ReactNode;
-  variant?: "default" | "elevated" | "outlined" | "filled";
-  padding?: "none" | "sm" | "md" | "lg" | "xl";
-  radius?: "none" | "sm" | "md" | "lg" | "xl" | "full";
-  pressable?: boolean;
-  onPress?: () => void;
-  className?: string;
-}
+import { View, TouchableOpacity, TouchableOpacityProps } from "react-native";
+import type { CardProps } from "@/src/types/ui";
 
 export default function Card({
   children,

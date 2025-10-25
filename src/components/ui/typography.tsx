@@ -1,40 +1,6 @@
 import React from "react";
-import { Text, TextProps } from "react-native";
-
-interface TypographyProps extends TextProps {
-  children: React.ReactNode;
-  variant?: "h1" | "h2" | "h3" | "h4" | "body" | "caption" | "overline";
-  size?:
-    | "xs"
-    | "sm"
-    | "base"
-    | "lg"
-    | "xl"
-    | "2xl"
-    | "3xl"
-    | "4xl"
-    | "5xl"
-    | "6xl";
-  weight?: "light" | "normal" | "medium" | "semibold" | "bold";
-  color?:
-    | "primary"
-    | "secondary"
-    | "success"
-    | "danger"
-    | "warning"
-    | "info"
-    | "text-primary"
-    | "text-secondary"
-    | "text-tertiary"
-    | "text-inverse"
-    | "white"
-    | "black";
-  align?: "left" | "center" | "right" | "justify";
-  className?: string;
-  style?: any;
-  numberOfLines?: number;
-  ellipsizeMode?: "head" | "middle" | "tail" | "clip";
-}
+import { Text } from "react-native";
+import type { TypographyProps } from "@/src/types/ui";
 
 export default function Typography({
   children,

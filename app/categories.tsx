@@ -24,8 +24,7 @@ import {
   useDeleteCategory, // YENİ EKLENEN
 } from "@/src/hooks/api/useCategories";
 import { CategoryFormData, CategoryUpdateData } from "@/src/types/category";
-
-import { categorySchema } from "@/src/validations/salesValidation";
+import type { CategoryDisplay } from "@/src/types/ui";
 
 // Basit validation - kategori adı ve vergi oranı için
 const validateCategoryForm = (name: string, taxRate: string) => {
@@ -50,15 +49,6 @@ const validateCategoryForm = (name: string, taxRate: string) => {
   return { isValid: Object.keys(errors).length === 0, errors };
 };
 
-// Types
-interface Category {
-  id: string;
-  name: string;
-  taxRate: number;
-  createdDate: string;
-  isActive: boolean;
-}
-
 export default function CategoriesPage() {
   const [searchText, setSearchText] = useState("");
 
@@ -66,7 +56,8 @@ export default function CategoriesPage() {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [isEditCategoryModalVisible, setIsEditCategoryModalVisible] =
     useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] =
+    useState<CategoryDisplay | null>(null);
 
   // Category Form States
   const [categoryName, setCategoryName] = useState("");
@@ -80,7 +71,7 @@ export default function CategoriesPage() {
   // BACKEND HOOKS
   // React Query Hook - BACKEND CATEGORIES
   const {
-    data: backendCategories = [],
+    data: categories = [],
     isLoading: categoriesLoading,
     isError: categoriesError,
     error: categoriesErrorMessage,
@@ -145,11 +136,11 @@ export default function CategoriesPage() {
 
               console.log("💾 Saving category to backend:", categoryFormData);
 
-              const backendResult = await createCategoryMutation.mutateAsync(
+              const result = await createCategoryMutation.mutateAsync(
                 categoryFormData
               );
 
-              if (backendResult) {
+              if (result) {
                 handleCategoryModalClose();
                 showSuccess("Kategori başarıyla eklendi!");
 
@@ -168,7 +159,7 @@ export default function CategoriesPage() {
     );
   };
 
-  const handleEditCategory = (category: Category) => {
+  const handleEditCategory = (category: CategoryDisplay) => {
     setEditingCategory(category);
     setCategoryName(category.name);
     setCategoryTaxRate(category.taxRate.toString());
@@ -238,7 +229,7 @@ export default function CategoriesPage() {
   };
 
   // YENİ EKLENEN: Category Delete Function
-  const handleDeleteCategory = (category: Category) => {
+  const handleDeleteCategory = (category: CategoryDisplay) => {
     Alert.alert(
       "Kategori Sil",
       `"${category.name}" kategorisini silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`,
@@ -269,7 +260,7 @@ export default function CategoriesPage() {
 
   // Filtering
   const getFilteredCategories = () => {
-    return backendCategories.filter((category) =>
+    return categories.filter((category) =>
       category.name.toLowerCase().includes(searchText.toLowerCase())
     );
   };

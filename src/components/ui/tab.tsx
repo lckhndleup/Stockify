@@ -1,21 +1,7 @@
 import React from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import Typography from "./typography";
-
-interface TabItem {
-  id: string;
-  label: string;
-  disabled?: boolean;
-}
-
-interface TabProps {
-  tabs: TabItem[];
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
-  className?: string;
-  variant?: "default" | "pills" | "underline";
-  size?: "sm" | "md" | "lg";
-}
+import type { TabItem, TabProps } from "@/src/types/ui";
 
 export default function Tab({
   tabs,

@@ -12,7 +12,6 @@ import {
   Toast,
   Loading,
 } from "@/src/components/ui";
-import { useAppStore } from "@/src/stores/appStore";
 import { useToast } from "@/src/hooks/useToast";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import {
@@ -21,17 +20,7 @@ import {
   useSalesCancel,
 } from "@/src/hooks/api/useSales";
 import type { SalesSummary } from "@/src/types/sales";
-
-type SalesItemParam = {
-  id: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  taxRate?: number;
-  taxPrice?: number;
-  totalPriceWithTax?: number;
-};
+import type { SalesItemParam } from "@/src/types/salesUI";
 
 export default function ConfirmSales() {
   // --- Params & state (LOGIC AYNI) ---
@@ -48,33 +37,18 @@ export default function ConfirmSales() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [summary, setSummary] = useState<SalesSummary | null>(null);
 
-  const {
-    brokers: localBrokers,
-    getBrokerTotalDebt,
-    getBrokerDiscount,
-  } = useAppStore();
   const { toast, showSuccess, showError } = useToast();
 
   const {
-    data: backendBrokers = [],
+    data: brokers = [],
     isLoading: brokersLoading,
     error: brokersError,
   } = useActiveBrokers();
 
-  const brokers = brokersError ? localBrokers : backendBrokers;
-  const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
+  const broker = brokers.find((b) => String(b.id) === String(brokerId));
 
-  const brokerDebt = broker
-    ? typeof (broker as any).currentBalance === "number"
-      ? (broker as any).currentBalance
-      : "balance" in broker
-      ? (broker as any).balance
-      : getBrokerTotalDebt(broker.id)
-    : 0;
-
-  const brokerDiscount = broker
-    ? broker.discountRate || 0
-    : getBrokerDiscount(brokerId);
+  const brokerBalance = broker ? broker.balance : 0;
+  const brokerDiscount = broker ? broker.discountRate || 0 : 0;
 
   // Mutations (LOGIC AYNI)
   const calcMutation = useSalesCalculate();
@@ -213,11 +187,11 @@ export default function ConfirmSales() {
             variant="body"
             weight="semibold"
             className={`${
-              brokerDebt >= 0 ? "text-stock-red" : "text-stock-green"
+              brokerBalance >= 0 ? "text-stock-red" : "text-stock-green"
             } text-center mt-0`}
           >
-            Bakiye: {brokerDebt >= 0 ? "" : "-"}₺
-            {Math.abs(brokerDebt).toLocaleString()}
+            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺
+            {Math.abs(brokerBalance).toLocaleString()}
           </Typography>
         </View>
         {/* 2) BAKİYE SATIRI (| ile iki sütun) */}
@@ -228,14 +202,14 @@ export default function ConfirmSales() {
                 onceki bakiye :
               </Typography>
               <Typography weight="semibold" className="text-stock-dark mt-0.5">
-                ₺{Number(brokerDebt).toLocaleString()}
+                ₺{Number(brokerBalance).toLocaleString()}
               </Typography>
             </View>
             <View className="w-px bg-stock-border" />
             <View className="flex-1 px-4 py-3">
               <Typography className="text-stock-text">yeni bakiye :</Typography>
               <Typography weight="bold" className="text-stock-dark mt-0.5">
-                ₺{Number(brokerDebt).toLocaleString()}
+                ₺{Number(brokerBalance).toLocaleString()}
               </Typography>
             </View>
           </View>
