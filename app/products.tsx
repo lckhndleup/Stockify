@@ -17,11 +17,9 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
+import logger from "@/src/utils/logger";
 import type { DropdownProps } from "@/src/types/ui";
-import {
-  useActiveCategories,
-  useCreateCategory,
-} from "@/src/hooks/api/useCategories";
+import { useActiveCategories, useCreateCategory } from "@/src/hooks/api/useCategories";
 
 // Backend hooks - UPDATED: usePassiveProducts eklendi
 import {
@@ -32,12 +30,7 @@ import {
   useDeleteProduct,
   useSearchProducts,
 } from "@/src/hooks/api/useProducts";
-import {
-  ProductFormData,
-  ProductUpdateData,
-  ProductDisplayItem,
-} from "@/src/types/product";
-import { CategoryDisplayItem } from "@/src/types/category";
+import { ProductFormData, ProductUpdateData, ProductDisplayItem } from "@/src/types/product";
 
 // Basit validation - sadece kategori ve ürün adı için
 const validateProductForm = (categoryId: string, name: string) => {
@@ -77,11 +70,7 @@ function Dropdown({
     return (
       <View className={`w-full ${className}`}>
         {label && (
-          <Typography
-            variant="caption"
-            weight="medium"
-            className="mb-2 text-stock-dark"
-          >
+          <Typography variant="caption" weight="medium" className="mb-2 text-stock-dark">
             {label}
           </Typography>
         )}
@@ -100,11 +89,7 @@ function Dropdown({
   return (
     <View className={`w-full ${className}`}>
       {label && (
-        <Typography
-          variant="caption"
-          weight="medium"
-          className="mb-2 text-stock-dark"
-        >
+        <Typography variant="caption" weight="medium" className="mb-2 text-stock-dark">
           {label}
         </Typography>
       )}
@@ -128,8 +113,8 @@ function Dropdown({
             {options.length === 0 && showAddButton
               ? "Kategori Ekle"
               : selectedOption
-              ? selectedOption.label
-              : placeholder}
+                ? selectedOption.label
+                : placeholder}
           </Typography>
           <Icon
             family="MaterialIcons"
@@ -137,22 +122,17 @@ function Dropdown({
               options.length === 0 && showAddButton
                 ? "add"
                 : isOpen
-                ? "keyboard-arrow-up"
-                : "keyboard-arrow-down"
+                  ? "keyboard-arrow-up"
+                  : "keyboard-arrow-down"
             }
             size={20}
-            color={
-              options.length === 0 && showAddButton ? "#E3001B" : "#6D706F"
-            }
+            color={options.length === 0 && showAddButton ? "#E3001B" : "#6D706F"}
           />
         </TouchableOpacity>
 
         {isOpen && options.length > 0 && (
           <View className="absolute top-full left-0 right-0 mt-1 bg-white border border-stock-border rounded-lg shadow-lg z-50">
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              style={{ maxHeight: 200 }}
-            >
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 200 }}>
               {showAddButton && onAddCategory && (
                 <>
                   <TouchableOpacity
@@ -171,29 +151,19 @@ function Dropdown({
                         color="#E3001B"
                         containerClassName="mr-2"
                       />
-                      <Typography
-                        variant="body"
-                        className="text-stock-red"
-                        weight="semibold"
-                      >
+                      <Typography variant="body" className="text-stock-red" weight="semibold">
                         Kategori Yönetimi
                       </Typography>
                     </View>
                   </TouchableOpacity>
-                  {options.length > 0 && (
-                    <View className="h-1 bg-stock-border" />
-                  )}
+                  {options.length > 0 && <View className="h-1 bg-stock-border" />}
                 </>
               )}
 
               {options.map((option, index) => (
                 <TouchableOpacity
                   key={option.value}
-                  className={`px-4 py-3 ${
-                    index !== options.length - 1
-                      ? "border-b border-stock-border"
-                      : ""
-                  } ${value === option.value ? "bg-stock-gray" : "bg-white"}`}
+                  className={`px-4 py-3 ${index !== options.length - 1 ? "border-b border-stock-border" : ""} ${value === option.value ? "bg-stock-gray" : "bg-white"}`}
                   onPress={() => {
                     onSelect(option.value);
                     setIsOpen(false);
@@ -202,11 +172,7 @@ function Dropdown({
                 >
                   <Typography
                     variant="body"
-                    className={
-                      value === option.value
-                        ? "text-stock-red"
-                        : "text-stock-dark"
-                    }
+                    className={value === option.value ? "text-stock-red" : "text-stock-dark"}
                     weight={value === option.value ? "semibold" : "normal"}
                   >
                     {option.label}
@@ -233,17 +199,11 @@ export default function ProductsPage() {
 
   // Product Modal States
   const [isProductModalVisible, setIsProductModalVisible] = useState(false);
-  const [isEditProductModalVisible, setIsEditProductModalVisible] =
-    useState(false);
-  const [editingProduct, setEditingProduct] =
-    useState<ProductDisplayItem | null>(null);
+  const [isEditProductModalVisible, setIsEditProductModalVisible] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductDisplayItem | null>(null);
 
   // Category Modal States
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-  const [isEditCategoryModalVisible, setIsEditCategoryModalVisible] =
-    useState(false);
-  const [editingCategory, setEditingCategory] =
-    useState<CategoryDisplayItem | null>(null);
 
   // Product Form States - sadece kategori ve ürün adı
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
@@ -254,9 +214,7 @@ export default function ProductsPage() {
   const [taxRate, setTaxRate] = useState("");
 
   // Validation Error States
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // BACKEND HOOKS
   // React Query Hook - BACKEND CATEGORIES
@@ -272,29 +230,22 @@ export default function ProductsPage() {
   const {
     data: activeProducts = [],
     isLoading: activeProductsLoading,
-    isError: activeProductsError,
-    error: activeProductsErrorMessage,
     refetch: refetchActiveProducts,
   } = useActiveProducts();
 
   const {
     data: passiveProducts = [],
     isLoading: passiveProductsLoading,
-    isError: passiveProductsError,
-    error: passiveProductsErrorMessage,
     refetch: refetchPassiveProducts,
   } = usePassiveProducts();
 
   // Search Products - UPDATED: status parametresi eklendi
+  const searchOptions = { enabled: false as const };
   const {
     data: searchResults = [],
     isLoading: searchLoading,
     refetch: refetchSearch,
-  } = useSearchProducts(
-    searchText,
-    activeTab === "active" ? "ACTIVE" : "PASSIVE",
-    { enabled: false }
-  );
+  } = useSearchProducts(searchText, activeTab === "active" ? "ACTIVE" : "PASSIVE", searchOptions);
 
   // Backend Mutations
   const createProductMutation = useCreateProduct();
@@ -308,10 +259,7 @@ export default function ProductsPage() {
   // LOG ACTIVE PRODUCTS FROM BACKEND API
   useEffect(() => {
     if (activeProducts && activeProducts.length > 0) {
-      console.log(
-        "🛍️ Backend Active Products:",
-        JSON.stringify(activeProducts, null, 2)
-      );
+      logger.debug("🛍️ Backend Active Products:", JSON.stringify(activeProducts, null, 2));
     }
   }, [activeProducts]);
 
@@ -349,7 +297,7 @@ export default function ProductsPage() {
             text: "Kategori Yönetimi",
             onPress: () => router.push("/categories"),
           },
-        ]
+        ],
       );
       return;
     }
@@ -365,7 +313,7 @@ export default function ProductsPage() {
             text: "Kategori Yönetimi",
             onPress: () => router.push("/categories"),
           },
-        ]
+        ],
       );
       return;
     }
@@ -418,11 +366,9 @@ export default function ProductsPage() {
                 name: productName.trim(),
               };
 
-              console.log("💾 Saving product to backend:", productFormData);
+              logger.debug("💾 Saving product to backend:", productFormData);
 
-              const result = await createProductMutation.mutateAsync(
-                productFormData
-              );
+              const result = await createProductMutation.mutateAsync(productFormData);
 
               if (result && result.productId) {
                 handleProductModalClose();
@@ -434,12 +380,12 @@ export default function ProductsPage() {
                 throw new Error("Backend'den geçersiz yanıt alındı");
               }
             } catch (error) {
-              console.error("❌ Product save error:", error);
+              logger.error("❌ Product save error:", error);
               showError("Ürün eklenirken bir hata oluştu!");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -490,7 +436,7 @@ export default function ProductsPage() {
                 name: productName.trim(),
               };
 
-              console.log("✏️ Updating product in backend:", productUpdateData);
+              logger.debug("✏️ Updating product in backend:", productUpdateData);
 
               await updateProductMutation.mutateAsync(productUpdateData);
 
@@ -504,12 +450,12 @@ export default function ProductsPage() {
                 refetchPassiveProducts();
               }
             } catch (error) {
-              console.error("❌ Product update error:", error);
+              logger.error("❌ Product update error:", error);
               showError("Ürün güncellenirken bir hata oluştu!");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -524,7 +470,7 @@ export default function ProductsPage() {
           style: "destructive",
           onPress: async () => {
             try {
-              console.log("🗑️ Deleting product from backend:", product.id);
+              logger.debug("🗑️ Deleting product from backend:", product.id);
 
               // Backend'den sil (status PASSIVE yapılır)
               await deleteProductMutation.mutateAsync(Number(product.id));
@@ -535,12 +481,12 @@ export default function ProductsPage() {
               refetchActiveProducts();
               refetchPassiveProducts();
             } catch (error) {
-              console.error("❌ Product delete error:", error);
+              logger.error("❌ Product delete error:", error);
               showError("Ürün silinirken bir hata oluştu!");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -575,9 +521,9 @@ export default function ProductsPage() {
     }, 100);
   };
 
-  const handleAddCategory = () => {
-    setIsCategoryModalVisible(true);
-  };
+  // const handleAddCategory = () => {
+  //   setIsCategoryModalVisible(true);
+  // };
 
   const handleCategoryModalClose = () => {
     setIsCategoryModalVisible(false);
@@ -617,21 +563,23 @@ export default function ProductsPage() {
         {
           text: "Ekle",
           style: "default",
-          onPress: () => {
+          onPress: async () => {
             try {
-              createCategoryMutation.mutate({
+              await createCategoryMutation.mutateAsync({
                 name: categoryName,
                 taxRate: taxRateNumber,
               });
 
+              // Listeyi yenile ve modalı kapat
+              await refetchCategories();
               handleCategoryModalClose();
               showSuccess("Kategori başarıyla eklendi!");
-            } catch (error) {
+            } catch {
               showError("Kategori eklenirken bir hata oluştu.");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -659,16 +607,15 @@ export default function ProductsPage() {
 
     // Search'e göre filtrele
     return sourceProducts.filter((product) =>
-      product.name.toLowerCase().includes(searchText.toLowerCase())
+      product.name.toLowerCase().includes(searchText.toLowerCase()),
     );
   };
 
   const filteredProducts = getFilteredProducts();
 
   // Loading state - UPDATED: tab'a göre loading
-  const isLoading =
-    categoriesLoading ||
-    (activeTab === "active" ? activeProductsLoading : passiveProductsLoading);
+  const isProductsLoading = activeTab === "active" ? activeProductsLoading : passiveProductsLoading;
+  const isLoading = categoriesLoading || isProductsLoading;
 
   if (isLoading) {
     return (
@@ -705,10 +652,7 @@ export default function ProductsPage() {
           <Typography variant="body" className="text-red-600 text-center mb-4">
             Kategoriler yüklenirken hata oluştu
           </Typography>
-          <Typography
-            variant="caption"
-            className="text-gray-500 text-center mb-4"
-          >
+          <Typography variant="caption" className="text-gray-500 text-center mb-4">
             {categoriesErrorMessage?.message || "Bilinmeyen hata"}
           </Typography>
           <Button variant="primary" onPress={() => refetchCategories()}>
@@ -722,21 +666,12 @@ export default function ProductsPage() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search ve Add Butonu */}
         <View className="flex-row items-center mb-3">
-          <SearchBar
-            placeholder="Ürün ara..."
-            onSearch={handleSearch}
-            className="flex-1 mr-3"
-          />
+          <SearchBar placeholder="Ürün ara..." onSearch={handleSearch} className="flex-1 mr-3" />
           {/* Sadece aktif tab'da add butonu göster */}
           {activeTab === "active" && (
             <Icon
@@ -791,18 +726,11 @@ export default function ProductsPage() {
                       >
                         {product.name}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        size="sm"
-                        className="text-stock-text mt-1"
-                      >
+                      <Typography variant="caption" size="sm" className="text-stock-text mt-1">
                         Kategori: {category?.name || "Kategori bulunamadı"}
                         {/* Pasif ürünlerde durum bilgisi ekleyelim */}
                         {activeTab === "passive" && (
-                          <Typography
-                            variant="caption"
-                            className="text-red-600 ml-2"
-                          >
+                          <Typography variant="caption" className="text-red-600 ml-2">
                             • Pasif
                           </Typography>
                         )}
@@ -852,8 +780,8 @@ export default function ProductsPage() {
               {searchText.trim()
                 ? "Arama kriterinize uygun ürün bulunamadı."
                 : activeTab === "active"
-                ? "Henüz aktif ürün eklenmemiş."
-                : "Pasif ürün bulunamadı."}
+                  ? "Henüz aktif ürün eklenmemiş."
+                  : "Pasif ürün bulunamadı."}
             </Typography>
           </View>
         )}
@@ -868,14 +796,7 @@ export default function ProductsPage() {
               className="bg-stock-red"
               onPress={handleAddProduct}
               loading={createProductMutation.isPending}
-              leftIcon={
-                <Icon
-                  family="MaterialIcons"
-                  name="add"
-                  size={20}
-                  color="white"
-                />
-              }
+              leftIcon={<Icon family="MaterialIcons" name="add" size={20} color="white" />}
             >
               Yeni Ürün Ekle
             </Button>
@@ -896,19 +817,13 @@ export default function ProductsPage() {
           <Dropdown
             label="Kategori *"
             value={selectedCategoryId}
-            placeholder={
-              categories.length === 0 ? "Kategori Ekle" : "Kategori seçiniz..."
-            }
+            placeholder={categories.length === 0 ? "Kategori Ekle" : "Kategori seçiniz..."}
             options={categoryOptions}
             onSelect={setSelectedCategoryId}
             onAddCategory={handleCategoryManagement}
             showAddButton={true}
             loading={categoriesLoading}
-            error={
-              categoriesError
-                ? "Kategoriler yüklenemedi"
-                : validationErrors.categoryId
-            }
+            error={categoriesError ? "Kategoriler yüklenemedi" : validationErrors.categoryId}
             className="mb-4"
           />
 
@@ -969,11 +884,7 @@ export default function ProductsPage() {
             onAddCategory={handleCategoryManagement}
             showAddButton={true}
             loading={categoriesLoading}
-            error={
-              categoriesError
-                ? "Kategoriler yüklenemedi"
-                : validationErrors.categoryId
-            }
+            error={categoriesError ? "Kategoriler yüklenemedi" : validationErrors.categoryId}
             className="mb-4"
           />
 
@@ -999,9 +910,7 @@ export default function ProductsPage() {
               disabled={updateProductMutation.isPending}
             >
               <Typography className="text-white">
-                {updateProductMutation.isPending
-                  ? "Güncelleniyor..."
-                  : "Güncelle"}
+                {updateProductMutation.isPending ? "Güncelleniyor..." : "Güncelle"}
               </Typography>
             </Button>
             <Button
@@ -1054,11 +963,12 @@ export default function ProductsPage() {
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleConfirmAddCategory}
-              //loading={/* Burada mutation olması gerekiyor */}TODOMali - Mutation eklenmedi
-              //disabled={/* Burada mutation olması gerekiyor */}TODOMali - Mutation eklenmedi
+              loading={createCategoryMutation.isPending}
+              disabled={createCategoryMutation.isPending}
             >
-              <Typography className="text-white">Ekle</Typography>
-              {/* Mutation.isPending ? "Ekleniyor..." : "Ekle" TODO-Mali - Mutation eklenmedi*/}
+              <Typography className="text-white">
+                {createCategoryMutation.isPending ? "Ekleniyor..." : "Ekle"}
+              </Typography>
             </Button>
             <Button
               variant="outline"

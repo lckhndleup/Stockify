@@ -1,16 +1,17 @@
 // src/services/api.ts
-import type {
-  LoginRequest,
-  LoginResponse,
-  LogoutResponse,
-  ApiError,
-} from "@/src/types/apiTypes";
+import type { LoginRequest, LoginResponse, LogoutResponse, ApiError } from "@/src/types/apiTypes";
+import logger from "@/src/utils/logger";
+import { forceLogoutAndRedirect } from "./authBridge";
 
 const API_BASE_URL = "https://stockify-gcsq.onrender.com";
+// Default network timeout for mobile networks (ms)
+const DEFAULT_TIMEOUT_MS = 15000;
 
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
+  // Prevent recursive logout loops on 401 handling
+  private forcingLogout = false;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -27,10 +28,7 @@ class ApiService {
   }
 
   // Base fetch wrapper
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
     // Headers'ı Record<string, string> olarak type'la
@@ -42,13 +40,11 @@ class ApiService {
     // Token varsa Authorization header'ı ekle
     if (this.token) {
       headers.Authorization = `Bearer ${this.token}`;
-      console.log(
-        "🔑 API Request with token:",
-        this.token.substring(0, 20) + "..."
-      );
+      // Avoid logging token content
+      logger.debug("🔑 API Request includes Authorization header");
     }
 
-    console.log("🌐 API Request:", {
+    logger.debug("🌐 API Request:", {
       method: options.method || "GET",
       url,
       hasToken: !!this.token,
@@ -58,17 +54,36 @@ class ApiService {
       },
     });
 
+    // Setup timeout-aware AbortController; respect any external signal
+    const controller = new AbortController();
+    const externalSignal = (options as any).signal as AbortSignal | undefined;
+    if (externalSignal) {
+      if (externalSignal.aborted) controller.abort();
+      else externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
+    }
+
+    const timeoutMs = (options as any).timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const timeoutId = setTimeout(() => {
+      try {
+        controller.abort();
+      } catch {}
+    }, timeoutMs);
+
     try {
       const response = await fetch(url, {
         ...options,
+        // Remove any custom keys we used
+        // @ts-expect-error custom field cleanup
+        timeoutMs: undefined,
         headers,
+        signal: controller.signal,
       });
 
       // Debug mode için - production'da kapatılabilir
       const isDebugMode = process.env.NODE_ENV === "development";
 
       if (isDebugMode) {
-        console.log("📡 API Response:", {
+        logger.debug("📡 API Response:", {
           status: response.status,
           statusText: response.statusText,
           ok: response.ok,
@@ -78,11 +93,11 @@ class ApiService {
 
       // Response'u text olarak al
       const responseText = await response.text();
-      console.log("📄 Raw response text:", responseText);
+      if (isDebugMode) logger.debug("📄 Raw response text:", responseText);
 
       // Response boşsa ve status başarılıysa success objesi döndür
       if (!responseText && response.ok) {
-        console.log("✅ Empty successful response, returning success");
+        logger.debug("✅ Empty successful response, returning success");
         return { success: true, message: "İşlem başarılı" } as T;
       }
 
@@ -91,8 +106,8 @@ class ApiService {
       try {
         data = responseText ? JSON.parse(responseText) : {};
       } catch (parseError) {
-        console.log("❌ JSON Parse Error:", parseError);
-        console.log("📄 Failed to parse text:", responseText);
+        logger.error("❌ JSON Parse Error:", parseError);
+        if (isDebugMode) logger.debug("📄 Failed to parse text:", responseText);
 
         if (response.ok) {
           // Parse edilemedi ama status başarılı - muhtemelen boş response
@@ -107,7 +122,7 @@ class ApiService {
       }
 
       if (isDebugMode) {
-        console.log("📦 Response data:", data);
+        logger.debug("📦 Response data:", data);
       }
 
       if (!response.ok) {
@@ -118,21 +133,46 @@ class ApiService {
 
         // Sadece debug mode'da detay göster
         if (isDebugMode) {
-          console.log("❌ API Error (debug):", errorInfo);
+          logger.warn("❌ API Error (debug):", errorInfo);
+        }
+
+        // Centralize 401 handling: force logout and redirect to login
+        // Avoid infinite loops by skipping for /auth/logout and guarding re-entrancy
+        if (
+          errorInfo.status === 401 &&
+          !endpoint.startsWith("/auth/logout") &&
+          !this.forcingLogout
+        ) {
+          try {
+            this.forcingLogout = true;
+            await forceLogoutAndRedirect();
+          } catch (e) {
+            logger.error("Failed to force logout after 401:", e);
+          } finally {
+            this.forcingLogout = false;
+          }
         }
 
         throw errorInfo;
       }
 
       if (isDebugMode) {
-        console.log("✅ API Success:", {
+        logger.debug("✅ API Success:", {
           endpoint,
           dataKeys: data ? Object.keys(data) : [],
         });
       }
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        const timeoutError = {
+          message: "İstek zaman aşımına uğradı. Lütfen tekrar deneyin.",
+          status: 0,
+        } as ApiError;
+        logger.warn("⏳ Request timed out:", { url, timeoutMs });
+        throw timeoutError;
+      }
       // Network hatası veya JSON parse hatası
       if (error instanceof TypeError) {
         const networkError = {
@@ -141,18 +181,22 @@ class ApiService {
         } as ApiError;
 
         // Network hatalarını her zaman logla (önemli debug bilgisi)
-        console.log("🌐 Network Error:", networkError);
+        logger.error("🌐 Network Error:", networkError);
         throw networkError;
       }
 
       // Diğer hataları sessizce fırlat
       throw error;
+    } finally {
+      try {
+        clearTimeout(timeoutId);
+      } catch {}
     }
   }
 
   // -------------------- Auth --------------------
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    console.log("🔐 API Login called with:", {
+    logger.debug("🔐 API Login called with:", {
       username: credentials.username,
       passwordLength: credentials.password.length,
       rememberMe: credentials.rememberMe, // 👈 YENİ
@@ -166,10 +210,10 @@ class ApiService {
 
   // 👈 YENİ: Logout API method
   async logout(): Promise<LogoutResponse> {
-    console.log("🚪 API Logout called");
+    logger.info("🚪 API Logout called");
 
     if (!this.token) {
-      console.log("⚠️ No token available for logout");
+      logger.warn("⚠️ No token available for logout");
       return { success: true, message: "Zaten çıkış yapılmış" };
     }
 
@@ -184,11 +228,8 @@ class ApiService {
     return this.request<any[]>("/category/all");
   }
 
-  async saveCategory(category: {
-    name: string;
-    taxRate: number;
-  }): Promise<any> {
-    console.log("🏷️ API: Saving category with data:", category);
+  async saveCategory(category: { name: string; taxRate: number }): Promise<any> {
+    logger.debug("🏷️ API: Saving category with data:", category);
 
     try {
       const result = await this.request<any>("/category/save", {
@@ -196,16 +237,13 @@ class ApiService {
         body: JSON.stringify(category),
       });
 
-      console.log("🏷️ API: Category save result:", result);
-      console.log("🏷️ API: Result type:", typeof result);
-      console.log(
-        "🏷️ API: Result keys:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("🏷️ API: Category save result:", result);
+      logger.debug("🏷️ API: Result type:", typeof result);
+      logger.debug("🏷️ API: Result keys:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🏷️ API: Category save error:", error);
+      logger.error("🏷️ API: Category save error:", error);
       throw error;
     }
   }
@@ -223,16 +261,16 @@ class ApiService {
 
   async deleteCategory(id: string | number): Promise<any> {
     try {
-      console.log("🗑️ API: Deleting category ID:", id);
+      logger.debug("🗑️ API: Deleting category ID:", id);
 
       const result = await this.request<any>(`/category/delete/${id}`, {
         method: "DELETE",
       });
 
-      console.log("✅ API: Category deleted:", result);
+      logger.debug("✅ API: Category deleted:", result);
       return result;
     } catch (error) {
-      console.log("🗑️ API: Category delete error:", error);
+      logger.error("🗑️ API: Category delete error:", error);
       throw error;
     }
   }
@@ -243,7 +281,7 @@ class ApiService {
     status?: "ACTIVE" | "PASSIVE";
   }): Promise<any[]> {
     try {
-      console.log("🛍️ API: Fetching products with params:", params);
+      logger.debug("🛍️ API: Fetching products with params:", params);
 
       const queryParams = new URLSearchParams();
       if (params?.productText) {
@@ -260,62 +298,51 @@ class ApiService {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Products fetched - Count:",
         Array.isArray(result) ? result.length : "not array",
         "Keys:",
-        Array.isArray(result) && result.length > 0
-          ? Object.keys(result[0])
-          : "empty"
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
       );
 
       return result;
     } catch (error) {
-      console.log("🛍️ API: Product fetch error:", error);
+      logger.error("🛍️ API: Product fetch error:", error);
       throw error;
     }
   }
 
   async getProductDetail(id: string | number): Promise<any> {
     try {
-      console.log("🛍️ API: Fetching product detail for ID:", id);
+      logger.debug("🛍️ API: Fetching product detail for ID:", id);
 
       const result = await this.request<any>(`/product/detail/${id}`, {
         method: "GET",
       });
 
-      console.log(
-        "✅ API: Product detail fetched:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Product detail fetched:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🛍️ API: Product detail fetch error:", error);
+      logger.error("🛍️ API: Product detail fetch error:", error);
       throw error;
     }
   }
 
-  async saveProduct(product: {
-    categoryId: number;
-    name: string;
-  }): Promise<any> {
+  async saveProduct(product: { categoryId: number; name: string }): Promise<any> {
     try {
-      console.log("🛍️ API: Saving product:", product);
+      logger.debug("🛍️ API: Saving product:", product);
 
       const result = await this.request<any>("/product/save", {
         method: "POST",
         body: JSON.stringify(product),
       });
 
-      console.log(
-        "✅ API: Product saved:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Product saved:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🛍️ API: Product save error:", error);
+      logger.error("🛍️ API: Product save error:", error);
       throw error;
     }
   }
@@ -326,37 +353,34 @@ class ApiService {
     name: string;
   }): Promise<any> {
     try {
-      console.log("🛍️ API: Updating product:", product);
+      logger.debug("🛍️ API: Updating product:", product);
 
       const result = await this.request<any>("/product/update", {
         method: "PUT",
         body: JSON.stringify(product),
       });
 
-      console.log(
-        "✅ API: Product updated:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Product updated:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🛍️ API: Product update error:", error);
+      logger.error("🛍️ API: Product update error:", error);
       throw error;
     }
   }
 
   async deleteProduct(id: string | number): Promise<any> {
     try {
-      console.log("🛍️ API: Deleting product ID:", id);
+      logger.debug("🛍️ API: Deleting product ID:", id);
 
       const result = await this.request<any>(`/product/delete/${id}`, {
         method: "DELETE",
       });
 
-      console.log("✅ API: Product deleted:", result);
+      logger.debug("✅ API: Product deleted:", result);
       return result;
     } catch (error) {
-      console.log("🛍️ API: Product delete error:", error);
+      logger.error("🛍️ API: Product delete error:", error);
       throw error;
     }
   }
@@ -364,36 +388,36 @@ class ApiService {
   // -------------------- Inventory --------------------
   async getInventoryAll(): Promise<any[]> {
     try {
-      console.log("📦 API: Fetching all inventory...");
+      logger.debug("📦 API: Fetching all inventory...");
 
       const result = await this.request<any[]>("/inventory/all", {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Inventory fetched - Count:",
-        Array.isArray(result) ? result.length : "not array"
+        Array.isArray(result) ? result.length : "not array",
       );
 
       return result;
     } catch (error) {
-      console.log("📦 API: Inventory fetch error:", error);
+      logger.error("📦 API: Inventory fetch error:", error);
       throw error;
     }
   }
 
   async getInventoryDetail(id: string | number): Promise<any> {
     try {
-      console.log("📦 API: Fetching inventory detail for ID:", id);
+      logger.debug("📦 API: Fetching inventory detail for ID:", id);
 
       const result = await this.request<any>(`/inventory/detail/${id}`, {
         method: "GET",
       });
 
-      console.log("✅ API: Inventory detail fetched:", result);
+      logger.debug("✅ API: Inventory detail fetched:", result);
       return result;
     } catch (error) {
-      console.log("📦 API: Inventory detail fetch error:", error);
+      logger.error("📦 API: Inventory detail fetch error:", error);
       throw error;
     }
   }
@@ -405,77 +429,77 @@ class ApiService {
     criticalProductCount: number;
   }): Promise<any> {
     try {
-      console.log("📦 API: Updating inventory:", inventoryData);
+      logger.debug("📦 API: Updating inventory:", inventoryData);
 
       const result = await this.request<any>("/inventory/update", {
         method: "PUT",
         body: JSON.stringify(inventoryData),
       });
 
-      console.log("✅ API: Inventory updated:", result);
+      logger.debug("✅ API: Inventory updated:", result);
       return result;
     } catch (error) {
-      console.log("📦 API: Inventory update error:", error);
+      logger.error("📦 API: Inventory update error:", error);
       throw error;
     }
   }
 
   async getInventoryCritical(): Promise<any[]> {
     try {
-      console.log("📦 API: Fetching critical inventory...");
+      logger.debug("📦 API: Fetching critical inventory...");
 
       const result = await this.request<any[]>("/inventory/critical", {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Critical inventory fetched - Count:",
-        Array.isArray(result) ? result.length : "not array"
+        Array.isArray(result) ? result.length : "not array",
       );
 
       return result;
     } catch (error) {
-      console.log("📦 API: Critical inventory fetch error:", error);
+      logger.error("📦 API: Critical inventory fetch error:", error);
       throw error;
     }
   }
 
   async getInventoryOutOf(): Promise<any[]> {
     try {
-      console.log("📦 API: Fetching out of stock inventory...");
+      logger.debug("📦 API: Fetching out of stock inventory...");
 
       const result = await this.request<any[]>("/inventory/outOf", {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Out of stock inventory fetched - Count:",
-        Array.isArray(result) ? result.length : "not array"
+        Array.isArray(result) ? result.length : "not array",
       );
 
       return result;
     } catch (error) {
-      console.log("📦 API: Out of stock inventory fetch error:", error);
+      logger.error("📦 API: Out of stock inventory fetch error:", error);
       throw error;
     }
   }
 
   async getInventoryAvailable(): Promise<any[]> {
     try {
-      console.log("📦 API: Fetching available inventory...");
+      logger.debug("📦 API: Fetching available inventory...");
 
       const result = await this.request<any[]>("/inventory/available", {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Available inventory fetched - Count:",
-        Array.isArray(result) ? result.length : "not array"
+        Array.isArray(result) ? result.length : "not array",
       );
 
       return result;
     } catch (error) {
-      console.log("📦 API: Available inventory fetch error:", error);
+      logger.error("📦 API: Available inventory fetch error:", error);
       throw error;
     }
   }
@@ -484,24 +508,22 @@ class ApiService {
   // GET /broker/all
   async getBrokers(): Promise<any[]> {
     try {
-      console.log("🤝 API: Fetching brokers...");
+      logger.debug("🤝 API: Fetching brokers...");
 
       const result = await this.request<any[]>("/broker/all", {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Brokers fetched - Count:",
         Array.isArray(result) ? result.length : "not array",
         "Keys:",
-        Array.isArray(result) && result.length > 0
-          ? Object.keys(result[0])
-          : "empty"
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
       );
 
       return result;
     } catch (error) {
-      console.log("🤝 API: Brokers fetch error:", error);
+      logger.error("🤝 API: Brokers fetch error:", error);
       throw error;
     }
   }
@@ -509,20 +531,17 @@ class ApiService {
   // Broker detayı getir - GET /broker/detail/{id}
   async getBrokerDetail(id: string | number): Promise<any> {
     try {
-      console.log("🤝 API: Fetching broker detail for ID:", id);
+      logger.debug("🤝 API: Fetching broker detail for ID:", id);
 
       const result = await this.request<any>(`/broker/detail/${id}`, {
         method: "GET",
       });
 
-      console.log(
-        "✅ API: Broker detail fetched:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Broker detail fetched:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🤝 API: Broker detail fetch error:", error);
+      logger.error("🤝 API: Broker detail fetch error:", error);
       throw error;
     }
   }
@@ -534,21 +553,18 @@ class ApiService {
     discountRate: number;
   }): Promise<any> {
     try {
-      console.log("🤝 API: Saving broker:", broker);
+      logger.debug("🤝 API: Saving broker:", broker);
 
       const result = await this.request<any>("/broker/save", {
         method: "POST",
         body: JSON.stringify(broker),
       });
 
-      console.log(
-        "✅ API: Broker saved:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Broker saved:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🤝 API: Broker save error:", error);
+      logger.error("🤝 API: Broker save error:", error);
       throw error;
     }
   }
@@ -561,21 +577,18 @@ class ApiService {
     discountRate: number;
   }): Promise<any> {
     try {
-      console.log("🤝 API: Updating broker:", broker);
+      logger.debug("🤝 API: Updating broker:", broker);
 
       const result = await this.request<any>("/broker/update", {
         method: "PUT",
         body: JSON.stringify(broker),
       });
 
-      console.log(
-        "✅ API: Broker updated:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Broker updated:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🤝 API: Broker update error:", error);
+      logger.error("🤝 API: Broker update error:", error);
       throw error;
     }
   }
@@ -586,21 +599,18 @@ class ApiService {
     discountRate: number;
   }): Promise<any> {
     try {
-      console.log("🤝 API: Updating broker discount rate:", discountData);
+      logger.debug("🤝 API: Updating broker discount rate:", discountData);
 
       const result = await this.request<any>("/broker/update/discount-rate", {
         method: "PUT",
         body: JSON.stringify(discountData),
       });
 
-      console.log(
-        "✅ API: Broker discount rate updated:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Broker discount rate updated:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("🤝 API: Broker discount rate update error:", error);
+      logger.error("🤝 API: Broker discount rate update error:", error);
       throw error;
     }
   }
@@ -608,16 +618,16 @@ class ApiService {
   // Broker sil - DELETE /broker/delete/{id}
   async deleteBroker(id: string | number): Promise<any> {
     try {
-      console.log("🤝 API: Deleting broker ID:", id);
+      logger.debug("🤝 API: Deleting broker ID:", id);
 
       const result = await this.request<any>(`/broker/delete/${id}`, {
         method: "DELETE",
       });
 
-      console.log("✅ API: Broker deleted:", result);
+      logger.debug("✅ API: Broker deleted:", result);
       return result;
     } catch (error) {
-      console.log("🤝 API: Broker delete error:", error);
+      logger.error("🤝 API: Broker delete error:", error);
       throw error;
     }
   }
@@ -629,21 +639,18 @@ class ApiService {
     paymentType: "CASH" | "CREDIT_CARD" | "BANK_TRANSFER" | "CHECK";
   }): Promise<any> {
     try {
-      console.log("💰 API: Saving payment:", payment);
+      logger.debug("💰 API: Saving payment:", payment);
 
       const result = await this.request<any>("/payment/save", {
         method: "POST",
         body: JSON.stringify(payment),
       });
 
-      console.log(
-        "✅ API: Payment saved:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Payment saved:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
-      console.log("💰 API: Payment save error:", error);
+      logger.error("💰 API: Payment save error:", error);
       throw error;
     }
   }
@@ -652,24 +659,22 @@ class ApiService {
   /** GET /sales/products */
   async getSalesProducts(): Promise<any[]> {
     try {
-      console.log("💰 API: Fetching sales products...");
+      logger.debug("💰 API: Fetching sales products...");
 
       const result = await this.request<any[]>("/sales/products", {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Sales products fetched - Count:",
         Array.isArray(result) ? result.length : "not array",
         "Keys:",
-        Array.isArray(result) && result.length > 0
-          ? Object.keys(result[0])
-          : "empty"
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
       );
 
       return result;
     } catch (error) {
-      console.log("💰 API: Sales products fetch error:", error);
+      logger.error("💰 API: Sales products fetch error:", error);
       throw error;
     }
   }
@@ -677,20 +682,20 @@ class ApiService {
   /** GET /sales/basket/{brokerId} */
   async getBasket(brokerId: number): Promise<any[]> {
     try {
-      console.log("🧺 API: Fetching basket for broker:", brokerId);
+      logger.debug("🧺 API: Fetching basket for broker:", brokerId);
 
       const result = await this.request<any[]>(`/sales/basket/${brokerId}`, {
         method: "GET",
       });
 
-      console.log(
+      logger.debug(
         "✅ API: Basket fetched - Count:",
-        Array.isArray(result) ? result.length : "not array"
+        Array.isArray(result) ? result.length : "not array",
       );
 
       return result;
     } catch (error) {
-      console.log("🧺 API: Basket fetch error:", error);
+      logger.error("🧺 API: Basket fetch error:", error);
       throw error;
     }
   }
@@ -702,20 +707,17 @@ class ApiService {
     productCount: number;
   }): Promise<{ success: true; message: string }> {
     try {
-      console.log("🧺➕ API: Add to basket:", payload);
+      logger.debug("🧺➕ API: Add to basket:", payload);
 
-      const result = await this.request<{ success: true; message: string }>(
-        "/basket/add",
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const result = await this.request<{ success: true; message: string }>("/basket/add", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-      console.log("✅ API: Added to basket");
+      logger.debug("✅ API: Added to basket");
       return result;
     } catch (error) {
-      console.log("🧺➕ API: Add to basket error:", error);
+      logger.error("🧺➕ API: Add to basket error:", error);
       throw error;
     }
   }
@@ -726,20 +728,17 @@ class ApiService {
     productId: number;
   }): Promise<{ success: true; message: string }> {
     try {
-      console.log("🧺➖ API: Remove from basket:", payload);
+      logger.debug("🧺➖ API: Remove from basket:", payload);
 
-      const result = await this.request<{ success: true; message: string }>(
-        "/basket/remove",
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const result = await this.request<{ success: true; message: string }>("/basket/remove", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-      console.log("✅ API: Removed from basket");
+      logger.debug("✅ API: Removed from basket");
       return result;
     } catch (error) {
-      console.log("🧺➖ API: Remove from basket error:", error);
+      logger.error("🧺➖ API: Remove from basket error:", error);
       throw error;
     }
   }
@@ -751,70 +750,55 @@ class ApiService {
     productCount: number;
   }): Promise<{ success: true; message: string }> {
     try {
-      console.log("🧺✏️ API: Update basket:", payload);
+      logger.debug("🧺✏️ API: Update basket:", payload);
 
-      const result = await this.request<{ success: true; message: string }>(
-        "/basket/update",
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const result = await this.request<{ success: true; message: string }>("/basket/update", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-      console.log("✅ API: Basket updated");
+      logger.debug("✅ API: Basket updated");
       return result;
     } catch (error) {
-      console.log("🧺✏️ API: Update basket error:", error);
+      logger.error("🧺✏️ API: Update basket error:", error);
       throw error;
     }
   }
 
   /** POST /sales/calculate */
-  async calculateSale(payload: {
-    brokerId: number;
-    createInvoice: boolean;
-  }): Promise<any> {
+  async calculateSale(payload: { brokerId: number; createInvoice: boolean }): Promise<any> {
     try {
-      console.log("🧮 API: Calculate sale:", payload);
+      logger.debug("🧮 API: Calculate sale:", payload);
 
       const result = await this.request<any>("/sales/calculate", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      console.log(
-        "✅ API: Calculation summary:",
-        result ? Object.keys(result) : "null"
-      );
+      logger.debug("✅ API: Calculation summary:", result ? Object.keys(result) : "null");
 
       return result;
     } catch (error) {
       // Boş sepet durumunda 404 + { message: "Basket empty", code: ... } gelebilir
-      console.log("🧮 API: Calculate sale error:", error);
+      logger.error("🧮 API: Calculate sale error:", error);
       throw error;
     }
   }
 
   /** POST /sales/confirm */
-  async confirmSale(payload: {
-    brokerId: number;
-    createInvoice: boolean;
-  }): Promise<any> {
+  async confirmSale(payload: { brokerId: number; createInvoice: boolean }): Promise<any> {
     try {
-      console.log("✅ API: Confirm sale:", payload);
+      logger.debug("✅ API: Confirm sale:", payload);
 
       const result = await this.request<any>("/sales/confirm", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      console.log(
-        "✅ API: Sale confirmed:",
-        result ? result.documentNumber : "no-doc"
-      );
+      logger.debug("✅ API: Sale confirmed:", result ? result.documentNumber : "no-doc");
       return result;
     } catch (error) {
-      console.log("✅ API: Confirm sale error:", error);
+      logger.error("✅ API: Confirm sale error:", error);
       throw error;
     }
   }
@@ -825,20 +809,17 @@ class ApiService {
     createInvoice: boolean;
   }): Promise<{ success: true; message: string }> {
     try {
-      console.log("🛑 API: Cancel sale:", payload);
+      logger.debug("🛑 API: Cancel sale:", payload);
 
-      const result = await this.request<{ success: true; message: string }>(
-        "/sales/cancel",
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const result = await this.request<{ success: true; message: string }>("/sales/cancel", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-      console.log("✅ API: Sale canceled");
+      logger.debug("✅ API: Sale canceled");
       return result;
     } catch (error) {
-      console.log("🛑 API: Cancel sale error:", error);
+      logger.error("🛑 API: Cancel sale error:", error);
       throw error;
     }
   }

@@ -3,20 +3,14 @@ import React, { useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { router } from "expo-router";
 
-import {
-  Container,
-  Typography,
-  Card,
-  SearchBar,
-  Icon,
-  Loading,
-} from "@/src/components/ui";
+import { Container, Typography, Card, SearchBar, Icon } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
+import logger from "@/src/utils/logger";
 
 export default function HomePage() {
-  const [searchText, setSearchText] = useState("");
+  const [, setSearchText] = useState("");
   const { user, logout } = useAuthStore();
   const { toast, hideToast } = useToast();
 
@@ -26,37 +20,27 @@ export default function HomePage() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      "Çıkış Yap",
-      "Hesabınızdan çıkış yapmak istediğinizden emin misiniz?",
-      [
-        {
-          text: "İptal",
-          style: "cancel",
+    Alert.alert("Çıkış Yap", "Hesabınızdan çıkış yapmak istediğinizden emin misiniz?", [
+      { text: "İptal", style: "cancel" },
+      {
+        text: "Çıkış Yap",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            logger.debug("🔄 Starting logout process...");
+            await logout();
+            router.replace("/login");
+          } catch (error) {
+            logger.error("❌ Logout error:", error);
+            router.replace("/login");
+            Alert.alert(
+              "Uyarı",
+              "Çıkış yaparken bir sorun oluştu, ancak oturumunuz sonlandırıldı.",
+            );
+          }
         },
-        {
-          text: "Çıkış Yap",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              console.log("🔄 Starting logout process...");
-
-              //logout fonksiyonunu çağır(async/await ile)
-              await logout();
-              router.replace("/login");
-            } catch (error) {
-              console.log("❌ Logout error:", error);
-              // Kullanıcıya bilgi ver
-              router.replace("/login");
-              Alert.alert(
-                "Uyarı",
-                "Çıkış yaparken bir sorun oluştu, ancak oturumunuz sonlandırıldı."
-              );
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleProducts = () => {
@@ -74,23 +58,13 @@ export default function HomePage() {
   return (
     <Container className="bg-white" padding="sm">
       {/* Toast Notification */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with User Info and Logout */}
         <View className="flex-row items-start justify-between mb-4 mt-1">
           <View className="flex-1">
-            <Typography
-              variant="h1"
-              weight="bold"
-              size="xl"
-              className="text-stock-red"
-            >
+            <Typography variant="h1" weight="bold" size="xl" className="text-stock-red">
               Stockify
             </Typography>
             {user && (
@@ -115,11 +89,7 @@ export default function HomePage() {
         </View>
 
         {/* SearchBar */}
-        <SearchBar
-          placeholder="Ara..."
-          onSearch={handleSearch}
-          className="mb-4"
-        />
+        <SearchBar placeholder="Ara..." onSearch={handleSearch} className="mb-4" />
 
         {/* Ana Menü Kartları */}
         <View>
@@ -151,21 +121,12 @@ export default function HomePage() {
                   >
                     ÜRÜN
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
+                  <Typography variant="caption" size="sm" className="text-stock-white/80">
                     Kuruyemiş ürünlerinizi yönetin
                   </Typography>
                 </View>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
 
@@ -197,21 +158,12 @@ export default function HomePage() {
                   >
                     ARACILAR
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
+                  <Typography variant="caption" size="sm" className="text-stock-white/80">
                     Aracı ve tedarikçi bilgileri
                   </Typography>
                 </View>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
 
@@ -243,21 +195,12 @@ export default function HomePage() {
                   >
                     STOK TAKİP
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-white/80"
-                  >
+                  <Typography variant="caption" size="sm" className="text-stock-white/80">
                     Stok durumu ve raporlar
                   </Typography>
                 </View>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
         </View>

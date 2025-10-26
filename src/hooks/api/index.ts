@@ -1,28 +1,23 @@
 // src/hooks/api/index.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type {
-  ApiError,
-  UseQueryOptions,
-  UseMutationOptions,
-} from "@/src/types/apiTypes";
+import type { ApiError, UseQueryOptions, UseMutationOptions } from "@/src/types/apiTypes";
 import { router } from "expo-router";
 import { queryKeys } from "./queryKeys";
+import logger from "@/src/utils/logger";
 export * from "./usePayments";
 export * from "./useSales"; // NEW
 export * from "./useBasket"; // NEW
 
 // Hook factory'ler için base type'lar
 export type QueryHook<TData, TParams = void> = TParams extends void
-  ? (
-      options?: UseQueryOptions<TData>
-    ) => ReturnType<typeof useQuery<TData, ApiError>>
+  ? (options?: UseQueryOptions<TData>) => ReturnType<typeof useQuery<TData, ApiError>>
   : (
       params: TParams,
-      options?: UseQueryOptions<TData>
+      options?: UseQueryOptions<TData>,
     ) => ReturnType<typeof useQuery<TData, ApiError>>;
 
 export type MutationHook<TData, TVariables = void> = (
-  options?: UseMutationOptions<TData, ApiError, TVariables>
+  options?: UseMutationOptions<TData, ApiError, TVariables>,
 ) => ReturnType<typeof useMutation<TData, ApiError, TVariables>>;
 
 // 👈 YENİ: Type Guard - ApiError olup olmadığını kontrol et
@@ -46,26 +41,26 @@ export const setAuthStore = (store: any) => {
 };
 // Common error handler
 export const handleApiError = async (error: ApiError) => {
-  console.log("🚨 Global API Error Handler:", error);
+  logger.error("🚨 Global API Error Handler:", error);
 
   // 401 Unauthorized - Token expired veya invalid
   if (error.status === 401) {
-    console.log("🔒 Unauthorized error - forcing logout");
+    logger.warn("🔒 Unauthorized error - forcing logout");
 
     try {
       // Auth store varsa logout çağır
       if (authStore?.logout) {
         await authStore.logout();
-        console.log("✅ Forced logout completed");
+        logger.info("✅ Forced logout completed");
       }
 
       // Login sayfasına yönlendir
       router.replace("/login");
 
       // Kullanıcıya bilgi ver (opsiyonel - toast olarak gösterilebilir)
-      console.log("📱 Redirected to login due to auth error");
+      logger.info("📱 Redirected to login due to auth error");
     } catch (logoutError) {
-      console.log("❌ Error during forced logout:", logoutError);
+      logger.error("❌ Error during forced logout:", logoutError);
       // Yine de login sayfasına git
       router.replace("/login");
     }
@@ -73,19 +68,19 @@ export const handleApiError = async (error: ApiError) => {
 
   // 403 Forbidden - Yetkisiz erişim
   else if (error.status === 403) {
-    console.log("🚫 Forbidden - insufficient permissions");
+    logger.warn("🚫 Forbidden - insufficient permissions");
     // Kullanıcıya yetki hatası göster
   }
 
   // 500 Server Error
   else if (error.status >= 500) {
-    console.log("🔥 Server error:", error.message);
+    logger.error("🔥 Server error:", error.message);
     // Server hatası toast'ı göster
   }
 
   // Network hatası
   else if (error.status === 0) {
-    console.log("🌐 Network error - server unreachable");
+    logger.error("🌐 Network error - server unreachable");
     // Network hatası toast'ı göster
   }
 
@@ -97,9 +92,7 @@ export const createQueryHook = <TData, TParams = void>(
   queryKeyFactory: TParams extends void
     ? () => readonly unknown[]
     : (params: TParams) => readonly unknown[],
-  queryFn: TParams extends void
-    ? () => Promise<TData>
-    : (params: TParams) => Promise<TData>
+  queryFn: TParams extends void ? () => Promise<TData> : (params: TParams) => Promise<TData>,
 ): QueryHook<TData, TParams> => {
   return ((params?: TParams, options?: UseQueryOptions<TData>) => {
     const queryKey =
@@ -110,24 +103,22 @@ export const createQueryHook = <TData, TParams = void>(
     return useQuery({
       queryKey,
       queryFn: () =>
-        params !== undefined
-          ? queryFn(params as TParams)
-          : (queryFn as () => Promise<TData>)(),
+        params !== undefined ? queryFn(params as TParams) : (queryFn as () => Promise<TData>)(),
       retry: (failureCount, error) => {
-        console.log("🔄 Query retry check:", { failureCount, error });
+        logger.debug("🔄 Query retry check:", { failureCount, error });
 
         // 👈 DÜZELTİLDİ: Type guard kullan
         if (isApiError(error)) {
           // 401/403 hatalarında retry yapma
           if (error.status === 401 || error.status === 403) {
-            console.log("🚫 No retry for auth errors:", error.status);
+            logger.debug("🚫 No retry for auth errors:", error.status);
             return false;
           }
         }
 
         // Diğer hatalar için max 3 retry
         const shouldRetry = failureCount < 3;
-        console.log("🔄 Retry decision:", { shouldRetry, failureCount });
+        logger.debug("🔄 Retry decision:", { shouldRetry, failureCount });
         return shouldRetry;
       },
       ...options,
@@ -137,15 +128,15 @@ export const createQueryHook = <TData, TParams = void>(
 
 // Enhanced mutation hook
 export const createMutationHook = <TData, TVariables = void>(
-  mutationFn: (variables: TVariables) => Promise<TData>
+  mutationFn: (variables: TVariables) => Promise<TData>,
 ): MutationHook<TData, TVariables> => {
   return (options?: UseMutationOptions<TData, ApiError, TVariables>) => {
-    const queryClient = useQueryClient();
+    const _queryClient = useQueryClient();
 
     return useMutation({
       mutationFn,
       onError: async (error, variables) => {
-        console.log("🚨 Mutation error:", error);
+        logger.error("🚨 Mutation error:", error);
 
         // 👈 DÜZELTİLDİ: Type guard kullan
         if (isApiError(error)) {
@@ -153,7 +144,7 @@ export const createMutationHook = <TData, TVariables = void>(
           await handleApiError(error);
         } else {
           // Diğer error tiplerini logla
-          console.log("❓ Non-API error:", error);
+          logger.warn("❓ Non-API error:", error);
         }
 
         // User-defined error handler
@@ -183,20 +174,15 @@ export const useInvalidateQueries = () => {
 
   return {
     // Invalidate specific query families
-    invalidateProducts: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all }),
+    invalidateProducts: () => queryClient.invalidateQueries({ queryKey: queryKeys.products.all }),
     invalidateCategories: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all }),
-    invalidateBrokers: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all }),
-    invalidateStock: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.stock.all }),
+    invalidateBrokers: () => queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all }),
+    invalidateStock: () => queryClient.invalidateQueries({ queryKey: queryKeys.stock.all }),
     invalidateTransactions: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all }),
-    invalidateInvoices: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all }),
-    invalidateDashboard: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
+    invalidateInvoices: () => queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all }),
+    invalidateDashboard: () => queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all }),
 
     // Invalidate by broker ID
     invalidateBrokerData: (brokerId: string) => {
@@ -247,8 +233,7 @@ export const useInvalidateQueries = () => {
     },
 
     // NEW: Sales helpers
-    invalidateSalesAll: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.sales.all }),
+    invalidateSalesAll: () => queryClient.invalidateQueries({ queryKey: queryKeys.sales.all }),
     clearSalesCalculation: (brokerId: string | number) =>
       queryClient.removeQueries({
         queryKey: queryKeys.sales.calculate(brokerId),
