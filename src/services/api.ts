@@ -2,10 +2,21 @@
 import type { LoginRequest, LoginResponse, LogoutResponse, ApiError } from "@/src/types/apiTypes";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
-
-const API_BASE_URL = "https://stockify-gcsq.onrender.com";
-// Default network timeout for mobile networks (ms)
-const DEFAULT_TIMEOUT_MS = 15000;
+import Constants from "expo-constants";
+// Prefer env/configured base URL with a safe fallback
+const API_BASE_URL =
+  (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+  ((Constants.expoConfig?.extra as any)?.apiUrl as string | undefined) ||
+  "https://stockify-gcsq.onrender.com";
+// Default network timeout for mobile networks (ms) - configurable via env/app.json
+const DEFAULT_TIMEOUT_MS = (() => {
+  const envValue = process.env.EXPO_PUBLIC_API_TIMEOUT_MS;
+  if (envValue && !Number.isNaN(Number(envValue))) return Number(envValue);
+  const extra = (Constants.expoConfig?.extra as any) || {};
+  const confValue = extra.apiTimeoutMs;
+  if (confValue && !Number.isNaN(Number(confValue))) return Number(confValue);
+  return 15000;
+})();
 
 class ApiService {
   private baseURL: string;
@@ -198,8 +209,7 @@ class ApiService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     logger.debug("🔐 API Login called with:", {
       username: credentials.username,
-      passwordLength: credentials.password.length,
-      rememberMe: credentials.rememberMe, // 👈 YENİ
+      rememberMe: credentials.rememberMe,
     });
 
     return this.request<LoginResponse>("/auth/login", {

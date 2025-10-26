@@ -1,6 +1,7 @@
 // src/hooks/api/index.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError, UseQueryOptions, UseMutationOptions } from "@/src/types/apiTypes";
+import type { AuthStore } from "@/src/types/stores";
 import { router } from "expo-router";
 import { queryKeys } from "./queryKeys";
 import logger from "@/src/utils/logger";
@@ -22,21 +23,18 @@ export type MutationHook<TData, TVariables = void> = (
 
 // 👈 YENİ: Type Guard - ApiError olup olmadığını kontrol et
 const isApiError = (error: unknown): error is ApiError => {
+  if (typeof error !== "object" || error === null) return false;
+  const e = error as Record<string, unknown>;
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    "message" in error &&
-    typeof (error as any).status === "number" &&
-    typeof (error as any).message === "string"
+    "status" in e && "message" in e && typeof e.status === "number" && typeof e.message === "string"
   );
 };
 
 // Global error handler - Auth Store'u import etmeden
-let authStore: any = null;
+let authStore: Pick<AuthStore, "logout"> | null = null;
 
 // Auth store'u set etmek için helper
-export const setAuthStore = (store: any) => {
+export const setAuthStore = (store: Pick<AuthStore, "logout">) => {
   authStore = store;
 };
 // Common error handler
@@ -162,7 +160,7 @@ export const createMutationHook = <TData, TVariables = void>(
 
 export const useAuthErrorHandler = () => {
   // Bu hook component'ta çağrılarak auth store bağlanabilir
-  const initializeErrorHandler = (authStoreInstance: any) => {
+  const initializeErrorHandler = (authStoreInstance: Pick<AuthStore, "logout">) => {
     setAuthStore(authStoreInstance);
   };
 

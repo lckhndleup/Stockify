@@ -1,12 +1,13 @@
 // src/stores/appStore.ts
-import React from "react";
+// React import not needed here
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AppStore } from "@/src/types/stores";
+import logger from "@/src/utils/logger";
 
 const middleware = persist<AppStore>(
-  (set, get) => ({
+  (set, _get) => ({
     // Global Toast
     globalToast: {
       visible: false,
@@ -42,7 +43,7 @@ const middleware = persist<AppStore>(
           type: "info",
         },
       });
-      console.log("🔄 Store completely reset");
+      logger.info("🔄 Store completely reset");
     },
   }),
   {
@@ -59,12 +60,12 @@ const middleware = persist<AppStore>(
             type: "info",
           },
         };
-        console.log("🔄 Migrated store to version 4 - removed all local data");
+        logger.info("🔄 Migrated store to version 4 - removed all local data");
         return newState;
       }
       return persistedState;
     },
-  }
+  },
 );
 
 export const useAppStore = create<AppStore>()(middleware);

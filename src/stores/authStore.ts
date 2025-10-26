@@ -29,14 +29,10 @@ const middleware = persist<AuthStore>(
         };
 
         const response = await apiService.login(credentials);
-        logger.debug("✅ Login response:", response);
+        logger.debug("✅ Login response received");
 
         if (response.token) {
-          logger.debug("🎯 Token received:", {
-            tokenLength: response.token.length,
-            tokenPreview: response.token.substring(0, 20) + "...",
-            tokenType: typeof response.token,
-          });
+          logger.debug("🎯 Token received (content hidden)");
 
           // Token'ı API service'e set et
           apiService.setToken(response.token);
@@ -49,7 +45,7 @@ const middleware = persist<AuthStore>(
             loginTime: new Date().toISOString(),
           };
 
-          logger.debug("👤 User created:", user);
+          logger.debug("👤 User session created for:", { username: user.username });
 
           set({
             user,

@@ -14,7 +14,6 @@ import {
   Modal,
   Checkbox,
   Loading,
-  // @ts-expect-error TODOMALİ
   type SelectBoxOption,
   Toast,
 } from "@/src/components/ui";
@@ -24,6 +23,7 @@ import { useNavigation } from "@react-navigation/native";
 // BACKEND HOOKS
 import { useActiveBrokers, useUpdateBrokerDiscountRate } from "@/src/hooks/api/useBrokers";
 import { useSalesProducts, useSalesCalculate } from "@/src/hooks/api/useSales";
+import { validateDiscountRate } from "@/src/validations/brokerValidation";
 import {
   useBasket,
   useAddToBasket,
@@ -31,7 +31,6 @@ import {
   useUpdateBasket,
 } from "@/src/hooks/api/useBasket";
 
-import { apiService } from "@/src/services/api";
 // tipler (swagger ile uyumlu)
 import type { SalesSummary } from "@/src/types/sales";
 import type { AddedProduct } from "@/src/types/salesUI";
@@ -150,12 +149,11 @@ export default function SalesSection() {
   }, [basketItems]);
 
   // Ürün seçenekleri (sepette olanları gizle)
-  const addedIds = new Set(addedProducts.map((p) => p.id));
-  const activeProducts = salesProducts || [];
-  const availableProducts = useMemo(
-    () => (activeProducts || []).filter((p: any) => !addedIds.has(String(p.id ?? p.productId))),
-    [activeProducts, addedIds],
-  );
+  const availableProducts = useMemo(() => {
+    const ids = new Set(addedProducts.map((p) => p.id));
+    const products = salesProducts || [];
+    return (products || []).filter((p: any) => !ids.has(String(p.id ?? p.productId)));
+  }, [salesProducts, addedProducts]);
 
   const productOptions: SelectBoxOption[] = (availableProducts || []).map((product: any) => {
     const rate = getTaxRate(product);
@@ -301,48 +299,8 @@ export default function SalesSection() {
     }
   };
 
-  // Ürün adedi güncelle (öncelik /basket/update, fallback remove→add)
-  const updateBasketQuantity = async (productId: number, productCount: number) => {
-    const svc: any = apiService as any;
-
-    // 1) apiService.updateBasket varsa
-    if (typeof svc.updateBasket === "function") {
-      return await svc.updateBasket({
-        brokerId: brokerIdNum,
-        productId,
-        productCount,
-      });
-    }
-
-    // 2) Düşük seviye request ile deneyelim
-    if (typeof svc.request === "function") {
-      try {
-        await svc.request("/basket/update", {
-          method: "POST",
-          body: JSON.stringify({
-            brokerId: brokerIdNum,
-            productId,
-            productCount,
-          }),
-        });
-        return { success: true };
-      } catch {
-        // fallback'e düş
-      }
-    }
-
-    // 3) Fallback: remove → add
-    await removeFromBasketMutation.mutateAsync({
-      brokerId: brokerIdNum,
-      productId,
-    });
-    await addToBasketMutation.mutateAsync({
-      brokerId: brokerIdNum,
-      productId,
-      productCount,
-    });
-    return { success: true };
-  };
+  // Ürün adedi güncelle (
+  // Not: Sepet güncellemeleri için doğrudan updateBasketMutation kullanılıyor.)
 
   const handleSaveEdit = async () => {
     if (!editingProduct || !editQuantity || !!editQuantityError) return;
@@ -379,8 +337,6 @@ export default function SalesSection() {
     setValidationErrors({});
     setDiscountModalVisible(true);
   };
-
-  const { validateDiscountRate } = require("@/src/validations/brokerValidation");
 
   const handleDiscountChange = (text: string) => {
     setDiscountValue(text);
