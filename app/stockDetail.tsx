@@ -1,17 +1,9 @@
 // app/stockDetail.tsx
 import React, { useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 
-import {
-  Container,
-  Typography,
-  Card,
-  Icon,
-  Button,
-  Input,
-  Loading,
-} from "@/src/components/ui";
+import { Container, Typography, Card, Icon, Button, Input, Loading } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 
@@ -21,6 +13,8 @@ import {
   useUpdateInventory,
   InventoryUpdateRequest,
 } from "@/src/hooks/api/useInventory";
+import { parseInventoryForm } from "@/src/validations/inventoryValidation";
+import { ZodError } from "zod";
 
 export default function StockDetailPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -64,48 +58,39 @@ export default function StockDetailPage() {
     }));
   };
 
+  // Zod ile form doğrulama
   const validateForm = () => {
-    const errors: string[] = [];
-
-    const price = parseFloat(formData.price);
-    const productCount = parseInt(formData.productCount);
-    const criticalProductCount = parseInt(formData.criticalProductCount);
-
-    if (isNaN(price) || price <= 0) {
-      errors.push("Fiyat geçerli bir sayı olmalı ve 0'dan büyük olmalıdır");
+    try {
+      const parsed = parseInventoryForm({
+        price: formData.price,
+        productCount: formData.productCount,
+        criticalProductCount: formData.criticalProductCount,
+      });
+      return { ok: true as const, data: parsed };
+    } catch (e) {
+      if (e instanceof ZodError) {
+        const first = e.issues?.[0];
+        const message = first?.message || "Form verileri geçersiz";
+        return { ok: false as const, message };
+      }
+      return { ok: false as const, message: "Form verileri doğrulanamadı" };
     }
-
-    if (isNaN(productCount) || productCount < 0) {
-      errors.push("Ürün adedi geçerli bir sayı olmalı ve 0'dan küçük olamaz");
-    }
-
-    if (isNaN(criticalProductCount) || criticalProductCount < 0) {
-      errors.push(
-        "Kritik ürün adedi geçerli bir sayı olmalı ve 0'dan küçük olamaz"
-      );
-    }
-
-    if (productCount < criticalProductCount) {
-      errors.push("Ürün adedi kritik ürün adedinden küçük olamaz");
-    }
-
-    return errors;
   };
 
   const handleUpdate = async () => {
     if (!inventoryDetail) return;
 
-    const validationErrors = validateForm();
-    if (validationErrors.length > 0) {
-      showError(validationErrors[0]);
+    const result = validateForm();
+    if (!result.ok) {
+      showError(result.message);
       return;
     }
 
     const updateData: InventoryUpdateRequest = {
       inventoryId: inventoryDetail.inventoryId,
-      price: parseFloat(formData.price),
-      productCount: parseInt(formData.productCount),
-      criticalProductCount: parseInt(formData.criticalProductCount),
+      price: result.data.price,
+      productCount: result.data.productCount,
+      criticalProductCount: result.data.criticalProductCount,
     };
 
     Alert.alert(
@@ -121,12 +106,12 @@ export default function StockDetailPage() {
               showSuccess("Stok başarıyla güncellendi!");
               setEditMode(false);
               refetch(); // Verileri yenile
-            } catch (error) {
+            } catch {
               showError("Stok güncellenirken bir hata oluştu.");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -151,30 +136,14 @@ export default function StockDetailPage() {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="flex-1 justify-center items-center">
-          <Icon
-            family="MaterialIcons"
-            name="error-outline"
-            size={64}
-            color="#E3001B"
-          />
-          <Typography
-            variant="h3"
-            weight="bold"
-            className="text-stock-red mt-4 mb-2"
-          >
+          <Icon family="MaterialIcons" name="error-outline" size={64} color="#E3001B" />
+          <Typography variant="h3" weight="bold" className="text-stock-red mt-4 mb-2">
             Hata Oluştu
           </Typography>
-          <Typography
-            variant="body"
-            className="text-stock-text text-center mb-6"
-          >
+          <Typography variant="body" className="text-stock-text text-center mb-6">
             Stok detayı yüklenirken bir hata oluştu.
           </Typography>
-          <Button
-            variant="primary"
-            onPress={() => refetch()}
-            className="bg-stock-red"
-          >
+          <Button variant="primary" onPress={() => refetch()} className="bg-stock-red">
             Tekrar Dene
           </Button>
         </View>
@@ -185,21 +154,11 @@ export default function StockDetailPage() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Ürün Bilgileri */}
-        <Card
-          variant="default"
-          padding="md"
-          className="bg-stock-gray border-0 mb-4"
-          radius="md"
-        >
+        <Card variant="default" padding="md" className="bg-stock-gray border-0 mb-4" radius="md">
           <View className="flex-row items-center mb-3">
             <Icon
               family="MaterialCommunityIcons"
@@ -207,11 +166,7 @@ export default function StockDetailPage() {
               size={24}
               color="#E3001B"
             />
-            <Typography
-              variant="h3"
-              weight="bold"
-              className="text-stock-dark ml-2"
-            >
+            <Typography variant="h3" weight="bold" className="text-stock-dark ml-2">
               {inventoryDetail.productName}
             </Typography>
           </View>
@@ -221,11 +176,7 @@ export default function StockDetailPage() {
               <Typography variant="caption" className="text-stock-text">
                 Kategori:
               </Typography>
-              <Typography
-                variant="caption"
-                weight="medium"
-                className="text-stock-dark"
-              >
+              <Typography variant="caption" weight="medium" className="text-stock-dark">
                 {inventoryDetail.categoryName}
               </Typography>
             </View>
@@ -234,11 +185,7 @@ export default function StockDetailPage() {
               <Typography variant="caption" className="text-stock-text">
                 Envanter Kodu:
               </Typography>
-              <Typography
-                variant="caption"
-                weight="medium"
-                className="text-stock-dark"
-              >
+              <Typography variant="caption" weight="medium" className="text-stock-dark">
                 {inventoryDetail.inventoryCode}
               </Typography>
             </View>
@@ -248,14 +195,8 @@ export default function StockDetailPage() {
                 Durum:
               </Typography>
               <View className="flex-row items-center">
-                <View
-                  className={`w-3 h-3 rounded-full ${inventoryDetail.statusColor} mr-2`}
-                />
-                <Typography
-                  variant="caption"
-                  weight="medium"
-                  className="text-stock-dark"
-                >
+                <View className={`w-3 h-3 rounded-full ${inventoryDetail.statusColor} mr-2`} />
+                <Typography variant="caption" weight="medium" className="text-stock-dark">
                   {inventoryDetail.statusText}
                 </Typography>
               </View>
@@ -284,34 +225,16 @@ export default function StockDetailPage() {
         {/* Stok Bilgileri Kartları */}
         <View className="space-y-4 mb-6">
           {/* Fiyat */}
-          <Card
-            variant="default"
-            padding="md"
-            className="border border-stock-border"
-            radius="md"
-          >
+          <Card variant="default" padding="md" className="border border-stock-border" radius="md">
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center">
-                <Icon
-                  family="MaterialIcons"
-                  name="attach-money"
-                  size={20}
-                  color="#0a7029"
-                />
-                <Typography
-                  variant="body"
-                  weight="semibold"
-                  className="text-stock-dark ml-2"
-                >
+                <Icon family="MaterialIcons" name="attach-money" size={20} color="#0a7029" />
+                <Typography variant="body" weight="semibold" className="text-stock-dark ml-2">
                   Birim Fiyat
                 </Typography>
               </View>
               <View className={`px-3 py-1 rounded-full bg-green-100`}>
-                <Typography
-                  variant="caption"
-                  className="text-green-700"
-                  weight="medium"
-                >
+                <Typography variant="caption" className="text-green-700" weight="medium">
                   TL
                 </Typography>
               </View>
@@ -324,6 +247,7 @@ export default function StockDetailPage() {
                 placeholder="0.00"
                 keyboardType="numeric"
                 variant="outlined"
+                numericOnly
                 className="mt-2"
               />
             ) : (
@@ -349,25 +273,11 @@ export default function StockDetailPage() {
           </Card>
 
           {/* Ürün Adedi */}
-          <Card
-            variant="default"
-            padding="md"
-            className="border border-stock-border"
-            radius="md"
-          >
+          <Card variant="default" padding="md" className="border border-stock-border" radius="md">
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center">
-                <Icon
-                  family="MaterialCommunityIcons"
-                  name="counter"
-                  size={20}
-                  color="#E3001B"
-                />
-                <Typography
-                  variant="body"
-                  weight="semibold"
-                  className="text-stock-dark ml-2"
-                >
+                <Icon family="MaterialCommunityIcons" name="counter" size={20} color="#E3001B" />
+                <Typography variant="body" weight="semibold" className="text-stock-dark ml-2">
                   Ürün Adedi
                 </Typography>
               </View>
@@ -376,8 +286,8 @@ export default function StockDetailPage() {
                   inventoryDetail.isOutOfStock
                     ? "bg-red-100"
                     : inventoryDetail.isCritical
-                    ? "bg-yellow-100"
-                    : "bg-blue-100"
+                      ? "bg-yellow-100"
+                      : "bg-blue-100"
                 }`}
               >
                 <Typography
@@ -386,8 +296,8 @@ export default function StockDetailPage() {
                     inventoryDetail.isOutOfStock
                       ? "text-red-700"
                       : inventoryDetail.isCritical
-                      ? "text-yellow-700"
-                      : "text-blue-700"
+                        ? "text-yellow-700"
+                        : "text-blue-700"
                   }
                   weight="medium"
                 >
@@ -399,12 +309,11 @@ export default function StockDetailPage() {
             {editMode ? (
               <Input
                 value={formData.productCount}
-                onChangeText={(value) =>
-                  handleInputChange("productCount", value)
-                }
+                onChangeText={(value) => handleInputChange("productCount", value)}
                 placeholder="0"
                 keyboardType="numeric"
                 variant="outlined"
+                numericOnly
                 className="mt-2"
               />
             ) : (
@@ -415,34 +324,16 @@ export default function StockDetailPage() {
           </Card>
 
           {/* Kritik Ürün Adedi */}
-          <Card
-            variant="default"
-            padding="md"
-            className="border border-stock-border"
-            radius="md"
-          >
+          <Card variant="default" padding="md" className="border border-stock-border" radius="md">
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center">
-                <Icon
-                  family="MaterialIcons"
-                  name="warning"
-                  size={20}
-                  color="#F59E0B"
-                />
-                <Typography
-                  variant="body"
-                  weight="semibold"
-                  className="text-stock-dark ml-2"
-                >
+                <Icon family="MaterialIcons" name="warning" size={20} color="#F59E0B" />
+                <Typography variant="body" weight="semibold" className="text-stock-dark ml-2">
                   Kritik Seviye
                 </Typography>
               </View>
               <View className="px-3 py-1 rounded-full bg-yellow-100">
-                <Typography
-                  variant="caption"
-                  className="text-yellow-700"
-                  weight="medium"
-                >
+                <Typography variant="caption" className="text-yellow-700" weight="medium">
                   Uyarı
                 </Typography>
               </View>
@@ -451,22 +342,16 @@ export default function StockDetailPage() {
             {editMode ? (
               <Input
                 value={formData.criticalProductCount}
-                onChangeText={(value) =>
-                  handleInputChange("criticalProductCount", value)
-                }
+                onChangeText={(value) => handleInputChange("criticalProductCount", value)}
                 placeholder="0"
                 keyboardType="numeric"
                 variant="outlined"
+                numericOnly
                 className="mt-2"
               />
             ) : (
-              <Typography
-                variant="h2"
-                weight="bold"
-                className="text-yellow-600"
-              >
-                {inventoryDetail.criticalProductCount.toLocaleString("tr-TR")}{" "}
-                adet
+              <Typography variant="h2" weight="bold" className="text-yellow-600">
+                {inventoryDetail.criticalProductCount.toLocaleString("tr-TR")} adet
               </Typography>
             )}
 
@@ -491,9 +376,7 @@ export default function StockDetailPage() {
               className="bg-stock-red"
             >
               <Typography className="text-white" weight="bold">
-                {updateInventoryMutation.isPending
-                  ? "Güncelleniyor..."
-                  : "GÜNCELLE"}
+                {updateInventoryMutation.isPending ? "Güncelleniyor..." : "GÜNCELLE"}
               </Typography>
             </Button>
 

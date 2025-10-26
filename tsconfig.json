@@ -5,14 +5,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@/components/*": ["./components/*"],
-      "@/stores/*": ["./stores/*"],
-      "@/services/*": ["./src/services/*"],
-      "@/types/*": ["./types/*"],
-      "@/utils/*": ["./utils/*"],
-      "@/hooks/*": ["./hooks/*"],
-      "@/src/*": ["./src/*"],
-      "@/styles/*": ["./styles/*"]
+      "@/src/*": ["./src/*"]
     },
     "resolveJsonModule": true
   },

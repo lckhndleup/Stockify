@@ -17,17 +17,20 @@ export { default as Checkbox } from "./checkbox";
 export { default as Toast } from "./toast";
 export { default as SelectBox } from "./selectbox";
 
-// Type Exports (optional, useful for TypeScript users)
-export type { default as ContainerProps } from "./container";
-export type { default as ButtonProps } from "./button";
-export type { default as TypographyProps } from "./typography";
-export type { default as CardProps } from "./card";
-export type { default as InputProps } from "./input";
-export type { default as IconProps } from "./icon";
-export type { default as LoadingProps } from "./loading";
-export type { default as ModalProps } from "./modal";
-export type { default as TabProps } from "./tab";
-export type { default as BottomSheetProps } from "./bottomsheet";
-export type { default as CheckboxProps } from "./checkbox";
-export type { default as ToastProps } from "./toast";
-export type { default as SelectBoxProps } from "./selectbox";
+// Type Exports (re-exported from central types)
+export type {
+  ContainerProps,
+  ButtonProps,
+  TypographyProps,
+  CardProps,
+  InputProps,
+  IconProps,
+  LoadingProps,
+  ModalProps,
+  TabProps,
+  BottomSheetProps,
+  CheckboxProps,
+  ToastProps,
+  SelectBoxProps,
+  SelectBoxOption,
+} from "@/src/types/ui";

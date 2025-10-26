@@ -1,5 +1,5 @@
 // app/broker/sections/salesSection.tsx
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { View, ScrollView, Alert, TouchableOpacity, Text } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -14,7 +14,6 @@ import {
   Modal,
   Checkbox,
   Loading,
-  // @ts-ignore TODOMALİ
   type SelectBoxOption,
   Toast,
 } from "@/src/components/ui";
@@ -22,11 +21,9 @@ import { useToast } from "@/src/hooks/useToast";
 import { useNavigation } from "@react-navigation/native";
 
 // BACKEND HOOKS
-import {
-  useActiveBrokers,
-  useUpdateBrokerDiscountRate,
-} from "@/src/hooks/api/useBrokers";
+import { useActiveBrokers, useUpdateBrokerDiscountRate } from "@/src/hooks/api/useBrokers";
 import { useSalesProducts, useSalesCalculate } from "@/src/hooks/api/useSales";
+import { validateDiscountRate } from "@/src/validations/brokerValidation";
 import {
   useBasket,
   useAddToBasket,
@@ -34,7 +31,6 @@ import {
   useUpdateBasket,
 } from "@/src/hooks/api/useBasket";
 
-import { apiService } from "@/src/services/api";
 // tipler (swagger ile uyumlu)
 import type { SalesSummary } from "@/src/types/sales";
 import type { AddedProduct } from "@/src/types/salesUI";
@@ -47,11 +43,7 @@ export default function SalesSection() {
   const { toast, showSuccess, showError } = useToast();
 
   // BACKEND: brokers
-  const {
-    data: brokers = [],
-    isLoading: brokersLoading,
-    error: brokersError,
-  } = useActiveBrokers();
+  const { data: brokers = [], isLoading: brokersLoading, error: brokersError } = useActiveBrokers();
 
   // BACKEND: products
   const {
@@ -61,10 +53,9 @@ export default function SalesSection() {
   } = useSalesProducts({ enabled: true });
 
   // BACKEND: basket (liste)
-  const { data: basketItems = [], isLoading: basketLoading } = useBasket(
-    brokerIdNum,
-    { enabled: !!brokerIdNum }
-  );
+  const { data: basketItems = [], isLoading: basketLoading } = useBasket(brokerIdNum, {
+    enabled: !!brokerIdNum,
+  });
 
   // BACKEND: basket mutations
   const addToBasketMutation = useAddToBasket();
@@ -85,9 +76,7 @@ export default function SalesSection() {
 
   // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<AddedProduct | null>(
-    null
-  );
+  const [editingProduct, setEditingProduct] = useState<AddedProduct | null>(null);
   const [editQuantity, setEditQuantity] = useState("");
   const [editQuantityError, setEditQuantityError] = useState("");
 
@@ -95,14 +84,12 @@ export default function SalesSection() {
   const [discountModalVisible, setDiscountModalVisible] = useState(false);
   const [discountValue, setDiscountValue] = useState("");
   const [discountError, setDiscountError] = useState("");
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Find broker from loaded backend data
   const broker = brokers.find((b: any) => String(b.id) === String(brokerId));
   const brokerDebt = broker
-    ? (broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0
+    ? ((broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0)
     : 0;
 
   const brokerDiscount = broker?.discountRate || 0;
@@ -135,14 +122,12 @@ export default function SalesSection() {
                     });
                   },
                 },
-              ]
+              ],
             );
           }}
           style={{ paddingLeft: 16 }}
         >
-          <Text style={{ color: "#E3001B", fontSize: 16, fontWeight: "600" }}>
-            İptal
-          </Text>
+          <Text style={{ color: "#E3001B", fontSize: 16, fontWeight: "600" }}>İptal</Text>
         </TouchableOpacity>
       ),
     });
@@ -164,39 +149,32 @@ export default function SalesSection() {
   }, [basketItems]);
 
   // Ürün seçenekleri (sepette olanları gizle)
-  const addedIds = new Set(addedProducts.map((p) => p.id));
-  const activeProducts = salesProducts || [];
-  const availableProducts = useMemo(
-    () =>
-      (activeProducts || []).filter(
-        (p: any) => !addedIds.has(String(p.id ?? p.productId))
-      ),
-    [activeProducts, addedIds]
-  );
+  const availableProducts = useMemo(() => {
+    const ids = new Set(addedProducts.map((p) => p.id));
+    const products = salesProducts || [];
+    return (products || []).filter((p: any) => !ids.has(String(p.id ?? p.productId)));
+  }, [salesProducts, addedProducts]);
 
-  const productOptions: SelectBoxOption[] = (availableProducts || []).map(
-    (product: any) => {
-      const rate = getTaxRate(product);
-      return {
-        label: `${product.name} (Stok: ${product.stock}, ₺${
-          product.unitPrice ?? product.price
-        }/adet${rate != null ? ` + KDV %${rate}` : ""})`,
-        value: String(product.id ?? product.productId),
-      };
-    }
-  );
+  const productOptions: SelectBoxOption[] = (availableProducts || []).map((product: any) => {
+    const rate = getTaxRate(product);
+    return {
+      label: `${product.name} (Stok: ${product.stock}, ₺${
+        product.unitPrice ?? product.price
+      }/adet${rate != null ? ` + KDV %${rate}` : ""})`,
+      value: String(product.id ?? product.productId),
+    };
+  });
 
   // Seçilen ürün bilgisi
   const selectedProductData = availableProducts.find(
-    (p: any) => String(p.id ?? p.productId) === selectedProduct
+    (p: any) => String(p.id ?? p.productId) === selectedProduct,
   );
 
   /* --------------------- Adet doğrulamaları (yerel) --------------------- */
   const validateQtyFormat = (value: string) => {
     if (!value || !/^\d+$/.test(value)) return "Geçersiz adet";
     const n = Number(value);
-    if (!Number.isInteger(n) || n <= 0)
-      return "Adet 1 veya daha büyük olmalıdır";
+    if (!Number.isInteger(n) || n <= 0) return "Adet 1 veya daha büyük olmalıdır";
     return "";
   };
 
@@ -227,7 +205,7 @@ export default function SalesSection() {
   };
 
   // Toplamı /sales/calculate ile güncelle
-  const recalcTotals = async () => {
+  const recalcTotals = useCallback(async () => {
     if (!brokerIdNum) return;
     try {
       const res = await calcMutation.mutateAsync({
@@ -239,7 +217,7 @@ export default function SalesSection() {
       // sepet boş vs.
       setSummary(null);
     }
-  };
+  }, [brokerIdNum, createInvoice, calcMutation]);
 
   // Ürün ekle (POST /basket/add)
   const handleAddProduct = async () => {
@@ -309,12 +287,10 @@ export default function SalesSection() {
       }
       const qty = parseInt(text, 10);
       const original = salesProducts.find(
-        (p: any) => String(p.id ?? p.productId) === editingProduct?.id
+        (p: any) => String(p.id ?? p.productId) === editingProduct?.id,
       ) as any;
       if (original && qty > original.stock) {
-        setEditQuantityError(
-          `Yetersiz stok! Mevcut stok: ${original.stock} adet`
-        );
+        setEditQuantityError(`Yetersiz stok! Mevcut stok: ${original.stock} adet`);
       } else {
         setEditQuantityError("");
       }
@@ -323,51 +299,8 @@ export default function SalesSection() {
     }
   };
 
-  // Ürün adedi güncelle (öncelik /basket/update, fallback remove→add)
-  const updateBasketQuantity = async (
-    productId: number,
-    productCount: number
-  ) => {
-    const svc: any = apiService as any;
-
-    // 1) apiService.updateBasket varsa
-    if (typeof svc.updateBasket === "function") {
-      return await svc.updateBasket({
-        brokerId: brokerIdNum,
-        productId,
-        productCount,
-      });
-    }
-
-    // 2) Düşük seviye request ile deneyelim
-    if (typeof svc.request === "function") {
-      try {
-        await svc.request("/basket/update", {
-          method: "POST",
-          body: JSON.stringify({
-            brokerId: brokerIdNum,
-            productId,
-            productCount,
-          }),
-        });
-        return { success: true };
-      } catch {
-        // fallback'e düş
-      }
-    }
-
-    // 3) Fallback: remove → add
-    await removeFromBasketMutation.mutateAsync({
-      brokerId: brokerIdNum,
-      productId,
-    });
-    await addToBasketMutation.mutateAsync({
-      brokerId: brokerIdNum,
-      productId,
-      productCount,
-    });
-    return { success: true };
-  };
+  // Ürün adedi güncelle (
+  // Not: Sepet güncellemeleri için doğrudan updateBasketMutation kullanılıyor.)
 
   const handleSaveEdit = async () => {
     if (!editingProduct || !editQuantity || !!editQuantityError) return;
@@ -405,19 +338,11 @@ export default function SalesSection() {
     setDiscountModalVisible(true);
   };
 
-  const {
-    validateDiscountRate,
-  } = require("@/src/validations/brokerValidation");
-
   const handleDiscountChange = (text: string) => {
     setDiscountValue(text);
     const validation = validateDiscountRate(text);
     setValidationErrors(validation.errors);
-    setDiscountError(
-      validation.isValid
-        ? ""
-        : validation.errors.discountRate || "Geçersiz değer"
-    );
+    setDiscountError(validation.isValid ? "" : validation.errors.discountRate || "Geçersiz değer");
   };
 
   const handleSaveDiscount = async () => {
@@ -459,8 +384,7 @@ export default function SalesSection() {
       return;
     }
     recalcTotals();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createInvoice, basketItems]);
+  }, [brokerIdNum, basketItems, recalcTotals]);
 
   // Confirm sayfasına geçiş
   const handleCompleteSale = () => {
@@ -482,7 +406,9 @@ export default function SalesSection() {
             totalPrice: p.totalPriceWithTax ?? p.totalPrice,
             taxRate: p.taxRate,
             taxPrice: p.taxPrice,
-          }))
+          })),
+          null,
+          0,
         ),
         createInvoice: createInvoice.toString(),
       },
@@ -546,18 +472,13 @@ export default function SalesSection() {
               brokerDebt >= 0 ? "text-stock-red" : "text-stock-green"
             } text-center mt-0`}
           >
-            Bakiye: {brokerDebt >= 0 ? "" : "-"}₺
-            {Math.abs(brokerDebt).toLocaleString()}
+            Bakiye: {brokerDebt >= 0 ? "" : "-"}₺{Math.abs(brokerDebt).toLocaleString()}
           </Typography>
         </View>
 
         {/* İskonto & Fatura */}
         <View className="flex-row gap-3 mb-4">
-          <TouchableOpacity
-            className="flex-1"
-            onPress={handleDiscountPress}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity className="flex-1" onPress={handleDiscountPress} activeOpacity={0.8}>
             <Card
               variant="default"
               padding="sm"
@@ -644,9 +565,7 @@ export default function SalesSection() {
                   fullWidth
                   className="bg-stock-red"
                   onPress={handleAddProduct}
-                  disabled={
-                    !quantity || !!quantityError || parseInt(quantity, 10) <= 0
-                  }
+                  disabled={!quantity || !!quantityError || parseInt(quantity, 10) <= 0}
                 >
                   <Typography className="text-white" weight="semibold">
                     EKLE
@@ -668,11 +587,7 @@ export default function SalesSection() {
                 color="#22C55E"
                 containerClassName="mr-2"
               />
-              <Typography
-                variant="body"
-                className="text-green-700 text-center"
-                weight="medium"
-              >
+              <Typography variant="body" className="text-green-700 text-center" weight="medium">
                 Tüm ürünler sepete eklendi
               </Typography>
             </View>
@@ -689,11 +604,7 @@ export default function SalesSection() {
         {/* Eklenen Ürünler */}
         {addedProducts.length > 0 && (
           <View className={`mb-4 ${addedProducts.length >= 3 ? "mb-8" : ""}`}>
-            <Typography
-              variant="h4"
-              weight="semibold"
-              className="text-stock-dark mb-4"
-            >
+            <Typography variant="h4" weight="semibold" className="text-stock-dark mb-4">
               EKLENEN ÜRÜNLER
             </Typography>
 
@@ -707,23 +618,17 @@ export default function SalesSection() {
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
-                    <Typography
-                      variant="body"
-                      weight="semibold"
-                      className="text-stock-dark mb-1"
-                    >
+                    <Typography variant="body" weight="semibold" className="text-stock-dark mb-1">
                       {product.name}
                     </Typography>
 
                     <Typography variant="caption" className="text-stock-text">
-                      {product.quantity} adet × ₺
-                      {product.unitPrice.toLocaleString()}
+                      {product.quantity} adet × ₺{product.unitPrice.toLocaleString()}
                     </Typography>
 
                     {product.taxRate != null && (
                       <Typography variant="caption" className="text-stock-text">
-                        KDV %{product.taxRate} = ₺
-                        {(product.taxPrice ?? 0).toLocaleString()}
+                        KDV %{product.taxRate} = ₺{(product.taxPrice ?? 0).toLocaleString()}
                       </Typography>
                     )}
                   </View>
@@ -756,36 +661,20 @@ export default function SalesSection() {
             {/* Toplam Hesaplaması (backend calculate) */}
             <View className="bg-stock-gray p-4 rounded-lg mb-4">
               <View className="flex-row justify-between items-center mb-2">
-                <Typography
-                  variant="body"
-                  weight="medium"
-                  className="text-stock-dark"
-                >
+                <Typography variant="body" weight="medium" className="text-stock-dark">
                   Alt Toplam:
                 </Typography>
-                <Typography
-                  variant="body"
-                  weight="semibold"
-                  className="text-stock-dark"
-                >
+                <Typography variant="body" weight="semibold" className="text-stock-dark">
                   ₺{(summary?.subtotalPrice ?? 0).toLocaleString()}
                 </Typography>
               </View>
 
               {(summary?.discountPrice ?? 0) > 0 && (
                 <View className="flex-row justify-between items-center mb-2">
-                  <Typography
-                    variant="body"
-                    weight="medium"
-                    className="text-stock-red"
-                  >
+                  <Typography variant="body" weight="medium" className="text-stock-red">
                     İskonto (%{summary?.discountRate ?? brokerDiscount}):
                   </Typography>
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    className="text-stock-red"
-                  >
+                  <Typography variant="body" weight="semibold" className="text-stock-red">
                     -₺{(summary?.discountPrice ?? 0).toLocaleString()}
                   </Typography>
                 </View>
@@ -793,36 +682,20 @@ export default function SalesSection() {
 
               {/* İskontodan sonraki ara toplam (KDV hariç) */}
               <View className="flex-row justify-between items-center mb-2">
-                <Typography
-                  variant="body"
-                  weight="medium"
-                  className="text-stock-dark"
-                >
+                <Typography variant="body" weight="medium" className="text-stock-dark">
                   Ara Toplam (KDV hariç):
                 </Typography>
-                <Typography
-                  variant="body"
-                  weight="semibold"
-                  className="text-stock-dark"
-                >
+                <Typography variant="body" weight="semibold" className="text-stock-dark">
                   ₺{(summary?.totalPrice ?? 0).toLocaleString()}
                 </Typography>
               </View>
 
               {/* Toplam KDV */}
               <View className="flex-row justify-between items-center mb-2">
-                <Typography
-                  variant="body"
-                  weight="medium"
-                  className="text-stock-dark"
-                >
+                <Typography variant="body" weight="medium" className="text-stock-dark">
                   KDV Toplamı:
                 </Typography>
-                <Typography
-                  variant="body"
-                  weight="semibold"
-                  className="text-stock-dark"
-                >
+                <Typography variant="body" weight="semibold" className="text-stock-dark">
                   ₺{(summary?.totalTaxPrice ?? 0).toLocaleString()}
                 </Typography>
               </View>
@@ -830,18 +703,10 @@ export default function SalesSection() {
               <Divider className="my-2" />
 
               <View className="flex-row justify-between items-center">
-                <Typography
-                  variant="body"
-                  weight="bold"
-                  className="text-stock-black"
-                >
+                <Typography variant="body" weight="bold" className="text-stock-black">
                   Genel Toplam (KDV dahil):
                 </Typography>
-                <Typography
-                  variant="h3"
-                  weight="bold"
-                  className="text-stock-red"
-                >
+                <Typography variant="h3" weight="bold" className="text-stock-red">
                   ₺{(summary?.totalPriceWithTax ?? 0).toLocaleString()}
                 </Typography>
               </View>
@@ -854,14 +719,7 @@ export default function SalesSection() {
               fullWidth
               className="bg-stock-red mb-16"
               onPress={handleCompleteSale}
-              leftIcon={
-                <Icon
-                  family="Ionicons"
-                  name="checkmark-circle"
-                  size={20}
-                  color="white"
-                />
-              }
+              leftIcon={<Icon family="Ionicons" name="checkmark-circle" size={20} color="white" />}
             >
               <Typography className="text-white" weight="bold">
                 SATIŞI TAMAMLA
@@ -881,8 +739,7 @@ export default function SalesSection() {
               containerClassName="mb-4"
             />
             <Typography variant="body" className="text-stock-text text-center">
-              Henüz ürün eklenmedi.{"\n"}Yukarıdan ürün seçerek satış listesi
-              oluşturun.
+              Henüz ürün eklenmedi.{"\n"}Yukarıdan ürün seçerek satış listesi oluşturun.
             </Typography>
           </View>
         )}
@@ -901,11 +758,7 @@ export default function SalesSection() {
         <View>
           {editingProduct && (
             <>
-              <Typography
-                variant="body"
-                weight="semibold"
-                className="text-stock-dark mb-4"
-              >
+              <Typography variant="body" weight="semibold" className="text-stock-dark mb-4">
                 {editingProduct.name}
               </Typography>
 
@@ -930,15 +783,9 @@ export default function SalesSection() {
 
               {editQuantity && !editQuantityError && (
                 <View className="bg-blue-50 p-3 rounded-lg mb-4">
-                  <Typography
-                    variant="caption"
-                    className="text-blue-700"
-                    weight="medium"
-                  >
+                  <Typography variant="caption" className="text-blue-700" weight="medium">
                     Yeni Toplam: ₺
-                    {(
-                      parseInt(editQuantity, 10) * editingProduct.unitPrice
-                    ).toLocaleString()}
+                    {(parseInt(editQuantity, 10) * editingProduct.unitPrice).toLocaleString()}
                   </Typography>
                 </View>
               )}
@@ -1002,9 +849,7 @@ export default function SalesSection() {
               }
             >
               <Typography className="text-white">
-                {updateDiscountRateMutation.isPending
-                  ? "Güncelleniyor..."
-                  : "Güncelle"}
+                {updateDiscountRateMutation.isPending ? "Güncelleniyor..." : "Güncelle"}
               </Typography>
             </Button>
             <Button
@@ -1021,11 +866,7 @@ export default function SalesSection() {
       </Modal>
 
       {/* Toast */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
     </Container>
   );
 }

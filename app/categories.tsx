@@ -1,6 +1,6 @@
 // app/categories.tsx
 import React, { useState } from "react";
-import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
+import { ScrollView, View, Alert } from "react-native";
 
 import {
   Container,
@@ -15,6 +15,7 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
+import logger from "@/src/utils/logger";
 
 // Backend hooks - DELETE HOOK EKLENDİ
 import {
@@ -38,11 +39,7 @@ const validateCategoryForm = (name: string, taxRate: string) => {
 
   if (!taxRate.trim()) {
     errors.taxRate = "KDV oranı zorunludur";
-  } else if (
-    isNaN(Number(taxRate)) ||
-    Number(taxRate) < 0 ||
-    Number(taxRate) > 100
-  ) {
+  } else if (isNaN(Number(taxRate)) || Number(taxRate) < 0 || Number(taxRate) > 100) {
     errors.taxRate = "KDV oranı 0-100 arası olmalıdır";
   }
 
@@ -54,19 +51,15 @@ export default function CategoriesPage() {
 
   // Category Modal States
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-  const [isEditCategoryModalVisible, setIsEditCategoryModalVisible] =
-    useState(false);
-  const [editingCategory, setEditingCategory] =
-    useState<CategoryDisplay | null>(null);
+  const [isEditCategoryModalVisible, setIsEditCategoryModalVisible] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryDisplay | null>(null);
 
   // Category Form States
   const [categoryName, setCategoryName] = useState("");
   const [categoryTaxRate, setCategoryTaxRate] = useState("");
 
   // Validation Error States
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // BACKEND HOOKS
   // React Query Hook - BACKEND CATEGORIES
@@ -134,11 +127,9 @@ export default function CategoriesPage() {
                 taxRate: taxRate,
               };
 
-              console.log("💾 Saving category to backend:", categoryFormData);
+              logger.debug("💾 Saving category to backend:", categoryFormData);
 
-              const result = await createCategoryMutation.mutateAsync(
-                categoryFormData
-              );
+              const result = await createCategoryMutation.mutateAsync(categoryFormData);
 
               if (result) {
                 handleCategoryModalClose();
@@ -150,12 +141,12 @@ export default function CategoriesPage() {
                 throw new Error("Backend'den geçersiz yanıt alındı");
               }
             } catch (error) {
-              console.error("❌ Category save error:", error);
+              logger.error("❌ Category save error:", error);
               showError("Kategori eklenirken bir hata oluştu!");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -206,10 +197,7 @@ export default function CategoriesPage() {
                 taxRate: taxRate,
               };
 
-              console.log(
-                "✏️ Updating category in backend:",
-                categoryUpdateData
-              );
+              logger.debug("✏️ Updating category in backend:", categoryUpdateData);
 
               await updateCategoryMutation.mutateAsync(categoryUpdateData);
 
@@ -219,12 +207,12 @@ export default function CategoriesPage() {
               // Kategorileri yenile
               refetchCategories();
             } catch (error) {
-              console.error("❌ Category update error:", error);
+              logger.error("❌ Category update error:", error);
               showError("Kategori güncellenirken bir hata oluştu!");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -240,7 +228,7 @@ export default function CategoriesPage() {
           style: "destructive",
           onPress: async () => {
             try {
-              console.log("🗑️ Deleting category from backend:", category.id);
+              logger.debug("🗑️ Deleting category from backend:", category.id);
 
               await deleteCategoryMutation.mutateAsync(Number(category.id));
 
@@ -249,21 +237,18 @@ export default function CategoriesPage() {
               // Kategorileri yenile
               refetchCategories();
             } catch (error) {
-              console.error("❌ Category delete error:", error);
+              logger.error("❌ Category delete error:", error);
               showError("Kategori silinirken bir hata oluştu!");
             }
           },
         },
-      ]
+      ],
     );
   };
 
   // Filtering
-  const getFilteredCategories = () => {
-    return categories.filter((category) =>
-      category.name.toLowerCase().includes(searchText.toLowerCase())
-    );
-  };
+  const getFilteredCategories = () =>
+    categories.filter((category) => category.name.toLowerCase().includes(searchText.toLowerCase()));
 
   const filteredCategories = getFilteredCategories();
 
@@ -284,17 +269,10 @@ export default function CategoriesPage() {
           <Typography className="text-red-600 text-center mb-4">
             Veriler yüklenirken bir hata oluştu
           </Typography>
-          <Typography
-            variant="caption"
-            className="text-gray-500 text-center mb-4"
-          >
+          <Typography variant="caption" className="text-gray-500 text-center mb-4">
             {categoriesErrorMessage?.message || "Bilinmeyen hata"}
           </Typography>
-          <Button
-            onPress={() => refetchCategories()}
-            variant="primary"
-            size="md"
-          >
+          <Button onPress={() => refetchCategories()} variant="primary" size="md">
             Yeniden Dene
           </Button>
         </View>
@@ -305,12 +283,7 @@ export default function CategoriesPage() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search ve Add Butonu */}
@@ -351,11 +324,7 @@ export default function CategoriesPage() {
                   >
                     {category.name}
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    size="sm"
-                    className="text-stock-text mt-1"
-                  >
+                  <Typography variant="caption" size="sm" className="text-stock-text mt-1">
                     KDV Oranı: %{category.taxRate}
                   </Typography>
                 </View>
@@ -414,9 +383,7 @@ export default function CategoriesPage() {
             className="bg-stock-red"
             onPress={handleAddCategory}
             loading={createCategoryMutation.isPending}
-            leftIcon={
-              <Icon family="MaterialIcons" name="add" size={20} color="white" />
-            }
+            leftIcon={<Icon family="MaterialIcons" name="add" size={20} color="white" />}
           >
             Yeni Kategori Ekle
           </Button>

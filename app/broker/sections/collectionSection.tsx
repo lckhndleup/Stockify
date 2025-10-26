@@ -1,7 +1,7 @@
 // app/broker/sections/confirmSales.tsx
 import React, { useState } from "react";
 import { View, ScrollView, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import {
   Container,
   Typography,
@@ -12,19 +12,15 @@ import {
   Toast,
   Loading,
 } from "@/src/components/ui";
-import type { SelectBoxOption } from "@/src/types/ui";
 import { useToast } from "@/src/hooks/useToast";
+import logger from "@/src/utils/logger";
 
 // Backend hooks
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useCreatePayment } from "@/src/hooks/api/usePayments";
 
 // Payment types
-import {
-  PaymentFormData,
-  PAYMENT_TYPE_OPTIONS,
-  PAYMENT_TYPE_LABELS,
-} from "@/src/types/payment";
+import { PaymentFormData, PAYMENT_TYPE_OPTIONS, PAYMENT_TYPE_LABELS } from "@/src/types/payment";
 
 export default function CollectionSection() {
   // Hooks
@@ -32,11 +28,7 @@ export default function CollectionSection() {
   const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Backend hooks
-  const {
-    data: brokers = [],
-    isLoading: brokersLoading,
-    error: brokersError,
-  } = useActiveBrokers();
+  const { data: brokers = [], isLoading: brokersLoading, error: brokersError } = useActiveBrokers();
 
   const createPaymentMutation = useCreatePayment();
 
@@ -97,8 +89,7 @@ export default function CollectionSection() {
     }
 
     const amountValue = parseFloat(amount);
-    const paymentTypeLabel =
-      PAYMENT_TYPE_LABELS[paymentType as keyof typeof PAYMENT_TYPE_LABELS];
+    const paymentTypeLabel = PAYMENT_TYPE_LABELS[paymentType as keyof typeof PAYMENT_TYPE_LABELS];
 
     Alert.alert(
       "Tahsilat Onayı",
@@ -118,7 +109,7 @@ export default function CollectionSection() {
                 paymentType: paymentType as any,
               };
 
-              console.log("🎯 Creating payment with backend:", {
+              logger.debug("🎯 Creating payment with backend:", {
                 brokerId,
                 paymentData,
               });
@@ -128,26 +119,21 @@ export default function CollectionSection() {
                 paymentData,
               });
 
-              console.log(
-                "✅ Payment created successfully via backend:",
-                result
-              );
+              logger.debug("✅ Payment created successfully via backend:", result);
 
-              showSuccess(
-                `₺${amountValue.toLocaleString()} tutarında tahsilat başarıyla alındı!`
-              );
+              showSuccess(`₺${amountValue.toLocaleString()} tutarında tahsilat başarıyla alındı!`);
 
               // Formu sıfırla
               setPaymentType("");
               setAmount("");
               setAmountError("");
             } catch (error) {
-              console.error("❌ Backend payment creation failed:", error);
+              logger.error("❌ Backend payment creation failed:", error);
               showError("Tahsilat işlemi başarısız oldu.");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -178,12 +164,7 @@ export default function CollectionSection() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       {/* Backend Error Bilgilendirme */}
       {brokersError && (
@@ -208,12 +189,9 @@ export default function CollectionSection() {
           <Typography
             variant="body"
             weight="semibold"
-            className={`${
-              brokerBalance >= 0 ? "text-stock-red" : "text-stock-green"
-            } text-center mt-0`}
+            className={`${brokerBalance >= 0 ? "text-stock-red" : "text-stock-green"} text-center mt-0`}
           >
-            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺
-            {Math.abs(brokerBalance).toLocaleString()}
+            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺{Math.abs(brokerBalance).toLocaleString()}
           </Typography>
         </View>
 
@@ -224,11 +202,7 @@ export default function CollectionSection() {
           className="border border-stock-border mb-4"
           radius="md"
         >
-          <Typography
-            variant="h4"
-            weight="semibold"
-            className="text-stock-dark mb-4 text-center"
-          >
+          <Typography variant="h4" weight="semibold" className="text-stock-dark mb-4 text-center">
             TAHSİLAT FORMU
           </Typography>
 
@@ -252,9 +226,7 @@ export default function CollectionSection() {
             error={amountError}
             helperText={
               !amountError
-                ? `Mevcut bakiye: ${brokerBalance >= 0 ? "" : "-"}₺${Math.abs(
-                    brokerBalance
-                  ).toLocaleString()}`
+                ? `Mevcut bakiye: ${brokerBalance >= 0 ? "" : "-"}₺${Math.abs(brokerBalance).toLocaleString()}`
                 : ""
             }
             className="mb-6"
@@ -263,44 +235,24 @@ export default function CollectionSection() {
           {/* Bilgi Notu */}
           {paymentType && amount && !amountError && (
             <View className="bg-blue-50 p-3 rounded-lg mb-4">
-              <Typography
-                variant="caption"
-                className="text-blue-700"
-                weight="medium"
-              >
-                {
-                  PAYMENT_TYPE_LABELS[
-                    paymentType as keyof typeof PAYMENT_TYPE_LABELS
-                  ]
-                }{" "}
-                ile ₺{parseFloat(amount).toLocaleString()} tahsil edilecek.
+              <Typography variant="caption" className="text-blue-700" weight="medium">
+                {`${
+                  PAYMENT_TYPE_LABELS[paymentType as keyof typeof PAYMENT_TYPE_LABELS]
+                } ile ₺${parseFloat(amount).toLocaleString()} tahsil edilecek.`}
               </Typography>
 
               {brokerBalance > 0 && parseFloat(amount) > 0 && (
-                <Typography
-                  variant="caption"
-                  className="text-blue-700 mt-1"
-                  weight="medium"
-                >
-                  Yeni bakiye:{" "}
+                <Typography variant="caption" className="text-blue-700 mt-1" weight="medium">
+                  Yeni bakiye:
                   {brokerBalance - parseFloat(amount) >= 0
-                    ? `₺${(
-                        brokerBalance - parseFloat(amount)
-                      ).toLocaleString()}`
-                    : `-₺${Math.abs(
-                        brokerBalance - parseFloat(amount)
-                      ).toLocaleString()}`}
-                  {brokerBalance - parseFloat(amount) < 0 &&
-                    " (Aracının alacağı olacak)"}
+                    ? `₺${(brokerBalance - parseFloat(amount)).toLocaleString()}`
+                    : `-₺${Math.abs(brokerBalance - parseFloat(amount)).toLocaleString()}`}
+                  {brokerBalance - parseFloat(amount) < 0 && " (Aracının alacağı olacak)"}
                 </Typography>
               )}
 
               {brokerBalance <= 0 && (
-                <Typography
-                  variant="caption"
-                  className="text-blue-700 mt-1"
-                  weight="medium"
-                >
+                <Typography variant="caption" className="text-blue-700 mt-1" weight="medium">
                   Aracının zaten alacağı var: {brokerBalance >= 0 ? "" : "-"}₺
                   {Math.abs(brokerBalance).toLocaleString()}
                 </Typography>
@@ -316,17 +268,10 @@ export default function CollectionSection() {
             className="bg-stock-red"
             onPress={handleCollection}
             loading={createPaymentMutation.isPending}
-            disabled={
-              !paymentType ||
-              !amount ||
-              !!amountError ||
-              createPaymentMutation.isPending
-            }
+            disabled={!paymentType || !amount || !!amountError || createPaymentMutation.isPending}
           >
             <Typography className="text-white" weight="bold">
-              {createPaymentMutation.isPending
-                ? "TAHSİL EDİLİYOR..."
-                : "TAHSİLATI TAMAMLA"}
+              {createPaymentMutation.isPending ? "TAHSİL EDİLİYOR..." : "TAHSİLATI TAMAMLA"}
             </Typography>
           </Button>
         </Card>
@@ -334,8 +279,8 @@ export default function CollectionSection() {
         {/* Yardım Notu */}
         <View className="items-center py-4 mb-4">
           <Typography variant="caption" className="text-stock-text text-center">
-            Bu ekrandan yapılan tahsilatlar, aracının bakiye hesabına otomatik
-            olarak yansıtılacaktır.
+            Bu ekrandan yapılan tahsilatlar, aracının bakiye hesabına otomatik olarak
+            yansıtılacaktır.
           </Typography>
         </View>
       </ScrollView>
