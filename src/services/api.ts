@@ -1,12 +1,5 @@
 // src/services/api.ts
-import type {
-  LoginRequest,
-  LoginResponse,
-  LogoutResponse,
-  ApiError,
-  TransactionRequest,
-  TransactionResponse,
-} from "@/src/types/apiTypes";
+import type { ApiError } from "@/src/types/apiTypes";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
 import Constants from "expo-constants";
@@ -210,34 +203,6 @@ class ApiService {
         clearTimeout(timeoutId);
       } catch {}
     }
-  }
-
-  // -------------------- Auth --------------------
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
-    logger.debug("🔐 API Login called with:", {
-      username: credentials.username,
-      rememberMe: credentials.rememberMe,
-    });
-
-    return this.request<LoginResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials), // rememberMe da gönderilecek
-    });
-  }
-
-  // 👈 YENİ: Logout API method
-  async logout(): Promise<LogoutResponse> {
-    logger.info("🚪 API Logout called");
-
-    if (!this.token) {
-      logger.warn("⚠️ No token available for logout");
-      return { success: true, message: "Zaten çıkış yapılmış" };
-    }
-
-    return this.request<LogoutResponse>("/auth/logout", {
-      method: "DELETE",
-      // Authorization header otomatik olarak ekleniyor
-    });
   }
 
   // -------------------- Category --------------------
@@ -837,38 +802,6 @@ class ApiService {
       return result;
     } catch (error) {
       logger.error("🛑 API: Cancel sale error:", error);
-      throw error;
-    }
-  }
-
-  // -------------------- Transaction --------------------
-  /** GET /transaction/all */
-  async getTransactions(params: TransactionRequest): Promise<TransactionResponse> {
-    try {
-      console.log("📊 API: Fetching transactions:", params);
-
-      const queryParams = new URLSearchParams();
-      queryParams.append("brokerId", params.brokerId.toString());
-      queryParams.append("startDate", params.startDate.toString());
-      queryParams.append("endDate", params.endDate.toString());
-
-      const queryString = queryParams.toString();
-      const url = `/transaction/all?${queryString}`;
-
-      const result = await this.request<TransactionResponse>(url, {
-        method: "GET",
-      });
-
-      console.log(
-        "✅ API: Transactions fetched - Total:",
-        result.totalElements,
-        "Pages:",
-        result.totalPages,
-      );
-
-      return result;
-    } catch (error) {
-      console.log("📊 API: Transactions fetch error:", error);
       throw error;
     }
   }

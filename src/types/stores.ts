@@ -15,11 +15,7 @@ export interface AuthStore {
   rememberMe: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (
-    username: string,
-    password: string,
-    rememberMe: boolean
-  ) => Promise<boolean>;
+  login: (username: string, password: string, rememberMe: boolean) => Promise<boolean>;
   logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   clearError: () => void;
@@ -37,10 +33,7 @@ export interface GlobalToast {
 
 export interface AppStore {
   globalToast: GlobalToast;
-  showGlobalToast: (
-    message: string,
-    type?: "success" | "error" | "warning" | "info"
-  ) => void;
+  showGlobalToast: (message: string, type?: "success" | "error" | "warning" | "info") => void;
   hideGlobalToast: () => void;
 }
 

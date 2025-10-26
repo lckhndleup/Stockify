@@ -22,6 +22,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@tanstack/react-query": "^5.86.0",
     "@tanstack/react-query-persist-client": "^5.86.0",
+    "axios": "^1.12.2",
     "dayjs": "^1.11.13",
     "expo": "^54.0.20",
     "expo-constants": "~18.0.10",
