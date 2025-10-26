@@ -27,6 +27,8 @@ export interface BrokerDisplayItem {
 export interface BrokerFormData {
   firstName: string;
   lastName: string;
+  email: string;
+  vkn: string;
   discountRate: number;
 }
 
@@ -56,18 +58,18 @@ export const adaptBrokerForUI = (broker: Broker): BrokerDisplayItem => ({
 });
 
 // UI form'undan backend format'ına çevir
-export const adaptBroker = (
-  formData: BrokerFormData
-): Omit<BrokerFormData, "id"> => ({
+export const adaptBroker = (formData: BrokerFormData): Omit<BrokerFormData, "id"> => ({
   firstName: formData.firstName.trim(),
   lastName: formData.lastName.trim(),
   discountRate: formData.discountRate,
+  email: formData.email.trim(),
+  vkn: formData.vkn.trim(),
 });
 
 // Update için backend format'ına çevir
 export const adaptBrokerUpdate = (
   brokerId: number,
-  formData: { firstName: string; lastName: string; discountRate: number }
+  formData: { firstName: string; lastName: string; discountRate: number },
 ): BrokerUpdateData => ({
   brokerId,
   firstName: formData.firstName.trim(),

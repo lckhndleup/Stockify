@@ -1,5 +1,12 @@
 // src/services/api.ts
-import type { LoginRequest, LoginResponse, LogoutResponse, ApiError } from "@/src/types/apiTypes";
+import type {
+  LoginRequest,
+  LoginResponse,
+  LogoutResponse,
+  ApiError,
+  TransactionRequest,
+  TransactionResponse,
+} from "@/src/types/apiTypes";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
 import Constants from "expo-constants";
@@ -832,6 +839,81 @@ class ApiService {
       logger.error("🛑 API: Cancel sale error:", error);
       throw error;
     }
+  }
+
+  // -------------------- Transaction --------------------
+  /** GET /transaction/all */
+  async getTransactions(params: TransactionRequest): Promise<TransactionResponse> {
+    try {
+      console.log("📊 API: Fetching transactions:", params);
+
+      const queryParams = new URLSearchParams();
+      queryParams.append("brokerId", params.brokerId.toString());
+      queryParams.append("startDate", params.startDate.toString());
+      queryParams.append("endDate", params.endDate.toString());
+
+      const queryString = queryParams.toString();
+      const url = `/transaction/all?${queryString}`;
+
+      const result = await this.request<TransactionResponse>(url, {
+        method: "GET",
+      });
+
+      console.log(
+        "✅ API: Transactions fetched - Total:",
+        result.totalElements,
+        "Pages:",
+        result.totalPages,
+      );
+
+      return result;
+    } catch (error) {
+      console.log("📊 API: Transactions fetch error:", error);
+      throw error;
+    }
+  }
+
+  // -------------------- Document Download (with auth) --------------------
+  /** Download document with authentication */
+  async downloadDocument(url: string): Promise<Blob> {
+    try {
+      console.log("📄 API: Downloading document from:", url);
+
+      // Token'ı header'a ekle
+      const headers: Record<string, string> = {};
+      if (this.token) {
+        headers.Authorization = `Bearer ${this.token}`;
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers,
+      });
+
+      if (!response.ok) {
+        throw {
+          message: "Belge indirilemedi",
+          status: response.status,
+        } as ApiError;
+      }
+
+      const blob = await response.blob();
+      console.log("✅ API: Document downloaded, size:", blob.size);
+
+      return blob;
+    } catch (error) {
+      console.log("📄 API: Document download error:", error);
+      throw error;
+    }
+  }
+
+  // Return headers that include Authorization if token exists
+  getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers.Authorization = `Bearer ${this.token}`;
+    }
+    return headers;
   }
 }
 

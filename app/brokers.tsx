@@ -41,6 +41,8 @@ export default function BrokersPage() {
   // Form states
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
+  const [email, setEmail] = useState("");
+  const [vkn, setVKN] = useState("");
   const [brokerDiscount, setBrokerDiscount] = useState(""); // Yeni iskonto alanı
   const [editingBroker, setEditingBroker] = useState<BrokerDisplayItem | null>(null);
 
@@ -122,7 +124,13 @@ export default function BrokersPage() {
   // Backend entegreli broker ekleme
   const handleSaveBroker = async () => {
     // Form validation
-    const validation = validateBrokerForm(brokerName, brokerSurname, brokerDiscount || "0");
+    const validation = validateBrokerForm(
+      brokerName,
+      brokerSurname,
+      brokerDiscount || "0",
+      email,
+      vkn,
+    );
     setValidationErrors(validation.errors);
 
     if (!validation.isValid) {
@@ -147,6 +155,8 @@ export default function BrokersPage() {
                 firstName: brokerName.trim(),
                 lastName: brokerSurname.trim(),
                 discountRate: discountRate,
+                email: email.trim(),
+                vkn: vkn.trim(),
               };
 
               logger.debug("🎯 Creating broker with backend:", brokerData);
@@ -170,7 +180,13 @@ export default function BrokersPage() {
     if (!editingBroker) return;
 
     // Form validation
-    const validation = validateBrokerForm(brokerName, brokerSurname, brokerDiscount || "0");
+    const validation = validateBrokerForm(
+      brokerName,
+      brokerSurname,
+      brokerDiscount || "0",
+      email,
+      vkn,
+    );
     setValidationErrors(validation.errors);
 
     if (!validation.isValid) {
@@ -354,6 +370,26 @@ export default function BrokersPage() {
             variant="outlined"
             className="mb-4"
             error={validationErrors.lastName}
+          />
+
+          <Input
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Aracının email adresini girin..."
+            variant="outlined"
+            className="mb-4"
+            error={validationErrors.email}
+          />
+
+          <Input
+            label="VKN"
+            value={vkn}
+            onChangeText={setVKN}
+            placeholder="Aracının VKN bilgisini girin..."
+            variant="outlined"
+            className="mb-4"
+            error={validationErrors.vkn}
           />
 
           <Input

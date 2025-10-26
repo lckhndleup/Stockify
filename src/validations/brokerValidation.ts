@@ -54,7 +54,9 @@ export const discountRateSchema = z.object({
 export const validateBrokerForm = (
   firstName: string,
   lastName: string,
-  discountRate: string
+  discountRate: string,
+  email: string,
+  vkn: string,
 ) => {
   const errors: Record<string, string> = {};
 
@@ -72,6 +74,22 @@ export const validateBrokerForm = (
     errors.lastName = "Soyad en az 2 karakter olmalıdır";
   } else if (lastName.trim().length > 50) {
     errors.lastName = "Soyad en fazla 50 karakter olabilir";
+  }
+
+  if (!email.trim()) {
+    errors.email = "Email zorunludur";
+  } else if (email.trim().length < 2) {
+    errors.email = "Email en az 2 karakter olmalıdır";
+  } else if (email.trim().length > 50) {
+    errors.email = "Email en fazla 50 karakter olabilir";
+  }
+
+  if (!vkn.trim()) {
+    errors.vkn = "VKN zorunludur";
+  } else if (vkn.trim().length < 2) {
+    errors.vkn = "VKN en az 2 karakter olmalıdır";
+  } else if (vkn.trim().length > 50) {
+    errors.vkn = "VKN en fazla 50 karakter olabilir";
   }
 
   if (!discountRate.trim()) {
