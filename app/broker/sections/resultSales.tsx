@@ -2,20 +2,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, BackHandler, ScrollView, View, Linking } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import {
-  Container,
-  Typography,
-  Card,
-  Button,
-  Icon,
-  Divider,
-  Loading,
-} from "@/src/components/ui";
+import { Container, Typography, Card, Button, Icon, Divider, Loading } from "@/src/components/ui";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useSalesCalculate } from "@/src/hooks/api/useSales";
-import type { SalesItem, SalesSummaryResult } from "@/src/types/salesUI";
+import type { SalesSummaryResult } from "@/src/types/salesUI";
 import SuccessAnimation from "@/src/components/svg/successAnimation";
 import type { SuccessAnimationRef } from "@/src/types/svg";
+import logger from "@/src/utils/logger";
 
 export default function ResultSales() {
   const params = useLocalSearchParams();
@@ -25,7 +18,6 @@ export default function ResultSales() {
     totalAmount,
     discountAmount,
     createInvoice,
-    documentNumber,
     downloadUrl,
     summaryJSON,
   } = params;
@@ -35,38 +27,28 @@ export default function ResultSales() {
   const successAnimationRef = useRef<SuccessAnimationRef>(null);
 
   // Backend brokers
-  const {
-    data: brokers = [],
-    isLoading: brokersLoading,
-    error: brokersError,
-  } = useActiveBrokers();
+  const { data: brokers = [], isLoading: brokersLoading } = useActiveBrokers();
 
   // Backend broker
   const broker = useMemo(
     () => (brokers || []).find((b: any) => String(b.id) === String(brokerId)),
-    [brokers, brokerId]
+    [brokers, brokerId],
   );
 
   // Ad Soyad – API > Local
-  const displayName = broker
-    ? `${broker.name ?? ""} ${broker.surname ?? ""}`.trim()
-    : "Aracı";
+  const displayName = broker ? `${broker.name ?? ""} ${broker.surname ?? ""}`.trim() : "Aracı";
 
   // Confirm’den gelen özet (opsiyonel)
   const summary: SalesSummaryResult | null = useMemo(() => {
     try {
-      return summaryJSON
-        ? (JSON.parse(summaryJSON as string) as SalesSummaryResult)
-        : null;
+      return summaryJSON ? (JSON.parse(summaryJSON as string) as SalesSummaryResult) : null;
     } catch {
       return null;
     }
   }, [summaryJSON]);
 
   // ✅ Backend’den calculate sonucu da çek (confirm yoksa buradan göster)
-  const [calcSummary, setCalcSummary] = useState<SalesSummaryResult | null>(
-    null
-  );
+  const [calcSummary, setCalcSummary] = useState<SalesSummaryResult | null>(null);
   const calcMutation = useSalesCalculate();
 
   useEffect(() => {
@@ -78,14 +60,14 @@ export default function ResultSales() {
           brokerId: Number(brokerId),
           createInvoice: willCreateInvoice,
         });
-        console.log("🧮 [ResultSales] /sales/calculate response:", res);
+        logger.debug("🧮 [ResultSales] /sales/calculate response:", res);
         setCalcSummary(res);
       } catch (e) {
-        console.log("⚠️ [ResultSales] calculate error:", e);
+        logger.error("⚠️ [ResultSales] calculate error:", e);
         setCalcSummary(null);
       }
     })();
-  }, [isSuccess, brokerId, willCreateInvoice, summary]);
+  }, [isSuccess, brokerId, willCreateInvoice, summary, calcMutation]);
 
   // Ekranda kullanılacak özet: önce confirm’den gelen, yoksa backend calculate
   const summaryToShow: SalesSummaryResult | null = summary ?? calcSummary;
@@ -94,23 +76,21 @@ export default function ResultSales() {
   const totalWithTax =
     typeof totalAmount === "string"
       ? Number(totalAmount) || 0
-      : summaryToShow?.totalPriceWithTax ?? 0;
+      : (summaryToShow?.totalPriceWithTax ?? 0);
 
   const discountValue =
     typeof discountAmount === "string"
       ? Number(discountAmount) || 0
-      : summaryToShow?.discountPrice ?? 0;
+      : (summaryToShow?.discountPrice ?? 0);
 
   // Broker balance - sadece backend'den
-  const Balance = broker
-    ? (broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0
-    : 0;
+  const Balance = broker ? ((broker as any)?.currentBalance ?? (broker as any)?.balance ?? 0) : 0;
 
   /* =========================
      LOGS (isteğin doğrultusunda)
      ========================= */
   useEffect(() => {
-    console.log("🧾 [ResultSales] Broker resolve", {
+    logger.debug("🧾 [ResultSales] Broker resolve", {
       brokerId,
       source: "API",
       brokerFound: !!broker,
@@ -122,9 +102,8 @@ export default function ResultSales() {
   }, [brokerId, broker]);
 
   useEffect(() => {
-    const parsedParam =
-      typeof totalAmount === "string" ? Number(totalAmount) || 0 : 0;
-    console.log("🧮 [ResultSales] Totals", {
+    const parsedParam = typeof totalAmount === "string" ? Number(totalAmount) || 0 : 0;
+    logger.debug("🧮 [ResultSales] Totals", {
       totalAmountParam: totalAmount,
       parsedTotalAmount: parsedParam,
       summaryTotalWithTax: summaryToShow?.totalPriceWithTax,
@@ -136,14 +115,10 @@ export default function ResultSales() {
   // Android back – ana sayfaya sorarak dön
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      Alert.alert(
-        "Sayfadan Ayrıl",
-        "Ana sayfaya dönmek istediğinizden emin misiniz?",
-        [
-          { text: "Kal", style: "cancel" },
-          { text: "Ana Sayfa", onPress: () => router.push("/") },
-        ]
-      );
+      Alert.alert("Sayfadan Ayrıl", "Ana sayfaya dönmek istediğinizden emin misiniz?", [
+        { text: "Kal", style: "cancel" },
+        { text: "Ana Sayfa", onPress: () => router.push("/") },
+      ]);
       return true;
     });
     return () => sub.remove();
@@ -160,8 +135,7 @@ export default function ResultSales() {
     });
   const handleOpenInvoice = async () => {
     const url =
-      (typeof downloadUrl === "string" && downloadUrl) ||
-      (summaryToShow?.downloadUrl ?? "");
+      (typeof downloadUrl === "string" && downloadUrl) || (summaryToShow?.downloadUrl ?? "");
     if (!url) return;
     try {
       await Linking.openURL(url);
@@ -194,17 +168,6 @@ export default function ResultSales() {
           >
             {displayName || "Aracı"}
           </Typography>
-          <Typography
-            variant="body"
-            weight="semibold"
-            className={`${
-              Balance >= 0 ? "text-stock-red" : "text-stock-green"
-            } text-center mt-0`}
-          >
-            {/* Bakiye: ₺{Number(Balance).toLocaleString()} */}
-            Bakiye: {Balance >= 0 ? "" : "-"}₺
-            {Math.abs(Balance).toLocaleString()}
-          </Typography>
         </View>
 
         {/* BAŞARI/BAŞARISIZ GÖRSEL + BAŞLIK */}
@@ -232,9 +195,7 @@ export default function ResultSales() {
           variant="h2"
           weight="bold"
           size="2xl"
-          className={`${
-            isSuccess ? "text-green-600" : "text-red-600"
-          } text-center mb-6`}
+          className={`${isSuccess ? "text-green-600" : "text-red-600"} text-center mb-6`}
         >
           {isSuccess ? "SATIŞ TAMAMLANDI!" : "SATIŞ BAŞARISIZ!"}
         </Typography>
@@ -250,10 +211,7 @@ export default function ResultSales() {
             <View className="flex-row justify-between py-1">
               <Typography className="text-stock-dark">Alt Toplam:</Typography>
               <Typography weight="semibold" className="text-stock-dark">
-                ₺
-                {(
-                  summaryToShow?.totalPriceWithTax ?? totalWithTax
-                ).toLocaleString()}
+                ₺{(summaryToShow?.totalPriceWithTax ?? totalWithTax).toLocaleString()}
               </Typography>
             </View>
 
@@ -261,24 +219,16 @@ export default function ResultSales() {
               <View className="flex-row justify-between py-1">
                 <Typography className="text-stock-red">
                   İskonto
-                  {summaryToShow?.discountRate
-                    ? ` (%${summaryToShow.discountRate})`
-                    : ""}
-                  :
+                  {summaryToShow?.discountRate ? ` (%${summaryToShow.discountRate})` : ""}:
                 </Typography>
                 <Typography weight="semibold" className="text-stock-red">
-                  -₺
-                  {(
-                    summaryToShow?.discountPrice ?? discountValue
-                  ).toLocaleString()}
+                  -₺{(summaryToShow?.discountPrice ?? discountValue).toLocaleString()}
                 </Typography>
               </View>
             )}
 
             <View className="flex-row justify-between py-1">
-              <Typography className="text-stock-dark">
-                Ara Toplam (KDV hariç):
-              </Typography>
+              <Typography className="text-stock-dark">Ara Toplam (KDV hariç):</Typography>
               <Typography weight="semibold" className="text-stock-dark">
                 ₺{(summaryToShow?.totalPrice ?? 0).toLocaleString()}
               </Typography>
@@ -294,18 +244,11 @@ export default function ResultSales() {
             <Divider className="my-3" />
 
             <View className="flex-row justify-between items-center">
-              <Typography
-                variant="body"
-                weight="bold"
-                className="text-stock-black"
-              >
+              <Typography variant="body" weight="bold" className="text-stock-black">
                 Genel Toplam (KDV dahil):
               </Typography>
               <Typography variant="h3" weight="bold" className="text-stock-red">
-                ₺
-                {(
-                  summaryToShow?.totalPriceWithTax ?? totalWithTax
-                ).toLocaleString()}
+                ₺{(summaryToShow?.totalPriceWithTax ?? totalWithTax).toLocaleString()}
               </Typography>
             </View>
           </Card>
@@ -313,8 +256,7 @@ export default function ResultSales() {
 
         {/* PDF / BELGE İNDİR – kartın hemen altında */}
         {isSuccess &&
-          ((typeof downloadUrl === "string" && downloadUrl) ||
-            summaryToShow?.downloadUrl) && (
+          ((typeof downloadUrl === "string" && downloadUrl) || summaryToShow?.downloadUrl) && (
             <View className="mb-8">
               <Button
                 variant="secondary"
@@ -322,14 +264,7 @@ export default function ResultSales() {
                 fullWidth
                 className="bg-white border border-stock-border"
                 onPress={handleOpenInvoice}
-                leftIcon={
-                  <Icon
-                    family="MaterialIcons"
-                    name="download"
-                    size={20}
-                    color="#16A34A"
-                  />
-                }
+                leftIcon={<Icon family="MaterialIcons" name="download" size={20} color="#16A34A" />}
               >
                 <Typography className="text-stock-dark" weight="bold">
                   PDF/Belgeyi İndir
@@ -355,11 +290,7 @@ export default function ResultSales() {
                 containerClassName="mr-3"
               />
               <View className="flex-1">
-                <Typography
-                  variant="body"
-                  className="text-blue-700"
-                  weight="medium"
-                >
+                <Typography variant="body" className="text-blue-700" weight="medium">
                   Fatura oluşturuldu
                 </Typography>
                 <Typography variant="caption" className="text-blue-600">
@@ -378,14 +309,7 @@ export default function ResultSales() {
             fullWidth
             className="border-stock-red"
             onPress={handleGoToHome}
-            leftIcon={
-              <Icon
-                family="MaterialIcons"
-                name="home"
-                size={20}
-                color="#E3001B"
-              />
-            }
+            leftIcon={<Icon family="MaterialIcons" name="home" size={20} color="#E3001B" />}
           >
             <Typography className="text-stock-red" weight="bold">
               ANA SAYFAYA GİT
@@ -401,12 +325,7 @@ export default function ResultSales() {
                 className="bg-stock-gray"
                 onPress={handleNewSale}
                 leftIcon={
-                  <Icon
-                    family="MaterialIcons"
-                    name="add-shopping-cart"
-                    size={20}
-                    color="#67686A"
-                  />
+                  <Icon family="MaterialIcons" name="add-shopping-cart" size={20} color="#67686A" />
                 }
               >
                 <Typography className="text-stock-dark" weight="bold">
@@ -420,14 +339,7 @@ export default function ResultSales() {
                 fullWidth
                 className="bg-stock-red"
                 onPress={handleGoToBrokerDetail}
-                leftIcon={
-                  <Icon
-                    family="MaterialIcons"
-                    name="person"
-                    size={20}
-                    color="white"
-                  />
-                }
+                leftIcon={<Icon family="MaterialIcons" name="person" size={20} color="white" />}
               >
                 <Typography className="text-white" weight="bold">
                   ARACI DETAYINA GİT
@@ -441,14 +353,7 @@ export default function ResultSales() {
               fullWidth
               className="bg-stock-red"
               onPress={handleNewSale}
-              leftIcon={
-                <Icon
-                  family="MaterialIcons"
-                  name="refresh"
-                  size={20}
-                  color="white"
-                />
-              }
+              leftIcon={<Icon family="MaterialIcons" name="refresh" size={20} color="white" />}
             >
               <Typography className="text-white" weight="bold">
                 TEKRAR DENE

@@ -15,6 +15,7 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
+import logger from "@/src/utils/logger";
 
 // API Hooks
 import {
@@ -29,7 +30,7 @@ export default function StockPage() {
   const [activeTab, setActiveTab] = useState("all");
 
   // Toast
-  const { toast, showSuccess, showError, hideToast } = useToast();
+  const { toast, hideToast } = useToast();
 
   // API Hooks
   const {
@@ -66,10 +67,7 @@ export default function StockPage() {
   };
 
   const handleProductPress = (inventoryItem: InventoryDisplayItem) => {
-    console.log(
-      "Navigating to stock detail for inventory ID:",
-      inventoryItem.inventoryId
-    );
+    logger.debug("Navigating to stock detail for inventory ID:", inventoryItem.inventoryId);
     router.push(`/stockDetail?id=${inventoryItem.inventoryId}`);
   };
 
@@ -103,7 +101,7 @@ export default function StockPage() {
 
     // Search filter
     return inventoryToFilter.filter((item) =>
-      item.productName.toLowerCase().includes(searchText.toLowerCase())
+      item.productName.toLowerCase().includes(searchText.toLowerCase()),
     );
   };
 
@@ -128,30 +126,14 @@ export default function StockPage() {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
         <View className="flex-1 justify-center items-center -mt-16">
-          <Icon
-            family="MaterialIcons"
-            name="error-outline"
-            size={64}
-            color="#E3001B"
-          />
-          <Typography
-            variant="h3"
-            weight="bold"
-            className="text-stock-red mt-4 mb-2"
-          >
+          <Icon family="MaterialIcons" name="error-outline" size={64} color="#E3001B" />
+          <Typography variant="h3" weight="bold" className="text-stock-red mt-4 mb-2">
             Bağlantı Hatası
           </Typography>
-          <Typography
-            variant="body"
-            className="text-stock-text text-center mb-6"
-          >
+          <Typography variant="body" className="text-stock-text text-center mb-6">
             Stok verileri yüklenirken bir hata oluştu. Lütfen tekrar deneyiniz.
           </Typography>
-          <Button
-            variant="primary"
-            onPress={handleRetry}
-            className="bg-stock-red"
-          >
+          <Button variant="primary" onPress={handleRetry} className="bg-stock-red">
             Tekrar Dene
           </Button>
         </View>
@@ -172,20 +154,11 @@ export default function StockPage() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search Bar */}
-        <SearchBar
-          placeholder="Ürün ara..."
-          onSearch={handleSearch}
-          className="mb-3"
-        />
+        <SearchBar placeholder="Ürün ara..." onSearch={handleSearch} className="mb-3" />
 
         {/* İstatistikler */}
         {!isLoading && (
@@ -197,17 +170,10 @@ export default function StockPage() {
               radius="md"
             >
               <View className="items-center">
-                <Typography
-                  variant="h3"
-                  weight="bold"
-                  className="text-blue-600"
-                >
+                <Typography variant="h3" weight="bold" className="text-blue-600">
                   {stats.totalProducts}
                 </Typography>
-                <Typography
-                  variant="caption"
-                  className="text-blue-500 text-center"
-                >
+                <Typography variant="caption" className="text-blue-500 text-center">
                   Toplam Ürün
                 </Typography>
               </View>
@@ -220,20 +186,13 @@ export default function StockPage() {
               radius="md"
             >
               <View className="items-center">
-                <Typography
-                  variant="h3"
-                  weight="bold"
-                  className="text-green-600"
-                >
+                <Typography variant="h3" weight="bold" className="text-green-600">
                   {stats.totalValue.toLocaleString("tr-TR", {
                     maximumFractionDigits: 0,
                   })}{" "}
                   ₺
                 </Typography>
-                <Typography
-                  variant="caption"
-                  className="text-green-500 text-center"
-                >
+                <Typography variant="caption" className="text-green-500 text-center">
                   Toplam Değer
                 </Typography>
               </View>
@@ -246,17 +205,10 @@ export default function StockPage() {
               radius="md"
             >
               <View className="items-center">
-                <Typography
-                  variant="h3"
-                  weight="bold"
-                  className="text-yellow-600"
-                >
+                <Typography variant="h3" weight="bold" className="text-yellow-600">
                   {stats.criticalProducts}
                 </Typography>
-                <Typography
-                  variant="caption"
-                  className="text-yellow-500 text-center"
-                >
+                <Typography variant="caption" className="text-yellow-500 text-center">
                   Kritik Stok
                 </Typography>
               </View>
@@ -272,10 +224,7 @@ export default function StockPage() {
                 <Typography variant="h3" weight="bold" className="text-red-600">
                   {stats.outOfStockProducts}
                 </Typography>
-                <Typography
-                  variant="caption"
-                  className="text-red-500 text-center"
-                >
+                <Typography variant="caption" className="text-red-500 text-center">
                   Tükenen
                 </Typography>
               </View>
@@ -285,12 +234,7 @@ export default function StockPage() {
 
         {/* Tab Navigation */}
         <View className="mb-4">
-          <Tab
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            variant="pills"
-          />
+          <Tab tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} variant="pills" />
         </View>
 
         {/* Content */}
@@ -324,8 +268,8 @@ export default function StockPage() {
                             item.isOutOfStock
                               ? "bg-red-100"
                               : item.isCritical
-                              ? "bg-yellow-100"
-                              : "bg-green-100"
+                                ? "bg-yellow-100"
+                                : "bg-green-100"
                           }`}
                         >
                           <Typography
@@ -334,8 +278,8 @@ export default function StockPage() {
                               item.isOutOfStock
                                 ? "text-red-700"
                                 : item.isCritical
-                                ? "text-yellow-700"
-                                : "text-green-700"
+                                  ? "text-yellow-700"
+                                  : "text-green-700"
                             }
                             weight="medium"
                           >
@@ -347,10 +291,7 @@ export default function StockPage() {
                       {/* Alt Bilgiler */}
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1">
-                          <Typography
-                            variant="caption"
-                            className="text-stock-text"
-                          >
+                          <Typography variant="caption" className="text-stock-text">
                             {item.categoryName} • {item.inventoryCode}
                           </Typography>
                           <View className="flex-row items-center mt-1">
@@ -361,10 +302,7 @@ export default function StockPage() {
                             >
                               {item.productCount.toLocaleString("tr-TR")} adet
                             </Typography>
-                            <Typography
-                              variant="caption"
-                              className="text-stock-text mx-1"
-                            >
+                            <Typography variant="caption" className="text-stock-text mx-1">
                               •
                             </Typography>
                             <Typography
@@ -383,17 +321,10 @@ export default function StockPage() {
 
                         {/* Toplam Değer */}
                         <View className="items-end">
-                          <Typography
-                            variant="caption"
-                            className="text-stock-text"
-                          >
+                          <Typography variant="caption" className="text-stock-text">
                             Toplam Değer
                           </Typography>
-                          <Typography
-                            variant="body"
-                            weight="bold"
-                            className="text-stock-red"
-                          >
+                          <Typography variant="body" weight="bold" className="text-stock-red">
                             {item.totalPrice.toLocaleString("tr-TR", {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
@@ -417,12 +348,7 @@ export default function StockPage() {
             ))}
           </View>
         ) : (
-          <Card
-            variant="default"
-            padding="lg"
-            className="border border-stock-border"
-            radius="md"
-          >
+          <Card variant="default" padding="lg" className="border border-stock-border" radius="md">
             <View className="items-center">
               <Icon
                 family="MaterialCommunityIcons"
@@ -430,17 +356,14 @@ export default function StockPage() {
                 size={48}
                 color="#73767A"
               />
-              <Typography
-                variant="body"
-                className="text-stock-text text-center mt-3"
-              >
+              <Typography variant="body" className="text-stock-text text-center mt-3">
                 {searchText
                   ? "Arama kriterlerine uygun ürün bulunamadı."
                   : activeTab === "critical"
-                  ? "Kritik seviyede ürün bulunamadı."
-                  : activeTab === "outofstock"
-                  ? "Tükenen ürün bulunamadı."
-                  : "Ürün bulunamadı."}
+                    ? "Kritik seviyede ürün bulunamadı."
+                    : activeTab === "outofstock"
+                      ? "Tükenen ürün bulunamadı."
+                      : "Ürün bulunamadı."}
               </Typography>
             </View>
           </Card>

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
+import logger from "@/src/utils/logger";
 
 import { useLangStore } from "../stores/useLangStore";
 
@@ -16,7 +17,7 @@ export default function useLanguageLoader() {
           dayjs.locale(lang === "tr" ? "tr" : "en");
         }
       } catch (error) {
-        console.error("Language loading error:", error);
+        logger.error("Language loading error:", error);
       }
     };
 

@@ -3,11 +3,16 @@ const { withNativeWind } = require("nativewind/metro");
 
 const config = getDefaultConfig(__dirname);
 
-// JSON dosyaları için resolver ayarı
-config.resolver.assetExts.push("json");
+// JSON dosyalarını asset olarak ele al (Lottie vb.) ve sourceExts'den çıkar
+config.resolver.assetExts = [...config.resolver.assetExts, "json"];
+config.resolver.sourceExts = config.resolver.sourceExts.filter(
+  (ext) => ext !== "json"
+);
 
 // CSS dosyaları için (NativeWind)
-config.resolver.sourceExts.push("css");
+config.resolver.sourceExts = [
+  ...new Set([...config.resolver.sourceExts, "css"]),
+];
 
 // Src klasörü için watchFolders
 config.watchFolders = [__dirname];

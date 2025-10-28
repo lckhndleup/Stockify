@@ -1,14 +1,14 @@
 // app/broker/brokerDetail.tsx
 
 import React, { useState, useEffect } from "react";
-import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
+import { ScrollView, View, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
+import logger from "@/src/utils/logger";
 
 import {
   Container,
   Typography,
   Card,
-  Divider,
   Icon,
   Button,
   Toast,
@@ -28,7 +28,7 @@ import {
 import { validateBrokerForm } from "@/src/validations/brokerValidation";
 
 export default function BrokerDetailPage() {
-  console.log("🔍 BrokerDetailPage render started");
+  logger.debug("🔍 BrokerDetailPage render started");
 
   // ✅ HOOKS - DOĞRU SIRADA ÇAĞRILMALI
   const { brokerId } = useLocalSearchParams();
@@ -46,16 +46,15 @@ export default function BrokerDetailPage() {
   const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
 
   // ✅ STATE'LER - HOOKS'LARDAN SONRA
-  const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] =
-    useState(false);
+  const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] = useState(false);
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
+  const [brokerEmail, setBrokerEmail] = useState("");
+  const [brokerVkn, setBrokerVkn] = useState("");
   const [brokerDiscount, setBrokerDiscount] = useState("");
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  console.log("📝 BrokerDetailPage state initialized:", {
+  logger.debug("📝 BrokerDetailPage state initialized:", {
     brokerId,
     brokersCount: allBrokers.length,
     isEditModalVisible: isEditBrokerModalVisible,
@@ -70,7 +69,7 @@ export default function BrokerDetailPage() {
   // Balance hesaplama - Backend'den gelen balance kullan
   const totalDebt = broker ? broker.balance : 0;
 
-  console.log("🔎 Broker lookup result:", {
+  logger.debug("🔎 Broker lookup result:", {
     brokerId,
     brokerFound: !!broker,
     brokerName: broker?.name,
@@ -81,20 +80,20 @@ export default function BrokerDetailPage() {
 
   // ✅ EFFECT'LER - STATE'LERDEN SONRA
   useEffect(() => {
-    console.log("🔄 useEffect - Broker check:", {
+    logger.debug("🔄 useEffect - Broker check:", {
       broker: !!broker,
       brokerId,
       shouldNavigate: !broker && brokerId && !brokersLoading,
     });
 
     if (!broker && brokerId && !brokersLoading) {
-      console.log("🚀 Navigation triggered - broker not found");
+      logger.debug("🚀 Navigation triggered - broker not found");
       router.replace("/brokers");
     }
   }, [broker, brokerId, brokersLoading]);
 
   useEffect(() => {
-    console.log("🔄 useEffect - Broker state update:", {
+    logger.debug("🔄 useEffect - Broker state update:", {
       broker: !!broker,
       name: broker?.name,
       surname: broker?.surname,
@@ -104,13 +103,15 @@ export default function BrokerDetailPage() {
     if (broker) {
       setBrokerName(broker.name);
       setBrokerSurname(broker.surname);
+      setBrokerEmail((broker as any).email || "");
+      setBrokerVkn((broker as any).vkn || "");
       setBrokerDiscount(broker.discountRate?.toString() || "0");
     }
   }, [broker]);
 
   // ✅ ERKEN RETURN - TÜM HOOKS'LARDAN SONRA
   if (brokersLoading) {
-    console.log("⚠️ Early return - brokers loading");
+    logger.debug("⚠️ Early return - brokers loading");
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
@@ -121,7 +122,7 @@ export default function BrokerDetailPage() {
   }
 
   if (!broker) {
-    console.log("⚠️ Early return - broker not found, showing loading");
+    logger.debug("⚠️ Early return - broker not found, showing loading");
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <Loading size="large" />
@@ -129,30 +130,34 @@ export default function BrokerDetailPage() {
     );
   }
 
-  console.log("✅ Continuing with broker found:", broker.name);
+  logger.debug("✅ Continuing with broker found:", broker.name);
 
   // ✅ HANDLER FUNCTIONS
   const handleEditBroker = () => {
-    console.log("✏️ Edit broker triggered");
+    logger.debug("✏️ Edit broker triggered");
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
+    setBrokerEmail((broker as any).email || "");
+    setBrokerVkn((broker as any).vkn || "");
     setBrokerDiscount(broker.discountRate?.toString() || "0");
     setValidationErrors({});
     setIsEditBrokerModalVisible(true);
   };
 
   const handleCloseEditBrokerModal = () => {
-    console.log("❌ Close edit modal");
+    logger.debug("❌ Close edit modal");
     setIsEditBrokerModalVisible(false);
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
+    setBrokerEmail((broker as any).email || "");
+    setBrokerVkn((broker as any).vkn || "");
     setBrokerDiscount(broker.discountRate?.toString() || "0");
     setValidationErrors({});
   };
 
   // ✅ AKILLI UPDATE HANDLER
   const handleUpdateBroker = async () => {
-    console.log("💾 Update broker:", {
+    logger.debug("💾 Update broker:", {
       brokerName,
       brokerSurname,
       brokerDiscount,
@@ -162,7 +167,9 @@ export default function BrokerDetailPage() {
     const validation = validateBrokerForm(
       brokerName,
       brokerSurname,
-      brokerDiscount || "0"
+      brokerEmail,
+      brokerVkn,
+      brokerDiscount || "0",
     );
     setValidationErrors(validation.errors);
 
@@ -175,8 +182,7 @@ export default function BrokerDetailPage() {
 
     // Hangi alanlar değişmiş?
     const isNameChanged =
-      brokerName.trim() !== broker.name ||
-      brokerSurname.trim() !== broker.surname;
+      brokerName.trim() !== broker.name || brokerSurname.trim() !== broker.surname;
     const isDiscountChanged = discountRate !== (broker.discountRate || 0);
 
     if (!isNameChanged && !isDiscountChanged) {
@@ -198,32 +204,32 @@ export default function BrokerDetailPage() {
               // ✅ AKILLI ENDPOINT SEÇİMİ
               if (!isNameChanged && isDiscountChanged) {
                 // Sadece discount rate değişmişse özel endpoint kullan
-                console.log(
-                  "💰 Only discount rate changed, using discount endpoint"
-                );
+                logger.debug("💰 Only discount rate changed, using discount endpoint");
                 await updateDiscountRateMutation.mutateAsync({
                   brokerId: broker.id,
                   discountRate: discountRate,
                 });
-                console.log("✅ Discount rate updated via backend");
+                logger.debug("✅ Discount rate updated via backend");
               } else {
                 // İsim de değişmişse normal update endpoint
-                console.log("🔄 Name changed, using full update endpoint");
+                logger.debug("🔄 Name changed, using full update endpoint");
                 await updateBrokerMutation.mutateAsync({
                   brokerId: broker.id,
                   brokerData: {
                     firstName: brokerName.trim(),
                     lastName: brokerSurname.trim(),
+                    email: brokerEmail.trim(),
+                    vkn: brokerVkn.trim(),
                     discountRate: discountRate,
                   },
                 });
-                console.log("✅ Broker updated via backend");
+                logger.debug("✅ Broker updated via backend");
               }
 
               handleCloseEditBrokerModal();
               showSuccess("Aracı başarıyla güncellendi!");
             } catch (error: any) {
-              console.error("❌ Update broker error:", error);
+              logger.error("❌ Update broker error:", error);
 
               // Özel hata handling
               if (
@@ -231,7 +237,7 @@ export default function BrokerDetailPage() {
                 error?.message?.includes("Already Used")
               ) {
                 showError(
-                  "Bu isimde başka bir aracı zaten mevcut. Lütfen farklı bir isim kullanın."
+                  "Bu isimde başka bir aracı zaten mevcut. Lütfen farklı bir isim kullanın.",
                 );
                 return;
               }
@@ -240,13 +246,13 @@ export default function BrokerDetailPage() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
   // Delete handler
   const handleDeleteBroker = () => {
-    console.log("🗑️ Delete broker triggered:", broker.name);
+    logger.debug("🗑️ Delete broker triggered:", broker.name);
 
     Alert.alert(
       "Aracı Sil",
@@ -260,22 +266,22 @@ export default function BrokerDetailPage() {
             try {
               const brokerName = `${broker.name} ${broker.surname}`;
 
-              console.log("🗑️ Delete broker via backend");
+              logger.debug("🗑️ Delete broker via backend");
               await deleteBrokerMutation.mutateAsync(broker.id);
-              console.log("✅ Broker deleted via backend");
+              logger.debug("✅ Broker deleted via backend");
 
-              console.log("🚀 Navigate to brokers");
+              logger.debug("🚀 Navigate to brokers");
               router.push("/brokers");
 
-              console.log("🎉 Show success message");
+              logger.debug("🎉 Show success message");
               showSuccess(`${brokerName} başarıyla silindi!`);
             } catch (error) {
-              console.error("❌ Delete broker error:", error);
+              logger.error("❌ Delete broker error:", error);
               showError("Aracı silinirken bir hata oluştu.");
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -308,17 +314,12 @@ export default function BrokerDetailPage() {
     });
   };
 
-  console.log("🎨 Rendering BrokerDetailPage with broker:", broker.name);
+  logger.debug("🎨 Rendering BrokerDetailPage with broker:", broker.name);
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       {/* Backend Error Bilgilendirme */}
       {brokersError && (
@@ -343,12 +344,9 @@ export default function BrokerDetailPage() {
           <Typography
             variant="body"
             weight="semibold"
-            className={`${
-              totalDebt >= 0 ? "text-stock-red" : "text-stock-green"
-            } text-center mt-0`}
+            className={`${totalDebt >= 0 ? "text-stock-red" : "text-stock-green"} text-center mt-0`}
           >
-            Bakiye: {totalDebt >= 0 ? "" : "-"}₺
-            {Math.abs(totalDebt).toLocaleString()}
+            Bakiye: {totalDebt >= 0 ? "" : "-"}₺{Math.abs(totalDebt).toLocaleString()}
           </Typography>
         </View>
 
@@ -381,12 +379,7 @@ export default function BrokerDetailPage() {
                   SATIŞ
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
 
@@ -418,12 +411,7 @@ export default function BrokerDetailPage() {
                   TAHSİLAT
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
 
@@ -455,12 +443,7 @@ export default function BrokerDetailPage() {
                   EKSTRELER
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
 
@@ -476,12 +459,7 @@ export default function BrokerDetailPage() {
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
                 <View className="mr-3">
-                  <Icon
-                    family="MaterialCommunityIcons"
-                    name="receipt"
-                    size={22}
-                    color="#FFFEFF"
-                  />
+                  <Icon family="MaterialCommunityIcons" name="receipt" size={22} color="#FFFEFF" />
                 </View>
                 <Typography
                   variant="body"
@@ -492,12 +470,7 @@ export default function BrokerDetailPage() {
                   FATURALAR
                 </Typography>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
 
@@ -513,12 +486,7 @@ export default function BrokerDetailPage() {
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
                 <View className="mr-4">
-                  <Icon
-                    family="MaterialIcons"
-                    name="edit"
-                    size={22}
-                    color="#FFFEFF"
-                  />
+                  <Icon family="MaterialIcons" name="edit" size={22} color="#FFFEFF" />
                 </View>
                 <View className="flex-1">
                   <Typography
@@ -531,12 +499,7 @@ export default function BrokerDetailPage() {
                   </Typography>
                 </View>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
 
@@ -552,12 +515,7 @@ export default function BrokerDetailPage() {
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
                 <View className="mr-4">
-                  <Icon
-                    family="MaterialIcons"
-                    name="delete"
-                    size={22}
-                    color="#FFFEFF"
-                  />
+                  <Icon family="MaterialIcons" name="delete" size={22} color="#FFFEFF" />
                 </View>
                 <View className="flex-1">
                   <Typography
@@ -570,12 +528,7 @@ export default function BrokerDetailPage() {
                   </Typography>
                 </View>
               </View>
-              <Icon
-                family="MaterialIcons"
-                name="arrow-forward-ios"
-                size={16}
-                color="#FFFEFF"
-              />
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
             </View>
           </Card>
         </View>
@@ -622,24 +575,40 @@ export default function BrokerDetailPage() {
             helperText="İskonto oranını % cinsinden girin (örn: 20)"
           />
 
+          <Input
+            label="E-posta"
+            value={brokerEmail}
+            onChangeText={setBrokerEmail}
+            placeholder="ornek@domain.com"
+            variant="outlined"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            className="mb-4"
+            error={validationErrors.email}
+          />
+
+          <Input
+            label="VKN"
+            value={brokerVkn}
+            onChangeText={setBrokerVkn}
+            placeholder="10-11 haneli vergi kimlik no"
+            variant="outlined"
+            numericOnly={true}
+            className="mb-4"
+            error={validationErrors.vkn}
+          />
+
           <View className="mt-6">
             <Button
               variant="primary"
               fullWidth
               className="bg-stock-red mb-3"
               onPress={handleUpdateBroker}
-              loading={
-                updateBrokerMutation.isPending ||
-                updateDiscountRateMutation.isPending
-              }
-              disabled={
-                updateBrokerMutation.isPending ||
-                updateDiscountRateMutation.isPending
-              }
+              loading={updateBrokerMutation.isPending || updateDiscountRateMutation.isPending}
+              disabled={updateBrokerMutation.isPending || updateDiscountRateMutation.isPending}
             >
               <Typography className="text-white">
-                {updateBrokerMutation.isPending ||
-                updateDiscountRateMutation.isPending
+                {updateBrokerMutation.isPending || updateDiscountRateMutation.isPending
                   ? "Güncelleniyor..."
                   : "Güncelle"}
               </Typography>
@@ -649,10 +618,7 @@ export default function BrokerDetailPage() {
               fullWidth
               className="border-stock-border"
               onPress={handleCloseEditBrokerModal}
-              disabled={
-                updateBrokerMutation.isPending ||
-                updateDiscountRateMutation.isPending
-              }
+              disabled={updateBrokerMutation.isPending || updateDiscountRateMutation.isPending}
             >
               <Typography className="text-stock-dark">İptal</Typography>
             </Button>

@@ -5,13 +5,14 @@ import { StatusBar } from "expo-status-bar";
 import { View, TouchableOpacity } from "react-native";
 import { router, usePathname } from "expo-router";
 import Providers from "@/src/components/common/Providers";
+import { setAuthStoreRef } from "@/src/services/authBridge";
+// Initialize i18n translations globally
+import "@/src/utils/i18n";
 import { BottomNavigation, Icon } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
 import { useAuthErrorHandler } from "@/src/hooks/api";
-import type {
-  RouteParams,
-  CustomHeaderLeftProps,
-} from "@/src/types/navigation";
+import logger from "@/src/utils/logger";
+import type { RouteParams, CustomHeaderLeftProps } from "@/src/types/navigation";
 import "../global.css";
 
 const CustomHeaderLeft = ({
@@ -35,17 +36,8 @@ const CustomHeaderLeft = ({
   }, [targetRoute, routeParams, onPress]);
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      style={{ marginLeft: -5 }}
-      activeOpacity={0.7}
-    >
-      <Icon
-        family="MaterialIcons"
-        name={iconName as any}
-        size={24}
-        color={iconColor}
-      />
+    <TouchableOpacity onPress={handlePress} style={{ marginLeft: -5 }} activeOpacity={0.7}>
+      <Icon family="MaterialIcons" name={iconName as any} size={24} color={iconColor} />
     </TouchableOpacity>
   );
 };
@@ -64,11 +56,11 @@ export default function RootLayout() {
   // ✅ Navigation ready setup - SADECE BİR KERE
   useEffect(() => {
     const isDevMode = process.env.NODE_ENV === "development";
-    if (isDevMode) console.log("📱 RootLayout mounted");
+    if (isDevMode) logger.debug("📱 RootLayout mounted");
 
     const timer = setTimeout(() => {
       setIsNavigationReady(true);
-      if (isDevMode) console.log("✅ Navigation ready");
+      if (isDevMode) logger.debug("✅ Navigation ready");
     }, 100);
 
     return () => clearTimeout(timer);
@@ -78,21 +70,26 @@ export default function RootLayout() {
   useEffect(() => {
     if (!errorHandlerInitialized.current && isNavigationReady) {
       const isDevMode = process.env.NODE_ENV === "development";
-      if (isDevMode) console.log("🔧 Setting up global auth error handler...");
+      if (isDevMode) logger.debug("🔧 Setting up global auth error handler...");
 
       initializeErrorHandler(authStore);
+      // Bridge auth store to services layer (401 handler in apiService)
+      try {
+        setAuthStoreRef(authStore as any);
+      } catch {
+        // noop
+      }
       errorHandlerInitialized.current = true;
 
-      if (isDevMode)
-        console.log("✅ Global auth error handler setup completed");
+      if (isDevMode) logger.debug("✅ Global auth error handler setup completed");
     }
-  }, [isNavigationReady]); // 👈 authStore dependency kaldırıldı
+  }, [isNavigationReady, authStore, initializeErrorHandler]);
 
   // ✅ Auth initialization - SADECE BİR KERE
   useEffect(() => {
     if (isNavigationReady && !authInitialized.current) {
       const isDevMode = process.env.NODE_ENV === "development";
-      if (isDevMode) console.log("🔄 Starting auth initialization...");
+      if (isDevMode) logger.debug("🔄 Starting auth initialization...");
 
       initializeAuth();
       authInitialized.current = true;
@@ -105,7 +102,7 @@ export default function RootLayout() {
 
     const isDevMode = process.env.NODE_ENV === "development";
     if (isDevMode) {
-      console.log("🔍 Auth check:", {
+      logger.debug("🔍 Auth check:", {
         pathname,
         isAuthenticated,
         shouldRedirect: pathname !== "/login" && !isAuthenticated,
@@ -117,23 +114,20 @@ export default function RootLayout() {
 
     // Eğer giriş yapmamışsa login sayfasına yönlendir
     if (!isAuthenticated) {
-      if (isDevMode) console.log("🔄 Redirecting to login...");
+      if (isDevMode) logger.debug("🔄 Redirecting to login...");
       router.replace("/login");
     }
   }, [isAuthenticated, pathname, isNavigationReady]);
 
   // ✅ Bottom navigation visibility logic
-  const shouldShowBottomNav = useMemo(() => {
-    return (
-      isAuthenticated &&
-      pathname !== "/login" &&
-      !pathname.includes("/broker/sections/")
-    );
-  }, [isAuthenticated, pathname]);
+  const shouldShowBottomNav = useMemo(
+    () => isAuthenticated && pathname !== "/login" && !pathname.includes("/broker/sections/"),
+    [isAuthenticated, pathname],
+  );
 
   // ✅ Optimized logging - sadece development mode'da
   if (process.env.NODE_ENV === "development") {
-    console.log("🎯 RootLayout render:", {
+    logger.debug("🎯 RootLayout render:", {
       pathname,
       isAuthenticated,
       shouldShowBottomNav,
@@ -142,25 +136,13 @@ export default function RootLayout() {
   }
 
   // ✅ Memoized header components - Performance optimization
-  const brokerDetailHeaderLeft = useCallback(
-    () => <CustomHeaderLeft targetRoute="/brokers" />,
-    []
-  );
+  const brokerDetailHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/brokers" />, []);
 
-  const homeHeaderLeft = useCallback(
-    () => <CustomHeaderLeft targetRoute="/" />,
-    []
-  );
+  const homeHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/" />, []);
 
-  const productsHeaderLeft = useCallback(
-    () => <CustomHeaderLeft targetRoute="/products" />,
-    []
-  );
+  const productsHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/products" />, []);
 
-  const stockHeaderLeft = useCallback(
-    () => <CustomHeaderLeft targetRoute="/stock" />,
-    []
-  );
+  const stockHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/stock" />, []);
 
   return (
     <Providers>
@@ -334,9 +316,7 @@ export default function RootLayout() {
         </Stack>
 
         {/* ✅ Bottom Navigation */}
-        {shouldShowBottomNav && (
-          <BottomNavigation className="absolute bottom-10 left-2 right-2" />
-        )}
+        {shouldShowBottomNav && <BottomNavigation className="absolute bottom-10 left-2 right-2" />}
       </View>
     </Providers>
   );

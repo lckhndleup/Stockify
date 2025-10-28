@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
+import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import {
   Product,
@@ -13,33 +14,23 @@ import {
 } from "@/src/types/product";
 
 // Types
-export type {
-  Product,
-  ProductFormData,
-  ProductUpdateData,
-  ProductSearchParams,
-};
+export type { Product, ProductFormData, ProductUpdateData, ProductSearchParams };
 
 // Backend'den gelen data'yı UI format'ına çevir - stock/price default 0
-export const adaptProductsForUI = (
-  products: Product[]
-): ProductDisplayItem[] => {
+export const adaptProductsForUI = (products: Product[]): ProductDisplayItem[] => {
   return products.map((product) => adaptProductForUI(product));
 };
 
 // Hooks
 
 // Tüm ürünleri getir
-export const useProducts = (
-  params?: ProductSearchParams,
-  options?: { enabled?: boolean }
-) => {
+export const useProducts = (params?: ProductSearchParams, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: queryKeys.products.list(params),
     queryFn: async () => {
-      console.log("🛍️ Fetching products from API...");
+      logger.debug("🛍️ Fetching products from API...");
       const products = await apiService.getProducts(params);
-      console.log("✅ Products fetched:", products);
+      logger.debug("✅ Products fetched:", products);
       return products as Product[];
     },
     ...options,
@@ -51,7 +42,7 @@ export const useActiveProducts = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: queryKeys.products.active(),
     queryFn: async () => {
-      console.log("🛍️ Fetching active products...");
+      logger.debug("🛍️ Fetching active products...");
       const products = await apiService.getProducts({ status: "ACTIVE" });
       return adaptProductsForUI(products);
     },
@@ -64,9 +55,9 @@ export const usePassiveProducts = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: queryKeys.products.list({ status: "PASSIVE" }),
     queryFn: async () => {
-      console.log("🛍️ Fetching passive products...");
+      logger.debug("🛍️ Fetching passive products...");
       const products = await apiService.getProducts({ status: "PASSIVE" });
-      console.log("✅ Passive products fetched:", products);
+      logger.debug("✅ Passive products fetched:", products);
       return adaptProductsForUI(products);
     },
     ...options,
@@ -74,14 +65,11 @@ export const usePassiveProducts = (options?: { enabled?: boolean }) => {
 };
 
 // Ürün detayı getir
-export const useProductDetail = (
-  productId: string,
-  options?: { enabled?: boolean }
-) => {
+export const useProductDetail = (productId: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: queryKeys.products.detail(productId),
     queryFn: async () => {
-      console.log("🛍️ Fetching product detail for ID:", productId);
+      logger.debug("🛍️ Fetching product detail for ID:", productId);
       const product = await apiService.getProductDetail(productId);
       return product ? adaptProductForUI(product) : null;
     },
@@ -93,25 +81,19 @@ export const useProductDetail = (
 export const useSearchProducts = (
   searchText: string,
   status: "ACTIVE" | "PASSIVE" = "ACTIVE",
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) => {
   return useQuery({
     queryKey: queryKeys.products.search(`${searchText}-${status}`),
     queryFn: async () => {
-      console.log(
-        "🛍️ Searching products with text:",
-        searchText,
-        "status:",
-        status
-      );
+      logger.debug("🛍️ Searching products", { searchText, status });
       const products = await apiService.getProducts({
         productText: searchText,
         status: status,
       });
       return adaptProductsForUI(products);
     },
-    enabled:
-      !!searchText && searchText.length > 0 && (options?.enabled ?? true),
+    enabled: !!searchText && searchText.length > 0 && (options?.enabled ?? true),
   });
 };
 
@@ -121,31 +103,31 @@ export const useCreateProduct = () => {
 
   return useMutation({
     mutationFn: async (productData: ProductFormData) => {
-      console.log("➕ Creating product:", productData);
+      logger.debug("➕ Creating product:", productData);
 
       try {
         const result = await apiService.saveProduct(productData);
-        console.log("✅ Product created - RAW RESPONSE:", result);
-        console.log("✅ Response type:", typeof result);
-        console.log("✅ Response keys:", result ? Object.keys(result) : "null");
+        logger.debug("✅ Product created - RAW RESPONSE:", result);
+        logger.debug("✅ Response type:", typeof result);
+        logger.debug("✅ Response keys:", result ? Object.keys(result) : "null");
 
         return result;
       } catch (error) {
-        console.log("❌ API Error in product creation:", error);
+        logger.error("❌ API Error in product creation:", error);
         throw error;
       }
     },
     onSuccess: (data, variables) => {
-      console.log("🎉 Product creation onSuccess called");
-      console.log("🎉 Success data:", data);
-      console.log("🎉 Variables used:", variables);
+      logger.debug("🎉 Product creation onSuccess called");
+      logger.debug("🎉 Success data:", data);
+      logger.debug("🎉 Variables used:", variables);
 
       // Cache'i invalidate et - hem aktif hem pasif ürünler
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.all,
         exact: false,
       });
-      console.log("🔄 Products cache invalidated");
+      logger.debug("🔄 Products cache invalidated");
 
       // Biraz bekle ve sonra refetch yap
       setTimeout(() => {
@@ -153,22 +135,22 @@ export const useCreateProduct = () => {
           queryKey: queryKeys.products.all,
           exact: false,
         });
-        console.log("🔄 Products force refetched");
+        logger.debug("🔄 Products force refetched");
       }, 500);
     },
-    onError: (error: ApiError, variables) => {
-      console.log("❌ Product creation onError called");
-      console.log("❌ Error details:", error);
-      console.log("❌ Variables used:", variables);
+    onError: (error: ApiError, _variables) => {
+      logger.debug("❌ Product creation onError called");
+      logger.error("❌ Error details:", error);
+      logger.debug("❌ Variables used:", _variables);
     },
-    onSettled: (data, error, variables) => {
-      console.log("⚡ Product creation onSettled called");
-      console.log("⚡ Final data:", data);
-      console.log("⚡ Final error:", error);
+    onSettled: (data, error, _variables) => {
+      logger.debug("⚡ Product creation onSettled called");
+      logger.debug("⚡ Final data:", data);
+      logger.debug("⚡ Final error:", error);
 
       // Her durumda cache'i temizle
       if (data && !error) {
-        console.log("🧹 Cleaning all related product caches...");
+        logger.debug("🧹 Cleaning all related product caches...");
         queryClient.removeQueries({
           queryKey: queryKeys.products.all,
           exact: false,
@@ -189,9 +171,9 @@ export const useUpdateProduct = () => {
 
   return useMutation({
     mutationFn: async (productData: ProductUpdateData) => {
-      console.log("✏️ Updating product:", productData);
+      logger.debug("✏️ Updating product:", productData);
       const result = await apiService.updateProduct(productData);
-      console.log("✅ Product updated:", result);
+      logger.debug("✅ Product updated:", result);
       return result;
     },
     onSuccess: (data, variables) => {
@@ -201,10 +183,10 @@ export const useUpdateProduct = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.detail(variables.productId.toString()),
       });
-      console.log("🔄 Products cache invalidated");
+      logger.debug("🔄 Products cache invalidated");
     },
     onError: (error: ApiError) => {
-      console.log("❌ Update product error:", error);
+      logger.error("❌ Update product error:", error);
     },
   });
 };
@@ -215,9 +197,9 @@ export const useDeleteProduct = () => {
 
   return useMutation({
     mutationFn: async (productId: string | number) => {
-      console.log("🗑️ Deleting product:", productId);
+      logger.debug("🗑️ Deleting product:", productId);
       const result = await apiService.deleteProduct(productId);
-      console.log("✅ Product deleted (status set to PASSIVE):", result);
+      logger.debug("✅ Product deleted (status set to PASSIVE):", result);
       return result;
     },
     onSuccess: (data, productId) => {
@@ -227,10 +209,10 @@ export const useDeleteProduct = () => {
       queryClient.removeQueries({
         queryKey: queryKeys.products.detail(productId.toString()),
       });
-      console.log("🔄 Products cache invalidated after deletion");
+      logger.debug("🔄 Products cache invalidated after deletion");
     },
     onError: (error: ApiError) => {
-      console.log("❌ Delete product error:", error);
+      logger.error("❌ Delete product error:", error);
     },
   });
 };
@@ -241,6 +223,6 @@ export const useInvalidateProducts = () => {
 
   return () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
-    console.log("🔄 Products manually invalidated");
+    logger.debug("🔄 Products manually invalidated");
   };
 };

@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import apiService, { ApiError } from "@/src/services/api";
+import logger from "@/src/utils/logger";
 import type { User, AuthStore } from "@/src/types/stores";
 import type { LoginRequest } from "@/src/types/apiTypes";
 
@@ -10,6 +11,7 @@ const middleware = persist<AuthStore>(
   (set, get) => ({
     user: null,
     token: null,
+    role: null,
     isAuthenticated: false,
     rememberMe: false,
     isLoading: false,
@@ -19,7 +21,7 @@ const middleware = persist<AuthStore>(
       set({ isLoading: true, error: null });
 
       try {
-        console.log("🔐 Login attempt:", { username, rememberMe });
+        logger.debug("🔐 Login attempt:", { username, rememberMe });
 
         const credentials: LoginRequest = {
           username,
@@ -28,15 +30,10 @@ const middleware = persist<AuthStore>(
         };
 
         const response = await apiService.login(credentials);
-
-        console.log("✅ Login response:", response);
+        logger.debug("✅ Login response received");
 
         if (response.token) {
-          console.log("🎯 Token received:", {
-            tokenLength: response.token.length,
-            tokenPreview: response.token.substring(0, 20) + "...",
-            tokenType: typeof response.token,
-          });
+          logger.debug("🎯 Token received (content hidden)");
 
           // Token'ı API service'e set et
           apiService.setToken(response.token);
@@ -49,21 +46,22 @@ const middleware = persist<AuthStore>(
             loginTime: new Date().toISOString(),
           };
 
-          console.log("👤 User created:", user);
+          logger.debug("👤 User session created for:", { username: user.username });
 
           set({
             user,
             token: response.token,
+            role: response.role ?? null,
             isAuthenticated: true,
             rememberMe,
             isLoading: false,
             error: null,
           });
 
-          console.log("🎉 Login successful! State updated.");
+          logger.info("🎉 Login successful! State updated.");
           return true;
         } else {
-          console.log("❌ No token in response:", response);
+          logger.warn("❌ No token in response:", response);
           set({
             isLoading: false,
             error: "Giriş başarısız. Token alınamadı.",
@@ -71,7 +69,7 @@ const middleware = persist<AuthStore>(
           return false;
         }
       } catch (error) {
-        console.log("❌ Login error (handled quietly):", error);
+        logger.error("❌ Login error (handled quietly):", error);
 
         const apiError = error as ApiError;
         let errorMessage = "Giriş başarısız.";
@@ -83,20 +81,15 @@ const middleware = persist<AuthStore>(
           ) {
             errorMessage = "Kullanıcı adı veya şifre hatalı.";
           } else {
-            errorMessage =
-              "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.";
+            errorMessage = "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.";
           }
         } else if (apiError.status === 0) {
-          errorMessage =
-            "Sunucuya bağlanılamıyor. Lütfen Docker'ın çalıştığından emin olun.";
+          errorMessage = "Sunucuya bağlanılamıyor. Lütfen Docker'ın çalıştığından emin olun.";
         } else if (apiError.message) {
           errorMessage = apiError.message;
         }
 
-        console.log(
-          "💔 Login failed - showing user friendly message:",
-          errorMessage
-        );
+        logger.warn("💔 Login failed - showing user friendly message:", errorMessage);
 
         set({
           isLoading: false,
@@ -112,21 +105,18 @@ const middleware = persist<AuthStore>(
 
     // 👈 YENİ: Async logout with API call
     logout: async () => {
-      console.log("🚪 Logout triggered");
+      logger.info("🚪 Logout triggered");
 
       try {
         // Önce API'ye logout request'i gönder
         if (get().token) {
-          console.log("📡 Sending logout request to API...");
+          logger.debug("📡 Sending logout request to API...");
           const logoutResponse = await apiService.logout();
-          console.log("✅ Logout API response:", logoutResponse);
+          logger.debug("✅ Logout API response:", logoutResponse);
         }
       } catch (error) {
         // Logout API hatası olsa bile local state'i temizle
-        console.log(
-          "⚠️ Logout API error (proceeding with local logout):",
-          error
-        );
+        logger.warn("⚠️ Logout API error (proceeding with local logout):", error);
       } finally {
         // Her durumda local state'i ve token'ı temizle
         apiService.clearToken();
@@ -134,13 +124,14 @@ const middleware = persist<AuthStore>(
         set({
           user: null,
           token: null,
+          role: null,
           isAuthenticated: false,
           rememberMe: false,
           isLoading: false,
           error: null,
         });
 
-        console.log("✅ Logout completed - all state cleared");
+        logger.info("✅ Logout completed - all state cleared");
       }
     },
 
@@ -154,18 +145,18 @@ const middleware = persist<AuthStore>(
 
     checkTokenExpiry: () => {
       // Token expiry check logic could be implemented here
-      console.log("🕐 Checking token expiry");
+      logger.debug("🕐 Checking token expiry");
       // This would typically decode JWT and check exp field
     },
 
     refreshToken: async () => {
-      console.log("🔄 Refreshing token");
+      logger.debug("🔄 Refreshing token");
       try {
         // Token refresh logic would be implemented here
         // const newToken = await apiService.refreshToken();
         // set({ token: newToken });
       } catch (error) {
-        console.log("❌ Token refresh failed:", error);
+        logger.error("❌ Token refresh failed:", error);
         // Force logout on refresh failure
         get().logout();
       }
@@ -173,63 +164,80 @@ const middleware = persist<AuthStore>(
 
     initializeAuth: () => {
       const state = get();
-      console.log("🔄 Initializing auth:", {
+      logger.debug("🔄 Initializing auth:", {
         hasToken: !!state.token,
         isAuthenticated: state.isAuthenticated,
         username: state.user?.username,
+        role: state.role,
         rememberMe: state.rememberMe,
       });
 
       if (state.token && state.isAuthenticated) {
         // Uygulama başlarken token'ı API service'e set et
         apiService.setToken(state.token);
-        console.log("🔑 Token restored to API service");
+        logger.debug("🔑 Token restored to API service");
       } else {
-        console.log("ℹ️ No token to restore");
+        logger.debug("ℹ️ No token to restore");
       }
     },
   }),
   {
     name: "stockify-auth",
     storage: createJSONStorage(() => AsyncStorage),
-    // Sadece rememberMe true ise persist et
-    partialize: (state) => {
-      if (state.rememberMe) {
+    // Sadece seri hale getirilebilir alanları sakla
+    // rememberMe true ise user/token/isAuthenticated/rememberMe alanlarını persist et
+    // aksi halde hiçbir şey persist etme (boş obje)
+    partialize: (state) =>
+      (state.rememberMe
+        ? {
+            user: state.user,
+            token: state.token,
+            role: state.role,
+            isAuthenticated: state.isAuthenticated,
+            rememberMe: state.rememberMe,
+          }
+        : {}) as any,
+    // Eski state'leri temizlemek için versiyon ve migrate ekle
+    version: 3,
+    migrate: (persistedState: any, _version) => {
+      // v1'de fonksiyonlar ve geçici alanlar persist edilmiş olabilir; temizle
+      const base = persistedState || {};
+      if (!base.rememberMe) {
         return {
-          user: state.user,
-          token: state.token,
-          isAuthenticated: state.isAuthenticated,
-          rememberMe: state.rememberMe,
+          user: null,
+          token: null,
+          role: null,
+          isAuthenticated: false,
+          rememberMe: false,
           isLoading: false,
           error: null,
-          // Functions serialization için gerekli
-          login: state.login,
-          logout: state.logout,
-          setLoading: state.setLoading,
-          clearError: state.clearError,
-          checkTokenExpiry: state.checkTokenExpiry,
-          refreshToken: state.refreshToken,
-          initializeAuth: state.initializeAuth,
         };
       }
+
       return {
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        rememberMe: false,
+        user: base.user ?? null,
+        token: base.token ?? null,
+        role: base.role ?? null,
+        isAuthenticated: !!base.isAuthenticated && !!base.token,
+        rememberMe: !!base.rememberMe,
         isLoading: false,
         error: null,
-        // Functions serialization için gerekli
-        login: state.login,
-        logout: state.logout,
-        setLoading: state.setLoading,
-        clearError: state.clearError,
-        checkTokenExpiry: state.checkTokenExpiry,
-        refreshToken: state.refreshToken,
-        initializeAuth: state.initializeAuth,
-      };
+      } as any;
     },
-  }
+    // Rehydrate sonrası token'ı API service'e aktar
+    onRehydrateStorage: () => (state) => {
+      try {
+        const token = state?.token;
+        if (token) {
+          apiService.setToken(token);
+        } else {
+          apiService.clearToken();
+        }
+      } catch {
+        // noop
+      }
+    },
+  },
 );
 
 export const useAuthStore = create<AuthStore>()(middleware);

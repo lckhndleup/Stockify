@@ -1,6 +1,7 @@
 // src/hooks/api/useBrokers.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
+import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import {
   Broker,
@@ -34,9 +35,9 @@ export const useBrokers = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: queryKeys.brokers.all,
     queryFn: async () => {
-      console.log("👥 Fetching brokers from API...");
+      logger.debug("👥 Fetching brokers from API...");
       const brokers = await apiService.getBrokers();
-      console.log("✅ Brokers fetched:", brokers);
+      logger.debug("✅ Brokers fetched:", brokers);
       return brokers as Broker[];
     },
     ...options,
@@ -48,12 +49,10 @@ export const useActiveBrokers = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: queryKeys.brokers.lists(),
     queryFn: async () => {
-      console.log("👥 Fetching active brokers...");
+      logger.debug("👥 Fetching active brokers...");
       const brokers = await apiService.getBrokers();
       // Backend'den gelen tüm broker'ları aktif kabul ediyoruz (status: "ACTIVE" olanlar)
-      const activeBrokers = brokers.filter(
-        (broker: Broker) => broker.status === "ACTIVE"
-      );
+      const activeBrokers = brokers.filter((broker: Broker) => broker.status === "ACTIVE");
       return adaptBrokersForUI(activeBrokers);
     },
     ...options,
@@ -61,14 +60,11 @@ export const useActiveBrokers = (options?: { enabled?: boolean }) => {
 };
 
 // Broker detayı getir
-export const useBrokerDetail = (
-  brokerId: string,
-  options?: { enabled?: boolean }
-) => {
+export const useBrokerDetail = (brokerId: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: queryKeys.brokers.detail(brokerId),
     queryFn: async () => {
-      console.log("👥 Fetching broker detail for ID:", brokerId);
+      logger.debug("👥 Fetching broker detail for ID:", brokerId);
       const broker = await apiService.getBrokerDetail(brokerId);
       return broker ? adaptBrokerForUI(broker) : null;
     },
@@ -82,30 +78,30 @@ export const useCreateBroker = () => {
 
   return useMutation({
     mutationFn: async (brokerData: BrokerFormData) => {
-      console.log("➕ Creating broker:", brokerData);
+      logger.debug("➕ Creating broker:", brokerData);
 
       try {
         const data = adaptBroker(brokerData);
         const result = await apiService.saveBroker(data);
-        console.log("✅ Broker created - RAW RESPONSE:", result);
-        console.log("✅ Response type:", typeof result);
-        console.log("✅ Response keys:", result ? Object.keys(result) : "null");
+        logger.debug("✅ Broker created - RAW RESPONSE:", result);
+        logger.debug("✅ Response type:", typeof result);
+        logger.debug("✅ Response keys:", result ? Object.keys(result) : "null");
 
         return result;
       } catch (error) {
-        console.error("❌ Create broker error:", error);
+        logger.error("❌ Create broker error:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log("🎉 Broker created successfully:", data);
+      logger.debug("🎉 Broker created successfully:", data);
 
       // Broker listelerini yenile
       queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.brokers.lists() });
     },
     onError: (error: ApiError) => {
-      console.error("❌ Broker creation failed:", error);
+      logger.error("❌ Broker creation failed:", error);
     },
   });
 };
@@ -117,24 +113,30 @@ export const useUpdateBroker = () => {
   return useMutation({
     mutationFn: async (params: {
       brokerId: string;
-      brokerData: { firstName: string; lastName: string; discountRate: number };
+      brokerData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        vkn: string;
+        discountRate: number;
+      };
     }) => {
-      console.log("✏️ Updating broker:", params);
+      logger.debug("✏️ Updating broker:", params);
 
       try {
         const brokerId = parseInt(params.brokerId);
         const data = adaptBrokerUpdate(brokerId, params.brokerData);
         const result = await apiService.updateBroker(data);
-        console.log("✅ Broker updated - RAW RESPONSE:", result);
+        logger.debug("✅ Broker updated - RAW RESPONSE:", result);
 
         return result;
       } catch (error) {
-        console.error("❌ Update broker error:", error);
+        logger.error("❌ Update broker error:", error);
         throw error;
       }
     },
     onSuccess: (data, variables) => {
-      console.log("🎉 Broker updated successfully:", data);
+      logger.debug("🎉 Broker updated successfully:", data);
 
       // Broker listelerini ve detayını yenile
       queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all });
@@ -144,7 +146,7 @@ export const useUpdateBroker = () => {
       });
     },
     onError: (error: ApiError) => {
-      console.error("❌ Broker update failed:", error);
+      logger.error("❌ Broker update failed:", error);
     },
   });
 };
@@ -155,20 +157,20 @@ export const useDeleteBroker = () => {
 
   return useMutation({
     mutationFn: async (brokerId: string) => {
-      console.log("🗑️ Deleting broker ID:", brokerId);
+      logger.debug("🗑️ Deleting broker ID:", brokerId);
 
       try {
         const result = await apiService.deleteBroker(brokerId);
-        console.log("✅ Broker deleted - RAW RESPONSE:", result);
+        logger.debug("✅ Broker deleted - RAW RESPONSE:", result);
 
         return result;
       } catch (error) {
-        console.error("❌ Delete broker error:", error);
+        logger.error("❌ Delete broker error:", error);
         throw error;
       }
     },
     onSuccess: (data, brokerId) => {
-      console.log("🎉 Broker deleted successfully:", data);
+      logger.debug("🎉 Broker deleted successfully:", data);
 
       // Broker listelerini yenile
       queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all });
@@ -179,7 +181,7 @@ export const useDeleteBroker = () => {
       });
     },
     onError: (error: ApiError) => {
-      console.error("❌ Broker deletion failed:", error);
+      logger.error("❌ Broker deletion failed:", error);
     },
   });
 };
@@ -190,7 +192,7 @@ export const useUpdateBrokerDiscountRate = () => {
 
   return useMutation({
     mutationFn: async (params: { brokerId: string; discountRate: number }) => {
-      console.log("💰 Updating broker discount rate:", params);
+      logger.debug("💰 Updating broker discount rate:", params);
 
       try {
         const discountData: BrokerDiscountRateUpdateData = {
@@ -198,16 +200,16 @@ export const useUpdateBrokerDiscountRate = () => {
           discountRate: params.discountRate,
         };
         const result = await apiService.updateBrokerDiscountRate(discountData);
-        console.log("✅ Broker discount rate updated - RAW RESPONSE:", result);
+        logger.debug("✅ Broker discount rate updated - RAW RESPONSE:", result);
 
         return result;
       } catch (error) {
-        console.error("❌ Update broker discount rate error:", error);
+        logger.error("❌ Update broker discount rate error:", error);
         throw error;
       }
     },
     onSuccess: (data, variables) => {
-      console.log("🎉 Broker discount rate updated successfully:", data);
+      logger.debug("🎉 Broker discount rate updated successfully:", data);
 
       // Broker listelerini ve detayını yenile
       queryClient.invalidateQueries({ queryKey: queryKeys.brokers.all });
@@ -217,7 +219,7 @@ export const useUpdateBrokerDiscountRate = () => {
       });
     },
     onError: (error: ApiError) => {
-      console.error("❌ Broker discount rate update failed:", error);
+      logger.error("❌ Broker discount rate update failed:", error);
     },
   });
 };
