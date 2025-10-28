@@ -76,6 +76,8 @@ export const adaptBroker = (formData: BrokerFormData) => ({
   email: formData.email.trim(),
   vkn: formData.vkn.trim(),
   discountRate: formData.discountRate,
+  email: formData.email.trim(),
+  vkn: formData.vkn.trim(),
 });
 
 // Update için backend format'ına çevir

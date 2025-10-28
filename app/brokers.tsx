@@ -159,6 +159,8 @@ export default function BrokersPage() {
                 email: brokerEmail.trim(),
                 vkn: brokerVkn.trim(),
                 discountRate: discountRate,
+                email: email.trim(),
+                vkn: vkn.trim(),
               };
 
               logger.debug("🎯 Creating broker with backend:", brokerData);

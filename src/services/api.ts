@@ -1,5 +1,5 @@
 // src/services/api.ts
-import type { LoginRequest, LoginResponse, LogoutResponse, ApiError } from "@/src/types/apiTypes";
+import type { ApiError } from "@/src/types/apiTypes";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
 import Constants from "expo-constants";
@@ -203,34 +203,6 @@ class ApiService {
         clearTimeout(timeoutId);
       } catch {}
     }
-  }
-
-  // -------------------- Auth --------------------
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
-    logger.debug("🔐 API Login called with:", {
-      username: credentials.username,
-      rememberMe: credentials.rememberMe,
-    });
-
-    return this.request<LoginResponse>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials), // rememberMe da gönderilecek
-    });
-  }
-
-  // 👈 YENİ: Logout API method
-  async logout(): Promise<LogoutResponse> {
-    logger.info("🚪 API Logout called");
-
-    if (!this.token) {
-      logger.warn("⚠️ No token available for logout");
-      return { success: true, message: "Zaten çıkış yapılmış" };
-    }
-
-    return this.request<LogoutResponse>("/auth/logout", {
-      method: "DELETE",
-      // Authorization header otomatik olarak ekleniyor
-    });
   }
 
   // -------------------- Category --------------------
@@ -836,6 +808,49 @@ class ApiService {
       logger.error("🛑 API: Cancel sale error:", error);
       throw error;
     }
+  }
+
+  // -------------------- Document Download (with auth) --------------------
+  /** Download document with authentication */
+  async downloadDocument(url: string): Promise<Blob> {
+    try {
+      console.log("📄 API: Downloading document from:", url);
+
+      // Token'ı header'a ekle
+      const headers: Record<string, string> = {};
+      if (this.token) {
+        headers.Authorization = `Bearer ${this.token}`;
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers,
+      });
+
+      if (!response.ok) {
+        throw {
+          message: "Belge indirilemedi",
+          status: response.status,
+        } as ApiError;
+      }
+
+      const blob = await response.blob();
+      console.log("✅ API: Document downloaded, size:", blob.size);
+
+      return blob;
+    } catch (error) {
+      console.log("📄 API: Document download error:", error);
+      throw error;
+    }
+  }
+
+  // Return headers that include Authorization if token exists
+  getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers.Authorization = `Bearer ${this.token}`;
+    }
+    return headers;
   }
 }
 

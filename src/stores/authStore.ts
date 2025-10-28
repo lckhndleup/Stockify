@@ -5,7 +5,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import apiService, { ApiError } from "@/src/services/api";
 import logger from "@/src/utils/logger";
 import type { User, AuthStore } from "@/src/types/stores";
-import type { LoginRequest } from "@/src/types/apiTypes";
+import { LoginRequest } from "../services/auth/type";
+import { requestLogin, requestLogout } from "../services/auth";
 
 const middleware = persist<AuthStore>(
   (set, get) => ({
@@ -29,7 +30,7 @@ const middleware = persist<AuthStore>(
           rememberMe, // 👈 YENİ: rememberMe field'i API'ye gönderiliyor
         };
 
-        const response = await apiService.login(credentials);
+        const response = await requestLogin(credentials);
         logger.debug("✅ Login response received");
 
         if (response.token) {
@@ -111,7 +112,7 @@ const middleware = persist<AuthStore>(
         // Önce API'ye logout request'i gönder
         if (get().token) {
           logger.debug("📡 Sending logout request to API...");
-          const logoutResponse = await apiService.logout();
+          const logoutResponse = await requestLogout();
           logger.debug("✅ Logout API response:", logoutResponse);
         }
       } catch (error) {

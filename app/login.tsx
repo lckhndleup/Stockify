@@ -1,23 +1,10 @@
 // app/login.tsx
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  ScrollView,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { View, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { router } from "expo-router";
 import BackgroundSvg from "@/src/components/svg/backgorundsvg";
 
-import {
-  Container,
-  Typography,
-  Input,
-  Button,
-  Icon,
-  Checkbox,
-} from "@/src/components/ui";
+import { Container, Typography, Input, Button, Icon, Checkbox } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
@@ -87,10 +74,7 @@ export default function LoginPage() {
           onHide={hideToast}
         />
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           {/* Background with Real SVG - Üst Kısım */}
           <View className="relative" style={{ height: 220 }}>
             {/* Gerçek SVG Background */}
@@ -101,12 +85,7 @@ export default function LoginPage() {
               className="absolute inset-0 items-center justify-center"
               style={{ paddingBottom: 40 }}
             >
-              <Typography
-                variant="h1"
-                size="4xl"
-                weight="bold"
-                className="text-stock-white mb-2"
-              >
+              <Typography variant="h1" size="4xl" weight="bold" className="text-stock-white mb-2">
                 Stockify
               </Typography>
             </View>
@@ -124,11 +103,7 @@ export default function LoginPage() {
               >
                 Hoş Geldiniz
               </Typography>
-              <Typography
-                variant="body"
-                className="text-stock-text"
-                align="center"
-              >
+              <Typography variant="body" className="text-stock-text" align="center">
                 Hesabınıza giriş yapın
               </Typography>
             </View>
@@ -144,14 +119,7 @@ export default function LoginPage() {
                 variant="outlined"
                 autoCapitalize="none"
                 autoCorrect={false}
-                leftIcon={
-                  <Icon
-                    family="MaterialIcons"
-                    name="person"
-                    size={20}
-                    color="#6D706F"
-                  />
-                }
+                leftIcon={<Icon family="MaterialIcons" name="person" size={20} color="#6D706F" />}
                 className="mb-4"
               />
 
@@ -165,14 +133,7 @@ export default function LoginPage() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                leftIcon={
-                  <Icon
-                    family="MaterialIcons"
-                    name="lock"
-                    size={20}
-                    color="#6D706F"
-                  />
-                }
+                leftIcon={<Icon family="MaterialIcons" name="lock" size={20} color="#6D706F" />}
                 rightIcon={
                   <Icon
                     family="MaterialIcons"
