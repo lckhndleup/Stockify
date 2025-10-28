@@ -113,7 +113,13 @@ export const useUpdateBroker = () => {
   return useMutation({
     mutationFn: async (params: {
       brokerId: string;
-      brokerData: { firstName: string; lastName: string; discountRate: number };
+      brokerData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        vkn: string;
+        discountRate: number;
+      };
     }) => {
       logger.debug("✏️ Updating broker:", params);
 

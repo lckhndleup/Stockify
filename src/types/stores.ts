@@ -1,4 +1,5 @@
 // Store'lar için type tanımları
+import type { Role } from "./apiTypes";
 
 // Auth Store Types
 export interface User {
@@ -11,6 +12,7 @@ export interface User {
 export interface AuthStore {
   user: User | null;
   token: string | null;
+  role: Role | null;
   isAuthenticated: boolean;
   rememberMe: boolean;
   isLoading: boolean;

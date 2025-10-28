@@ -16,6 +16,12 @@ export const brokerSchema = z.object({
     .min(2, "Soyad en az 2 karakter olmalıdır")
     .max(50, "Soyad en fazla 50 karakter olabilir")
     .trim(),
+  email: z.string().email("Geçerli bir e-posta girin").max(100, "E-posta çok uzun"),
+  vkn: z
+    .string()
+    .min(10, "VKN en az 10 haneli olmalıdır")
+    .max(11, "VKN en fazla 11 haneli olabilir")
+    .regex(/^\d+$/, "VKN sadece rakamlardan oluşmalıdır"),
   discountRate: z
     .number()
     .min(0, "İskonto oranı 0'dan küçük olamaz")
@@ -36,6 +42,12 @@ export const editBrokerSchema = z.object({
     .min(2, "Soyad en az 2 karakter olmalıdır")
     .max(50, "Soyad en fazla 50 karakter olabilir")
     .trim(),
+  email: z.string().email("Geçerli bir e-posta girin").max(100, "E-posta çok uzun"),
+  vkn: z
+    .string()
+    .min(10, "VKN en az 10 haneli olmalıdır")
+    .max(11, "VKN en fazla 11 haneli olabilir")
+    .regex(/^\d+$/, "VKN sadece rakamlardan oluşmalıdır"),
   discountRate: z
     .number()
     .min(0, "İskonto oranı 0'dan küçük olamaz")
@@ -54,9 +66,9 @@ export const discountRateSchema = z.object({
 export const validateBrokerForm = (
   firstName: string,
   lastName: string,
-  discountRate: string,
   email: string,
   vkn: string,
+  discountRate: string,
 ) => {
   const errors: Record<string, string> = {};
 
@@ -77,19 +89,15 @@ export const validateBrokerForm = (
   }
 
   if (!email.trim()) {
-    errors.email = "Email zorunludur";
-  } else if (email.trim().length < 2) {
-    errors.email = "Email en az 2 karakter olmalıdır";
-  } else if (email.trim().length > 50) {
-    errors.email = "Email en fazla 50 karakter olabilir";
+    errors.email = "E-posta zorunludur";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    errors.email = "Geçerli bir e-posta girin";
   }
 
   if (!vkn.trim()) {
     errors.vkn = "VKN zorunludur";
-  } else if (vkn.trim().length < 2) {
-    errors.vkn = "VKN en az 2 karakter olmalıdır";
-  } else if (vkn.trim().length > 50) {
-    errors.vkn = "VKN en fazla 50 karakter olabilir";
+  } else if (!/^\d{10,11}$/.test(vkn.trim())) {
+    errors.vkn = "VKN 10-11 haneli rakamlardan oluşmalıdır";
   }
 
   if (!discountRate.trim()) {

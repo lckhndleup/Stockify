@@ -1,12 +1,36 @@
 // API servisleri için type tanımları
 
+// Rol tipleri (backend swagger)
+export type Role = "ROLE_ADMIN" | "ROLE_BROKER" | "ROLE_USER";
+
+// Auth API Types
+export interface LoginRequest {
+  username: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface LoginResponse {
+  token: string;
+  role: Role;
+}
+
+export interface LogoutResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface ApiError {
   message: string;
   status: number;
 }
 
+// Swagger adlarına uygun alias'lar
+export type AuthenticationRequest = LoginRequest;
+export type AuthenticationResponse = LoginResponse;
+
 // Hook Options Types
-export interface UseQueryOptions<T> {
+export interface UseQueryOptions<_T = unknown> {
   enabled?: boolean;
   staleTime?: number;
   gcTime?: number;

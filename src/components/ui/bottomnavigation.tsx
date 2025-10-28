@@ -2,15 +2,9 @@ import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { Link, usePathname } from "expo-router";
 import Icon from "./icon";
-import type {
-  BottomNavigationProps,
-  AppRoute,
-  NavigationItem,
-} from "@/src/types/navigation";
+import type { BottomNavigationProps, NavigationItem } from "@/src/types/navigation";
 
-export default function BottomNavigation({
-  className = "",
-}: BottomNavigationProps) {
+export default function BottomNavigation({ className = "" }: BottomNavigationProps) {
   const pathname = usePathname();
 
   const navigationItems: NavigationItem[] = [
@@ -42,8 +36,13 @@ export default function BottomNavigation({
       <View className="flex-row items-center h-full" style={{ gap: 8 }}>
         {/* Soldaki menü grubu - artık daha geniş */}
         <View
-          className="bg-stock-black rounded-full flex-row items-center overflow-hidden flex-1"
           style={{
+            backgroundColor: "#222222",
+            borderRadius: 9999,
+            flexDirection: "row",
+            alignItems: "center",
+            overflow: "hidden",
+            flex: 1,
             height: 58,
             paddingHorizontal: 4,
             paddingVertical: 4,
@@ -55,16 +54,19 @@ export default function BottomNavigation({
             return (
               <Link key={index} href={item.path as any} asChild>
                 <TouchableOpacity
-                  className={`py-2 flex-row items-center rounded-full ${
-                    isActive ? "bg-stock-gray px-6" : "bg-transparent px-3"
-                  }`}
                   style={{
                     flex: isActive ? 1.7 : 1,
                     height: 50,
                     justifyContent: "center",
+                    alignItems: "center",
+                    flexDirection: "row",
                     minWidth: isActive ? 60 : 50,
+                    paddingVertical: 8,
+                    paddingHorizontal: isActive ? 24 : 12,
+                    backgroundColor: isActive ? "#FFFEFF" : "transparent",
+                    borderRadius: 9999,
                   }}
-                  activeOpacity={0.7}
+                  activeOpacity={1.0}
                 >
                   <Icon
                     family={item.icon.family}

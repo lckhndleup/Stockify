@@ -41,8 +41,8 @@ export default function BrokersPage() {
   // Form states
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
-  const [email, setEmail] = useState("");
-  const [vkn, setVKN] = useState("");
+  const [brokerEmail, setBrokerEmail] = useState("");
+  const [brokerVkn, setBrokerVkn] = useState("");
   const [brokerDiscount, setBrokerDiscount] = useState(""); // Yeni iskonto alanı
   const [editingBroker, setEditingBroker] = useState<BrokerDisplayItem | null>(null);
 
@@ -106,6 +106,8 @@ export default function BrokersPage() {
     setBrokerName("");
     setBrokerSurname("");
     setBrokerDiscount("");
+    setBrokerEmail("");
+    setBrokerVkn("");
     setValidationErrors({});
     setIsBrokerModalVisible(true);
   };
@@ -127,9 +129,9 @@ export default function BrokersPage() {
     const validation = validateBrokerForm(
       brokerName,
       brokerSurname,
+      brokerEmail,
+      brokerVkn,
       brokerDiscount || "0",
-      email,
-      vkn,
     );
     setValidationErrors(validation.errors);
 
@@ -154,6 +156,8 @@ export default function BrokersPage() {
               const brokerData: BrokerFormData = {
                 firstName: brokerName.trim(),
                 lastName: brokerSurname.trim(),
+                email: brokerEmail.trim(),
+                vkn: brokerVkn.trim(),
                 discountRate: discountRate,
                 email: email.trim(),
                 vkn: vkn.trim(),
@@ -183,9 +187,9 @@ export default function BrokersPage() {
     const validation = validateBrokerForm(
       brokerName,
       brokerSurname,
+      brokerEmail,
+      brokerVkn,
       brokerDiscount || "0",
-      email,
-      vkn,
     );
     setValidationErrors(validation.errors);
 
@@ -213,6 +217,8 @@ export default function BrokersPage() {
                 brokerData: {
                   firstName: brokerName.trim(),
                   lastName: brokerSurname.trim(),
+                  email: brokerEmail.trim(),
+                  vkn: brokerVkn.trim(),
                   discountRate: discountRate,
                 },
               });
@@ -234,6 +240,8 @@ export default function BrokersPage() {
     setIsBrokerModalVisible(false);
     setBrokerName("");
     setBrokerSurname("");
+    setBrokerEmail("");
+    setBrokerVkn("");
     setBrokerDiscount(""); // İskonto alanını da temizle
     setValidationErrors({});
   };
@@ -243,6 +251,8 @@ export default function BrokersPage() {
     setEditingBroker(null);
     setBrokerName("");
     setBrokerSurname("");
+    setBrokerEmail("");
+    setBrokerVkn("");
     setBrokerDiscount(""); // İskonto alanını da temizle
     setValidationErrors({});
   };
@@ -373,21 +383,24 @@ export default function BrokersPage() {
           />
 
           <Input
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Aracının email adresini girin..."
+            label="E-posta"
+            value={brokerEmail}
+            onChangeText={setBrokerEmail}
+            placeholder="ornek@domain.com"
             variant="outlined"
+            autoCapitalize="none"
+            keyboardType="email-address"
             className="mb-4"
             error={validationErrors.email}
           />
 
           <Input
             label="VKN"
-            value={vkn}
-            onChangeText={setVKN}
-            placeholder="Aracının VKN bilgisini girin..."
+            value={brokerVkn}
+            onChangeText={setBrokerVkn}
+            placeholder="10-11 haneli vergi kimlik no"
             variant="outlined"
+            numericOnly={true}
             className="mb-4"
             error={validationErrors.vkn}
           />
@@ -457,6 +470,29 @@ export default function BrokersPage() {
             variant="outlined"
             className="mb-4"
             error={validationErrors.lastName}
+          />
+
+          <Input
+            label="E-posta"
+            value={brokerEmail}
+            onChangeText={setBrokerEmail}
+            placeholder="ornek@domain.com"
+            variant="outlined"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            className="mb-4"
+            error={validationErrors.email}
+          />
+
+          <Input
+            label="VKN"
+            value={brokerVkn}
+            onChangeText={setBrokerVkn}
+            placeholder="10-11 haneli vergi kimlik no"
+            variant="outlined"
+            numericOnly={true}
+            className="mb-4"
+            error={validationErrors.vkn}
           />
 
           <Input

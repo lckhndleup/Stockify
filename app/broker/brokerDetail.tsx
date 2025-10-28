@@ -49,6 +49,8 @@ export default function BrokerDetailPage() {
   const [isEditBrokerModalVisible, setIsEditBrokerModalVisible] = useState(false);
   const [brokerName, setBrokerName] = useState("");
   const [brokerSurname, setBrokerSurname] = useState("");
+  const [brokerEmail, setBrokerEmail] = useState("");
+  const [brokerVkn, setBrokerVkn] = useState("");
   const [brokerDiscount, setBrokerDiscount] = useState("");
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -101,6 +103,8 @@ export default function BrokerDetailPage() {
     if (broker) {
       setBrokerName(broker.name);
       setBrokerSurname(broker.surname);
+      setBrokerEmail((broker as any).email || "");
+      setBrokerVkn((broker as any).vkn || "");
       setBrokerDiscount(broker.discountRate?.toString() || "0");
     }
   }, [broker]);
@@ -133,6 +137,8 @@ export default function BrokerDetailPage() {
     logger.debug("✏️ Edit broker triggered");
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
+    setBrokerEmail((broker as any).email || "");
+    setBrokerVkn((broker as any).vkn || "");
     setBrokerDiscount(broker.discountRate?.toString() || "0");
     setValidationErrors({});
     setIsEditBrokerModalVisible(true);
@@ -143,6 +149,8 @@ export default function BrokerDetailPage() {
     setIsEditBrokerModalVisible(false);
     setBrokerName(broker.name);
     setBrokerSurname(broker.surname);
+    setBrokerEmail((broker as any).email || "");
+    setBrokerVkn((broker as any).vkn || "");
     setBrokerDiscount(broker.discountRate?.toString() || "0");
     setValidationErrors({});
   };
@@ -156,7 +164,13 @@ export default function BrokerDetailPage() {
     });
 
     // Form validation
-    const validation = validateBrokerForm(brokerName, brokerSurname, brokerDiscount || "0");
+    const validation = validateBrokerForm(
+      brokerName,
+      brokerSurname,
+      brokerEmail,
+      brokerVkn,
+      brokerDiscount || "0",
+    );
     setValidationErrors(validation.errors);
 
     if (!validation.isValid) {
@@ -204,6 +218,8 @@ export default function BrokerDetailPage() {
                   brokerData: {
                     firstName: brokerName.trim(),
                     lastName: brokerSurname.trim(),
+                    email: brokerEmail.trim(),
+                    vkn: brokerVkn.trim(),
                     discountRate: discountRate,
                   },
                 });
@@ -557,6 +573,29 @@ export default function BrokerDetailPage() {
             className="mb-4"
             error={validationErrors.discountRate}
             helperText="İskonto oranını % cinsinden girin (örn: 20)"
+          />
+
+          <Input
+            label="E-posta"
+            value={brokerEmail}
+            onChangeText={setBrokerEmail}
+            placeholder="ornek@domain.com"
+            variant="outlined"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            className="mb-4"
+            error={validationErrors.email}
+          />
+
+          <Input
+            label="VKN"
+            value={brokerVkn}
+            onChangeText={setBrokerVkn}
+            placeholder="10-11 haneli vergi kimlik no"
+            variant="outlined"
+            numericOnly={true}
+            className="mb-4"
+            error={validationErrors.vkn}
           />
 
           <View className="mt-6">
