@@ -11,6 +11,7 @@ const middleware = persist<AuthStore>(
   (set, get) => ({
     user: null,
     token: null,
+    role: null,
     isAuthenticated: false,
     rememberMe: false,
     isLoading: false,
@@ -50,6 +51,7 @@ const middleware = persist<AuthStore>(
           set({
             user,
             token: response.token,
+            role: response.role ?? null,
             isAuthenticated: true,
             rememberMe,
             isLoading: false,
@@ -122,6 +124,7 @@ const middleware = persist<AuthStore>(
         set({
           user: null,
           token: null,
+          role: null,
           isAuthenticated: false,
           rememberMe: false,
           isLoading: false,
@@ -165,6 +168,7 @@ const middleware = persist<AuthStore>(
         hasToken: !!state.token,
         isAuthenticated: state.isAuthenticated,
         username: state.user?.username,
+        role: state.role,
         rememberMe: state.rememberMe,
       });
 
@@ -188,12 +192,13 @@ const middleware = persist<AuthStore>(
         ? {
             user: state.user,
             token: state.token,
+            role: state.role,
             isAuthenticated: state.isAuthenticated,
             rememberMe: state.rememberMe,
           }
         : {}) as any,
     // Eski state'leri temizlemek için versiyon ve migrate ekle
-    version: 2,
+    version: 3,
     migrate: (persistedState: any, _version) => {
       // v1'de fonksiyonlar ve geçici alanlar persist edilmiş olabilir; temizle
       const base = persistedState || {};
@@ -201,6 +206,7 @@ const middleware = persist<AuthStore>(
         return {
           user: null,
           token: null,
+          role: null,
           isAuthenticated: false,
           rememberMe: false,
           isLoading: false,
@@ -211,6 +217,7 @@ const middleware = persist<AuthStore>(
       return {
         user: base.user ?? null,
         token: base.token ?? null,
+        role: base.role ?? null,
         isAuthenticated: !!base.isAuthenticated && !!base.token,
         rememberMe: !!base.rememberMe,
         isLoading: false,

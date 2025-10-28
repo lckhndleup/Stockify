@@ -560,6 +560,8 @@ class ApiService {
   async saveBroker(broker: {
     firstName: string;
     lastName: string;
+    email: string;
+    vkn: string;
     discountRate: number;
   }): Promise<any> {
     try {
@@ -584,6 +586,8 @@ class ApiService {
     brokerId: number;
     firstName: string;
     lastName: string;
+    email: string;
+    vkn: string;
     discountRate: number;
   }): Promise<any> {
     try {
