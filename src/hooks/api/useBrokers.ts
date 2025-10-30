@@ -118,6 +118,8 @@ export const useUpdateBroker = () => {
         lastName: string;
         email: string;
         vkn: string;
+        tkn: string;
+        targetDayOfWeek: string;
         discountRate: number;
       };
     }) => {

@@ -43,6 +43,7 @@ export default function BrokersPage() {
   const [brokerSurname, setBrokerSurname] = useState("");
   const [brokerEmail, setBrokerEmail] = useState("");
   const [brokerVkn, setBrokerVkn] = useState("");
+  const [brokerTCkn, setBrokerTCkn] = useState("");
   const [brokerDiscount, setBrokerDiscount] = useState(""); // Yeni iskonto alanı
   const [editingBroker, setEditingBroker] = useState<BrokerDisplayItem | null>(null);
 
@@ -108,6 +109,7 @@ export default function BrokersPage() {
     setBrokerDiscount("");
     setBrokerEmail("");
     setBrokerVkn("");
+    setBrokerTCkn("");
     setValidationErrors({});
     setIsBrokerModalVisible(true);
   };
@@ -131,6 +133,7 @@ export default function BrokersPage() {
       brokerSurname,
       brokerEmail,
       brokerVkn,
+      brokerTCkn,
       brokerDiscount || "0",
     );
     setValidationErrors(validation.errors);
@@ -157,10 +160,10 @@ export default function BrokersPage() {
                 firstName: brokerName.trim(),
                 lastName: brokerSurname.trim(),
                 email: brokerEmail.trim(),
+                tkn: brokerTCkn.trim(),
                 vkn: brokerVkn.trim(),
                 discountRate: discountRate,
-                email: email.trim(),
-                vkn: vkn.trim(),
+                targetDayOfWeek: "MONDAY",
               };
 
               logger.debug("🎯 Creating broker with backend:", brokerData);
@@ -189,6 +192,7 @@ export default function BrokersPage() {
       brokerSurname,
       brokerEmail,
       brokerVkn,
+      brokerTCkn,
       brokerDiscount || "0",
     );
     setValidationErrors(validation.errors);
@@ -219,7 +223,9 @@ export default function BrokersPage() {
                   lastName: brokerSurname.trim(),
                   email: brokerEmail.trim(),
                   vkn: brokerVkn.trim(),
+                  tkn: brokerTCkn.trim(),
                   discountRate: discountRate,
+                  targetDayOfWeek: "MONDAY",
                 },
               });
               logger.debug("✅ Broker updated via backend");
@@ -242,6 +248,7 @@ export default function BrokersPage() {
     setBrokerSurname("");
     setBrokerEmail("");
     setBrokerVkn("");
+    setBrokerTCkn("");
     setBrokerDiscount(""); // İskonto alanını da temizle
     setValidationErrors({});
   };
@@ -253,6 +260,7 @@ export default function BrokersPage() {
     setBrokerSurname("");
     setBrokerEmail("");
     setBrokerVkn("");
+    setBrokerTCkn("");
     setBrokerDiscount(""); // İskonto alanını da temizle
     setValidationErrors({});
   };
@@ -392,6 +400,18 @@ export default function BrokersPage() {
             keyboardType="email-address"
             className="mb-4"
             error={validationErrors.email}
+          />
+
+          <Input
+            label="TCKN"
+            value={brokerTCkn}
+            onChangeText={setBrokerTCkn}
+            placeholder="11 haneli TCKN yi girin..."
+            variant="outlined"
+            maxLength={11}
+            numericOnly={true}
+            className="mb-4"
+            error={validationErrors.tckn}
           />
 
           <Input

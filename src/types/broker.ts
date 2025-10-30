@@ -37,6 +37,8 @@ export interface BrokerFormData {
   lastName: string;
   email: string;
   vkn: string;
+  tkn: string;
+  targetDayOfWeek: string;
   discountRate: number;
 }
 
@@ -76,8 +78,8 @@ export const adaptBroker = (formData: BrokerFormData) => ({
   email: formData.email.trim(),
   vkn: formData.vkn.trim(),
   discountRate: formData.discountRate,
-  email: formData.email.trim(),
-  vkn: formData.vkn.trim(),
+  tkn: formData.tkn.trim(),
+  targetDayOfWeek: formData.targetDayOfWeek.trim(),
 });
 
 // Update için backend format'ına çevir
