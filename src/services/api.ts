@@ -1,5 +1,10 @@
 // src/services/api.ts
 import type { ApiError } from "@/src/types/apiTypes";
+import type {
+  CategoryCreateRequest,
+  CategoryResponse,
+  CategoryUpdateRequest,
+} from "@/src/types/category";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
 import Constants from "expo-constants";
@@ -206,15 +211,33 @@ class ApiService {
   }
 
   // -------------------- Category --------------------
-  async getCategories(): Promise<any[]> {
-    return this.request<any[]>("/category/all");
+  async getCategories(): Promise<CategoryResponse[]> {
+    try {
+      logger.debug("🏷️ API: Fetching categories...");
+
+      const result = await this.request<CategoryResponse[]>("/category/all", {
+        method: "GET",
+      });
+
+      logger.debug(
+        "✅ API: Categories fetched - Count:",
+        Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
+      );
+
+      return result;
+    } catch (error) {
+      logger.error("🏷️ API: Categories fetch error:", error);
+      throw error;
+    }
   }
 
-  async saveCategory(category: { name: string; taxRate: number }): Promise<any> {
+  async saveCategory(category: CategoryCreateRequest): Promise<CategoryResponse> {
     logger.debug("🏷️ API: Saving category with data:", category);
 
     try {
-      const result = await this.request<any>("/category/save", {
+      const result = await this.request<CategoryResponse>("/category/save", {
         method: "POST",
         body: JSON.stringify(category),
       });
@@ -230,15 +253,22 @@ class ApiService {
     }
   }
 
-  async updateCategory(category: {
-    categoryId: number;
-    name: string;
-    taxRate: number;
-  }): Promise<any> {
-    return this.request<any>("/category/update", {
-      method: "PUT",
-      body: JSON.stringify(category),
-    });
+  async updateCategory(category: CategoryUpdateRequest): Promise<CategoryResponse> {
+    try {
+      logger.debug("🏷️ API: Updating category with data:", category);
+
+      const result = await this.request<CategoryResponse>("/category/update", {
+        method: "PUT",
+        body: JSON.stringify(category),
+      });
+
+      logger.debug("✅ API: Category updated:", result ? Object.keys(result) : "null");
+
+      return result;
+    } catch (error) {
+      logger.error("🏷️ API: Category update error:", error);
+      throw error;
+    }
   }
 
   async deleteCategory(id: string | number): Promise<any> {
