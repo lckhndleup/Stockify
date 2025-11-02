@@ -534,7 +534,9 @@ class ApiService {
     lastName: string;
     email: string;
     vkn: string;
+    tkn: string;
     discountRate: number;
+    targetDayOfWeek: string;
   }): Promise<any> {
     try {
       logger.debug("🤝 API: Saving broker:", broker);
@@ -560,7 +562,9 @@ class ApiService {
     lastName: string;
     email: string;
     vkn: string;
+    tkn: string;
     discountRate: number;
+    targetDayOfWeek: string;
   }): Promise<any> {
     try {
       logger.debug("🤝 API: Updating broker:", broker);
@@ -814,7 +818,7 @@ class ApiService {
   /** Download document with authentication */
   async downloadDocument(url: string): Promise<Blob> {
     try {
-      console.log("📄 API: Downloading document from:", url);
+      logger.debug("📄 API: Downloading document from:", url);
 
       // Token'ı header'a ekle
       const headers: Record<string, string> = {};
@@ -835,11 +839,11 @@ class ApiService {
       }
 
       const blob = await response.blob();
-      console.log("✅ API: Document downloaded, size:", blob.size);
+      logger.debug("✅ API: Document downloaded, size:", blob.size);
 
       return blob;
     } catch (error) {
-      console.log("📄 API: Document download error:", error);
+      logger.error("📄 API: Document download error:", error);
       throw error;
     }
   }
