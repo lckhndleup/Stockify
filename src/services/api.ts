@@ -5,6 +5,17 @@ import type {
   CategoryResponse,
   CategoryUpdateRequest,
 } from "@/src/types/category";
+import type {
+  ProductCreateRequest,
+  ProductResponse,
+  ProductUpdateRequest,
+} from "@/src/types/product";
+import type {
+  InventoryCreateRequest,
+  InventoryListResponse,
+  InventoryResponse,
+  InventoryUpdateRequest,
+} from "@/src/types/inventory";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
 import Constants from "expo-constants";
@@ -291,7 +302,7 @@ class ApiService {
   async getProducts(params?: {
     productText?: string;
     status?: "ACTIVE" | "PASSIVE";
-  }): Promise<any[]> {
+  }): Promise<ProductResponse[]> {
     try {
       logger.debug("🛍️ API: Fetching products with params:", params);
 
@@ -306,7 +317,7 @@ class ApiService {
       const queryString = queryParams.toString();
       const url = `/product/all${queryString ? `?${queryString}` : ""}`;
 
-      const result = await this.request<any[]>(url, {
+      const result = await this.request<ProductResponse[]>(url, {
         method: "GET",
       });
 
@@ -324,11 +335,11 @@ class ApiService {
     }
   }
 
-  async getProductDetail(id: string | number): Promise<any> {
+  async getProductDetail(id: string | number): Promise<ProductResponse> {
     try {
       logger.debug("🛍️ API: Fetching product detail for ID:", id);
 
-      const result = await this.request<any>(`/product/detail/${id}`, {
+      const result = await this.request<ProductResponse>(`/product/detail/${id}`, {
         method: "GET",
       });
 
@@ -341,11 +352,11 @@ class ApiService {
     }
   }
 
-  async saveProduct(product: { categoryId: number; name: string }): Promise<any> {
+  async saveProduct(product: ProductCreateRequest): Promise<ProductResponse> {
     try {
       logger.debug("🛍️ API: Saving product:", product);
 
-      const result = await this.request<any>("/product/save", {
+      const result = await this.request<ProductResponse>("/product/save", {
         method: "POST",
         body: JSON.stringify(product),
       });
@@ -359,15 +370,11 @@ class ApiService {
     }
   }
 
-  async updateProduct(product: {
-    productId: number;
-    categoryId: number;
-    name: string;
-  }): Promise<any> {
+  async updateProduct(product: ProductUpdateRequest): Promise<ProductResponse> {
     try {
       logger.debug("🛍️ API: Updating product:", product);
 
-      const result = await this.request<any>("/product/update", {
+      const result = await this.request<ProductResponse>("/product/update", {
         method: "PUT",
         body: JSON.stringify(product),
       });
@@ -398,17 +405,19 @@ class ApiService {
   }
 
   // -------------------- Inventory --------------------
-  async getInventoryAll(): Promise<any[]> {
+  async getInventoryAll(): Promise<InventoryListResponse> {
     try {
       logger.debug("📦 API: Fetching all inventory...");
 
-      const result = await this.request<any[]>("/inventory/all", {
+      const result = await this.request<InventoryListResponse>("/inventory/all", {
         method: "GET",
       });
 
       logger.debug(
         "✅ API: Inventory fetched - Count:",
         Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
       );
 
       return result;
@@ -418,15 +427,15 @@ class ApiService {
     }
   }
 
-  async getInventoryDetail(id: string | number): Promise<any> {
+  async getInventoryDetail(id: string | number): Promise<InventoryResponse> {
     try {
       logger.debug("📦 API: Fetching inventory detail for ID:", id);
 
-      const result = await this.request<any>(`/inventory/detail/${id}`, {
+      const result = await this.request<InventoryResponse>(`/inventory/detail/${id}`, {
         method: "GET",
       });
 
-      logger.debug("✅ API: Inventory detail fetched:", result);
+      logger.debug("✅ API: Inventory detail fetched:", result ? Object.keys(result) : "null");
       return result;
     } catch (error) {
       logger.error("📦 API: Inventory detail fetch error:", error);
@@ -434,21 +443,33 @@ class ApiService {
     }
   }
 
-  async updateInventory(inventoryData: {
-    inventoryId: number;
-    price: number;
-    productCount: number;
-    criticalProductCount: number;
-  }): Promise<any> {
+  async saveInventory(payload: InventoryCreateRequest): Promise<InventoryResponse> {
+    try {
+      logger.debug("📦 API: Saving inventory:", payload);
+
+      const result = await this.request<InventoryResponse>("/inventory/save", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      logger.debug("✅ API: Inventory saved:", result ? Object.keys(result) : "null");
+      return result;
+    } catch (error) {
+      logger.error("📦 API: Inventory save error:", error);
+      throw error;
+    }
+  }
+
+  async updateInventory(inventoryData: InventoryUpdateRequest): Promise<InventoryResponse> {
     try {
       logger.debug("📦 API: Updating inventory:", inventoryData);
 
-      const result = await this.request<any>("/inventory/update", {
+      const result = await this.request<InventoryResponse>("/inventory/update", {
         method: "PUT",
         body: JSON.stringify(inventoryData),
       });
 
-      logger.debug("✅ API: Inventory updated:", result);
+      logger.debug("✅ API: Inventory updated:", result ? Object.keys(result) : "null");
       return result;
     } catch (error) {
       logger.error("📦 API: Inventory update error:", error);
@@ -456,17 +477,19 @@ class ApiService {
     }
   }
 
-  async getInventoryCritical(): Promise<any[]> {
+  async getInventoryCritical(): Promise<InventoryListResponse> {
     try {
       logger.debug("📦 API: Fetching critical inventory...");
 
-      const result = await this.request<any[]>("/inventory/critical", {
+      const result = await this.request<InventoryListResponse>("/inventory/critical", {
         method: "GET",
       });
 
       logger.debug(
         "✅ API: Critical inventory fetched - Count:",
         Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
       );
 
       return result;
@@ -476,17 +499,19 @@ class ApiService {
     }
   }
 
-  async getInventoryOutOf(): Promise<any[]> {
+  async getInventoryOutOf(): Promise<InventoryListResponse> {
     try {
       logger.debug("📦 API: Fetching out of stock inventory...");
 
-      const result = await this.request<any[]>("/inventory/outOf", {
+      const result = await this.request<InventoryListResponse>("/inventory/outOf", {
         method: "GET",
       });
 
       logger.debug(
         "✅ API: Out of stock inventory fetched - Count:",
         Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
       );
 
       return result;
@@ -496,17 +521,19 @@ class ApiService {
     }
   }
 
-  async getInventoryAvailable(): Promise<any[]> {
+  async getInventoryAvailable(): Promise<InventoryListResponse> {
     try {
       logger.debug("📦 API: Fetching available inventory...");
 
-      const result = await this.request<any[]>("/inventory/available", {
+      const result = await this.request<InventoryListResponse>("/inventory/available", {
         method: "GET",
       });
 
       logger.debug(
         "✅ API: Available inventory fetched - Count:",
         Array.isArray(result) ? result.length : "not array",
+        "Keys:",
+        Array.isArray(result) && result.length > 0 ? Object.keys(result[0]) : "empty",
       );
 
       return result;
