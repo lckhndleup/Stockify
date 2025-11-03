@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { View, Animated } from "react-native";
-import { Typography, Icon } from "@/src/components/ui";
+import Typography from "./typography";
+import Icon from "./icon";
 import type { ToastProps } from "@/src/types/ui";
 
 export default function Toast({

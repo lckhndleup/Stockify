@@ -64,6 +64,7 @@ export interface ButtonProps extends TouchableOpacityProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   className?: string;
+  loadingIndicatorColor?: string;
 }
 
 export interface InputProps extends TextInputProps {

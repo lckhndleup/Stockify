@@ -1,6 +1,6 @@
 // app/broker/sections/resultSales.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, BackHandler, ScrollView, View, Linking } from "react-native";
+import { Alert, BackHandler, ScrollView, View, Linking, Platform } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Container, Typography, Card, Button, Icon, Divider, Loading } from "@/src/components/ui";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
@@ -143,21 +143,82 @@ export default function ResultSales() {
       return;
     }
 
-    const headers = apiService.getAuthHeaders();
+    const headers = {
+      Accept: "application/pdf",
+      ...apiService.getAuthHeaders(),
+    };
     const sanitizedName = url.split("/").pop() || `${kind}_belgesi.pdf`;
     const fileName = sanitizedName.endsWith(".pdf") ? sanitizedName : `${kind}_${Date.now()}.pdf`;
-    const cacheDir = (FileSystem as any).cacheDirectory as string | undefined;
-    const docDir = (FileSystem as any).documentDirectory as string | undefined;
-    const targetDir = cacheDir || docDir;
-
-    if (!targetDir) {
-      Alert.alert("Hata", "Dosya sistemi erişimi sağlanamadı.");
-      return;
-    }
-
     setDownloadingDoc(kind);
     try {
-      const downloadRes = await FileSystem.downloadAsync(url, `${targetDir}${fileName}`, {
+      if (Platform.OS === "web") {
+        const response = await fetch(url, {
+          method: "GET",
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Sunucu ${response.status} yanıtı döndürdü`);
+        }
+
+        const blob = await response.blob();
+        const browser = globalThis as typeof globalThis & {
+          document?: any;
+          URL?: any;
+        };
+
+        if (!browser.document || !browser.URL?.createObjectURL) {
+          throw new Error("Tarayıcı indirme desteklenmiyor");
+        }
+
+        const blobUrl = browser.URL.createObjectURL(blob);
+        const anchor = browser.document.createElement("a");
+        anchor.href = blobUrl;
+        anchor.download = fileName;
+        browser.document.body.appendChild(anchor);
+        anchor.click();
+        browser.document.body.removeChild(anchor);
+        browser.URL.revokeObjectURL(blobUrl);
+        return;
+      }
+
+      const docDir = FileSystem.documentDirectory ?? null;
+      const cacheDir = FileSystem.cacheDirectory ?? null;
+      const tempDir = (FileSystem as any).temporaryDirectory ?? null;
+      const baseDir = docDir || cacheDir || tempDir;
+
+      logger.debug("📁 Belge indirme dizinleri", {
+        platform: Platform.OS,
+        docDir,
+        cacheDir,
+        tempDir,
+      });
+
+      if (!baseDir) {
+        logger.warn("📁 Yerel dizin bulunamadı, WebView ekranına yönlendiriliyor", {
+          platform: Platform.OS,
+        });
+        router.push({
+          pathname: "/broker/sections/documentViewer",
+          params: {
+            url,
+            title: kind === "invoice" ? "Fatura" : "Satış Fişi",
+          },
+        });
+        return;
+      }
+
+      const baseWithSlash = baseDir.endsWith("/") ? baseDir : `${baseDir}/`;
+      const normalizedDir = `${baseWithSlash}stockify-downloads/`;
+      try {
+        await FileSystem.makeDirectoryAsync(normalizedDir, { intermediates: true });
+      } catch (dirError) {
+        // Dizin zaten varsa hata dönebilir, loglayıp devam edelim
+        logger.debug("📁 Dizin oluşturma sonucu", dirError?.message ?? dirError);
+      }
+
+      const targetPath = `${normalizedDir}${fileName}`;
+      const downloadRes = await FileSystem.downloadAsync(url, targetPath, {
         headers,
       });
 

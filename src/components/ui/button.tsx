@@ -13,10 +13,23 @@ export default function Button({
   rightIcon,
   disabled,
   className = "",
+  loadingIndicatorColor,
   onPress,
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
+
+  const spinnerColors = {
+    primary: "#FFFFFF",
+    secondary: "#1F2937",
+    success: "#FFFFFF",
+    danger: "#FFFFFF",
+    warning: "#FFFFFF",
+    outline: "#E3001B",
+    ghost: "#1F2937",
+  } as const;
+
+  const indicatorColor = loadingIndicatorColor ?? spinnerColors[variant] ?? "#FFFFFF";
 
   const variantClasses = {
     primary: "bg-stock-red active:bg-[#CC0018]",
@@ -104,7 +117,8 @@ export default function Button({
       {loading && (
         <ActivityIndicator
           size="small"
-          color={textColorClass.includes("white") ? "white" : "#E3001B"}
+          color={indicatorColor}
+          style={{ marginRight: leftIcon || children ? 8 : 0 }}
         />
       )}
 
