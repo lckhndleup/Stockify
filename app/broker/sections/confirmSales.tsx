@@ -17,6 +17,7 @@ import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useSalesCalculate, useSalesConfirm, useSalesCancel } from "@/src/hooks/api/useSales";
 import type { SalesSummary } from "@/src/types/sales";
 import type { SalesItemParam } from "@/src/types/salesUI";
+import { parseApiError } from "@/src/utils/apiError";
 
 export default function ConfirmSales() {
   // --- Params & state (LOGIC AYNI) ---
@@ -117,33 +118,77 @@ export default function ConfirmSales() {
 
   const handleEdit = () => router.back();
 
+  const navigateToResult = (res: SalesSummary, invoiceFlag: boolean) => {
+    router.push({
+      pathname: "/broker/sections/resultSales",
+      params: {
+        brokerId,
+        success: "true",
+        totalAmount: String(res?.totalPriceWithTax ?? 0),
+        discountAmount: String(res?.discountPrice ?? 0),
+        createInvoice: String(invoiceFlag),
+        documentNumber: res?.documentNumber ?? "",
+        downloadUrl: res?.downloadUrl ?? res?.invoiceDownloadUrl ?? "",
+        summaryJSON: JSON.stringify(res),
+      },
+    });
+  };
+
+  const confirmSale = async (invoiceFlag: boolean) => {
+    const result = await confirmMutation.mutateAsync({
+      brokerId: Number(brokerId),
+      createInvoice: invoiceFlag,
+    });
+    navigateToResult(result, invoiceFlag);
+  };
+
+  const promptInvoiceFallback = () => {
+    Alert.alert(
+      "Fatura Yüklenemedi",
+      "Belge servisine ulaşılamadığı için fatura oluşturulamadı. Faturasız devam etmek ister misiniz?",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Faturasız Devam Et",
+          style: "default",
+          onPress: async () => {
+            try {
+              setIsProcessing(true);
+              await confirmSale(false);
+            } catch (err) {
+              const parsed = parseApiError(err);
+              showError(parsed.message || "Satış tamamlanamadı.");
+            } finally {
+              setIsProcessing(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleConfirm = async () => {
     if (!parsedSalesData.length) {
       showError("Satış yapılacak ürün bulunamadı.");
       return;
     }
+
+    setIsProcessing(true);
     try {
-      setIsProcessing(true);
-      const res = await confirmMutation.mutateAsync({
-        brokerId: Number(brokerId),
-        createInvoice: willCreateInvoice,
-      });
-      router.push({
-        pathname: "/broker/sections/resultSales",
-        params: {
-          brokerId,
-          success: "true",
-          totalAmount: String(res?.totalPriceWithTax ?? 0),
-          discountAmount: String(res?.discountPrice ?? 0),
-          createInvoice: String(willCreateInvoice),
-          documentNumber: res?.documentNumber ?? "",
-          downloadUrl: res?.downloadUrl ?? res?.invoiceDownloadUrl ?? "",
-          // ✅ eklenen alan: resultSales’te ara toplam ve KDV’nin 0 gelmemesi için
-          summaryJSON: JSON.stringify(res),
-        },
-      });
-    } catch {
-      showError("Satış onaylanırken hata oluştu.");
+      await confirmSale(willCreateInvoice);
+    } catch (err) {
+      const parsed = parseApiError(err);
+      if (
+        parsed.status === 404 &&
+        typeof parsed.message === "string" &&
+        parsed.message.toLowerCase().includes("document upload error")
+      ) {
+        setIsProcessing(false);
+        promptInvoiceFallback();
+        return;
+      }
+
+      showError(parsed.message || "Satış onaylanırken hata oluştu.");
     } finally {
       setIsProcessing(false);
     }

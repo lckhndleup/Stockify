@@ -9,6 +9,9 @@ import type { SalesSummaryResult } from "@/src/types/salesUI";
 import SuccessAnimation from "@/src/components/svg/successAnimation";
 import type { SuccessAnimationRef } from "@/src/types/svg";
 import logger from "@/src/utils/logger";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import apiService from "@/src/services/api";
 
 export default function ResultSales() {
   const params = useLocalSearchParams();
@@ -50,6 +53,7 @@ export default function ResultSales() {
   // ✅ Backend’den calculate sonucu da çek (confirm yoksa buradan göster)
   const [calcSummary, setCalcSummary] = useState<SalesSummaryResult | null>(null);
   const calcMutation = useSalesCalculate();
+  const [downloadingDoc, setDownloadingDoc] = useState<"receipt" | "invoice" | null>(null);
 
   useEffect(() => {
     if (!isSuccess || !brokerId) return;
@@ -133,17 +137,50 @@ export default function ResultSales() {
       pathname: "/broker/sections/salesSection",
       params: { brokerId },
     });
-  const handleOpenInvoice = async () => {
-    const url =
-      (typeof downloadUrl === "string" && downloadUrl) ||
-      summaryToShow?.downloadUrl ||
-      summaryToShow?.invoiceDownloadUrl ||
-      "";
-    if (!url) return;
+  const downloadAndOpenDocument = async (url: string, kind: "receipt" | "invoice") => {
+    if (!url) {
+      Alert.alert("Uyarı", "İndirilecek belge bulunamadı.");
+      return;
+    }
+
+    const headers = apiService.getAuthHeaders();
+    const sanitizedName = url.split("/").pop() || `${kind}_belgesi.pdf`;
+    const fileName = sanitizedName.endsWith(".pdf") ? sanitizedName : `${kind}_${Date.now()}.pdf`;
+    const cacheDir = (FileSystem as any).cacheDirectory as string | undefined;
+    const docDir = (FileSystem as any).documentDirectory as string | undefined;
+    const targetDir = cacheDir || docDir;
+
+    if (!targetDir) {
+      Alert.alert("Hata", "Dosya sistemi erişimi sağlanamadı.");
+      return;
+    }
+
+    setDownloadingDoc(kind);
     try {
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert("Hata", "Belge açılamadı.");
+      const downloadRes = await FileSystem.downloadAsync(url, `${targetDir}${fileName}`, {
+        headers,
+      });
+
+      if (downloadRes.status && downloadRes.status >= 400) {
+        throw new Error(`Sunucu ${downloadRes.status} yanıtı döndürdü`);
+      }
+
+      const fileUri = downloadRes.uri;
+
+      // Tercihen paylaş / görüntüle
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: "application/pdf",
+          UTI: "com.adobe.pdf",
+        });
+      } else {
+        await Linking.openURL(fileUri);
+      }
+    } catch (error) {
+      logger.error("📄 Belge indirme hatası:", error);
+      Alert.alert("Hata", "Belge indirilirken bir sorun oluştu.");
+    } finally {
+      setDownloadingDoc(null);
     }
   };
 
@@ -157,6 +194,10 @@ export default function ResultSales() {
       </Container>
     );
   }
+
+  const receiptUrl =
+    (typeof downloadUrl === "string" && downloadUrl) || summaryToShow?.downloadUrl || "";
+  const invoiceUrl = summaryToShow?.invoiceDownloadUrl || "";
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
@@ -258,25 +299,49 @@ export default function ResultSales() {
         )}
 
         {/* PDF / BELGE İNDİR – kartın hemen altında */}
-        {isSuccess &&
-          ((typeof downloadUrl === "string" && downloadUrl) ||
-            summaryToShow?.downloadUrl ||
-            summaryToShow?.invoiceDownloadUrl) && (
-            <View className="mb-8">
+        {isSuccess && (receiptUrl || invoiceUrl) && (
+          <View className="mb-8 space-y-3">
+            {receiptUrl ? (
               <Button
                 variant="secondary"
                 size="md"
                 fullWidth
                 className="bg-white border border-stock-border"
-                onPress={handleOpenInvoice}
-                leftIcon={<Icon family="MaterialIcons" name="download" size={20} color="#16A34A" />}
+                onPress={() => downloadAndOpenDocument(receiptUrl, "receipt")}
+                loading={downloadingDoc === "receipt"}
+                leftIcon={
+                  downloadingDoc === "receipt" ? undefined : (
+                    <Icon family="MaterialIcons" name="download" size={20} color="#16A34A" />
+                  )
+                }
               >
                 <Typography className="text-stock-dark" weight="bold">
-                  PDF/Belgeyi İndir
+                  Satış Fişini İndir
                 </Typography>
               </Button>
-            </View>
-          )}
+            ) : null}
+
+            {invoiceUrl ? (
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
+                className="bg-white border border-stock-border"
+                onPress={() => downloadAndOpenDocument(invoiceUrl, "invoice")}
+                loading={downloadingDoc === "invoice"}
+                leftIcon={
+                  downloadingDoc === "invoice" ? undefined : (
+                    <Icon family="MaterialIcons" name="picture-as-pdf" size={20} color="#2563EB" />
+                  )
+                }
+              >
+                <Typography className="text-stock-dark" weight="bold">
+                  Faturayı İndir
+                </Typography>
+              </Button>
+            ) : null}
+          </View>
+        )}
 
         {/* FATURA OLUŞTURULDU kartı */}
         {isSuccess && willCreateInvoice && (
