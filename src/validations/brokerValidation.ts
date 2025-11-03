@@ -73,7 +73,6 @@ export const validateBrokerForm = (
   lastName: string,
   email: string,
   vkn: string,
-  tckn: string,
   discountRate: string,
   tkn: string,
   targetDayOfWeek: string,
@@ -106,10 +105,6 @@ export const validateBrokerForm = (
     errors.vkn = "VKN zorunludur";
   } else if (!/^\d{10,11}$/.test(vkn.trim())) {
     errors.vkn = "VKN 10-11 haneli rakamlardan oluşmalıdır";
-  }
-
-  if (!tckn.trim()) {
-    errors.tckn = "VKN zorunludur";
   }
 
   if (!discountRate.trim()) {
