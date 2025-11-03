@@ -23,6 +23,14 @@ import type {
   InventoryResponse,
   InventoryUpdateRequest,
 } from "@/src/types/inventory";
+import type {
+  SalesCalculateRequest,
+  SalesCancelRequest,
+  SalesCancelResponse,
+  SalesConfirmRequest,
+  SalesProductsResponse,
+  SalesSummary,
+} from "@/src/types/sales";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
 import Constants from "expo-constants";
@@ -711,11 +719,11 @@ class ApiService {
 
   // -------------------- Sales (SalesController) --------------------
   /** GET /sales/products */
-  async getSalesProducts(): Promise<any[]> {
+  async getSalesProducts(): Promise<SalesProductsResponse> {
     try {
       logger.debug("💰 API: Fetching sales products...");
 
-      const result = await this.request<any[]>("/sales/products", {
+      const result = await this.request<SalesProductsResponse>("/sales/products", {
         method: "GET",
       });
 
@@ -749,6 +757,11 @@ class ApiService {
 
       return result;
     } catch (error) {
+      const status = (error as ApiError | undefined)?.status;
+      if (status === 404) {
+        logger.debug("🧺 API: Basket empty for broker, returning []");
+        return [];
+      }
       logger.error("🧺 API: Basket fetch error:", error);
       throw error;
     }
@@ -809,11 +822,11 @@ class ApiService {
   }
 
   /** POST /sales/calculate */
-  async calculateSale(payload: { brokerId: number; createInvoice: boolean }): Promise<any> {
+  async calculateSale(payload: SalesCalculateRequest): Promise<SalesSummary> {
     try {
       logger.debug("🧮 API: Calculate sale:", payload);
 
-      const result = await this.request<any>("/sales/calculate", {
+      const result = await this.request<SalesSummary>("/sales/calculate", {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -829,11 +842,11 @@ class ApiService {
   }
 
   /** POST /sales/confirm */
-  async confirmSale(payload: { brokerId: number; createInvoice: boolean }): Promise<any> {
+  async confirmSale(payload: SalesConfirmRequest): Promise<SalesSummary> {
     try {
       logger.debug("✅ API: Confirm sale:", payload);
 
-      const result = await this.request<any>("/sales/confirm", {
+      const result = await this.request<SalesSummary>("/sales/confirm", {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -847,14 +860,11 @@ class ApiService {
   }
 
   /** POST /sales/cancel */
-  async cancelSale(payload: {
-    brokerId: number;
-    createInvoice: boolean;
-  }): Promise<{ success: true; message: string }> {
+  async cancelSale(payload: SalesCancelRequest): Promise<SalesCancelResponse> {
     try {
       logger.debug("🛑 API: Cancel sale:", payload);
 
-      const result = await this.request<{ success: true; message: string }>("/sales/cancel", {
+      const result = await this.request<SalesCancelResponse>("/sales/cancel", {
         method: "POST",
         body: JSON.stringify(payload),
       });

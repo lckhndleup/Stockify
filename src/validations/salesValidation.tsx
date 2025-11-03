@@ -69,9 +69,10 @@ export const salesSummarySchema = z.object({
   discountPrice: z.number(),
   discountRate: z.number(),
   totalPrice: z.number(),
-  taxPrice: z.number(),
+  totalTaxPrice: z.number(),
   totalPriceWithTax: z.number(),
   downloadUrl: z.string().url().optional(),
+  invoiceDownloadUrl: z.string().url().optional(),
 });
 export type SalesItem = z.infer<typeof salesItemSchema>;
 export type SalesSummary = z.infer<typeof salesSummarySchema>;

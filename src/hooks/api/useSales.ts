@@ -4,12 +4,12 @@ import { apiService } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
 import {
   adaptSalesProductsForUI,
-  SalesProduct,
   SalesProductDisplayItem,
   SalesCalculateRequest,
   SalesCancelRequest,
   SalesConfirmRequest,
   SalesSummary,
+  SalesCancelResponse,
 } from "@/src/types/sales";
 
 // ---------- QUERIES ----------
@@ -20,7 +20,7 @@ export const useSalesProducts = (options?: { enabled?: boolean }) =>
     queryKey: queryKeys.sales.products(),
     queryFn: async () => {
       const products = await apiService.getSalesProducts();
-      return adaptSalesProductsForUI(products as SalesProduct[]);
+      return adaptSalesProductsForUI(products);
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -61,7 +61,7 @@ export const useSalesConfirm = () => {
 // POST /sales/cancel
 export const useSalesCancel = () => {
   const qc = useQueryClient();
-  return useMutation<{ success: true; message: string }, unknown, SalesCancelRequest>({
+  return useMutation<SalesCancelResponse, unknown, SalesCancelRequest>({
     mutationFn: (payload) => apiService.cancelSale(payload),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({

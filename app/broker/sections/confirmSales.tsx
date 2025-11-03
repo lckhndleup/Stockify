@@ -1,5 +1,5 @@
 // app/broker/sections/confirmSales.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -51,20 +51,40 @@ export default function ConfirmSales() {
   const confirmMutation = useSalesConfirm();
   const cancelMutation = useSalesCancel();
 
+  const lastFetchKeyRef = useRef<string | null>(null);
+
   useEffect(() => {
+    if (!brokerId) return;
+
+    const fetchKey = `${brokerId}-${willCreateInvoice}`;
+    if (lastFetchKeyRef.current === fetchKey) {
+      return;
+    }
+
+    lastFetchKeyRef.current = fetchKey;
+    let isActive = true;
+
     const run = async () => {
-      if (!brokerId) return;
       try {
         const res = await calcMutation.mutateAsync({
           brokerId: Number(brokerId),
           createInvoice: willCreateInvoice,
         });
-        setSummary(res);
+        if (isActive) {
+          setSummary(res);
+        }
       } catch {
-        setSummary(null);
+        if (isActive) {
+          setSummary(null);
+        }
       }
     };
+
     run();
+
+    return () => {
+      isActive = false;
+    };
   }, [brokerId, willCreateInvoice, calcMutation]);
 
   const handleCancel = () => {
@@ -117,7 +137,7 @@ export default function ConfirmSales() {
           discountAmount: String(res?.discountPrice ?? 0),
           createInvoice: String(willCreateInvoice),
           documentNumber: res?.documentNumber ?? "",
-          downloadUrl: res?.downloadUrl ?? "",
+          downloadUrl: res?.downloadUrl ?? res?.invoiceDownloadUrl ?? "",
           // ✅ eklenen alan: resultSales’te ara toplam ve KDV’nin 0 gelmemesi için
           summaryJSON: JSON.stringify(res),
         },

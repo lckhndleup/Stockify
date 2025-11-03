@@ -135,7 +135,10 @@ export default function ResultSales() {
     });
   const handleOpenInvoice = async () => {
     const url =
-      (typeof downloadUrl === "string" && downloadUrl) || (summaryToShow?.downloadUrl ?? "");
+      (typeof downloadUrl === "string" && downloadUrl) ||
+      summaryToShow?.downloadUrl ||
+      summaryToShow?.invoiceDownloadUrl ||
+      "";
     if (!url) return;
     try {
       await Linking.openURL(url);
@@ -256,7 +259,9 @@ export default function ResultSales() {
 
         {/* PDF / BELGE İNDİR – kartın hemen altında */}
         {isSuccess &&
-          ((typeof downloadUrl === "string" && downloadUrl) || summaryToShow?.downloadUrl) && (
+          ((typeof downloadUrl === "string" && downloadUrl) ||
+            summaryToShow?.downloadUrl ||
+            summaryToShow?.invoiceDownloadUrl) && (
             <View className="mb-8">
               <Button
                 variant="secondary"

@@ -65,4 +65,13 @@ export interface SalesSummary {
   totalTaxPrice: number; // ✅ toplam KDV (backend: totalTaxPrice)
   totalPriceWithTax: number; // KDV dahil genel toplam
   downloadUrl?: string; // confirm
+  invoiceDownloadUrl?: string; // confirm + fatura PDF
+}
+
+export type SalesCalculateResponse = SalesSummary;
+export type SalesConfirmResponse = SalesSummary;
+
+export interface SalesCancelResponse {
+  success: boolean;
+  message: string;
 }

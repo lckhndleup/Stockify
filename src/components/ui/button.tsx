@@ -28,6 +28,16 @@ export default function Button({
     ghost: "bg-transparent active:bg-stock-gray",
   };
 
+  const disabledVariantClasses = {
+    primary: "bg-stock-gray border border-stock-border",
+    secondary: "bg-stock-gray border border-stock-border",
+    success: "bg-stock-gray border border-stock-border",
+    danger: "bg-stock-gray border border-stock-border",
+    warning: "bg-stock-gray border border-stock-border",
+    outline: "border-2 border-stock-border bg-transparent",
+    ghost: "bg-transparent border border-stock-border",
+  } as const;
+
   const textColors = {
     primary: "text-stock-white",
     secondary: "text-stock-dark",
@@ -37,6 +47,16 @@ export default function Button({
     outline: "text-stock-red",
     ghost: "text-stock-dark",
   };
+
+  const disabledTextColors = {
+    primary: "text-stock-dark",
+    secondary: "text-stock-dark",
+    success: "text-stock-dark",
+    danger: "text-stock-dark",
+    warning: "text-stock-dark",
+    outline: "text-stock-dark",
+    ghost: "text-stock-dark",
+  } as const;
 
   // Tüm boyutlar için standart yükseklik (52px) ayarlanıyor, padding-x değerleri korunuyor
   const sizeClasses = {
@@ -53,6 +73,8 @@ export default function Button({
     xl: "xl",
   };
 
+  const textColorClass = isDisabled ? disabledTextColors[variant] : textColors[variant];
+
   const baseClasses = [
     "rounded-lg", // Tüm komponentlerde tutarlı border radius
     "flex-row",
@@ -65,6 +87,7 @@ export default function Button({
     fullWidth && "w-full",
     isDisabled && "opacity-50",
     className,
+    isDisabled && disabledVariantClasses[variant],
   ]
     .filter(Boolean)
     .join(" ");
@@ -81,7 +104,7 @@ export default function Button({
       {loading && (
         <ActivityIndicator
           size="small"
-          color={textColors[variant].includes("white") ? "white" : "#E3001B"}
+          color={textColorClass.includes("white") ? "white" : "#E3001B"}
         />
       )}
 
@@ -99,14 +122,18 @@ export default function Button({
         </View>
       )}
 
-      <Typography
-        variant="body"
-        size={textSizes[size] as any}
-        weight="semibold"
-        className={`${textColors[variant]}`}
-      >
-        {children}
-      </Typography>
+      {typeof children === "string" || typeof children === "number" ? (
+        <Typography
+          variant="body"
+          size={textSizes[size] as any}
+          weight="semibold"
+          className={textColorClass}
+        >
+          {children}
+        </Typography>
+      ) : (
+        children
+      )}
 
       {!loading && rightIcon && (
         <View
