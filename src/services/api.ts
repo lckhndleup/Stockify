@@ -1,6 +1,13 @@
 // src/services/api.ts
 import type { ApiError } from "@/src/types/apiTypes";
 import type {
+  BasketAddRequest,
+  BasketMutationResponse,
+  BasketRemoveRequest,
+  BasketResponse,
+  BasketUpdateRequest,
+} from "@/src/types/basket";
+import type {
   CategoryCreateRequest,
   CategoryResponse,
   CategoryUpdateRequest,
@@ -727,11 +734,11 @@ class ApiService {
   }
 
   /** GET /sales/basket/{brokerId} */
-  async getBasket(brokerId: number): Promise<any[]> {
+  async getBasket(brokerId: number): Promise<BasketResponse> {
     try {
       logger.debug("🧺 API: Fetching basket for broker:", brokerId);
 
-      const result = await this.request<any[]>(`/sales/basket/${brokerId}`, {
+      const result = await this.request<BasketResponse>(`/sales/basket/${brokerId}`, {
         method: "GET",
       });
 
@@ -748,15 +755,11 @@ class ApiService {
   }
 
   /** POST /basket/add  (Swagger: /sales değil, root /basket) */
-  async addToBasket(payload: {
-    brokerId: number;
-    productId: number;
-    productCount: number;
-  }): Promise<{ success: true; message: string }> {
+  async addToBasket(payload: BasketAddRequest): Promise<BasketMutationResponse> {
     try {
       logger.debug("🧺➕ API: Add to basket:", payload);
 
-      const result = await this.request<{ success: true; message: string }>("/basket/add", {
+      const result = await this.request<BasketMutationResponse>("/basket/add", {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -770,14 +773,11 @@ class ApiService {
   }
 
   /** POST /basket/remove */
-  async removeFromBasket(payload: {
-    brokerId: number;
-    productId: number;
-  }): Promise<{ success: true; message: string }> {
+  async removeFromBasket(payload: BasketRemoveRequest): Promise<BasketMutationResponse> {
     try {
       logger.debug("🧺➖ API: Remove from basket:", payload);
 
-      const result = await this.request<{ success: true; message: string }>("/basket/remove", {
+      const result = await this.request<BasketMutationResponse>("/basket/remove", {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -791,15 +791,11 @@ class ApiService {
   }
 
   /** POST /basket/update */
-  async updateBasket(payload: {
-    brokerId: number;
-    productId: number;
-    productCount: number;
-  }): Promise<{ success: true; message: string }> {
+  async updateBasket(payload: BasketUpdateRequest): Promise<BasketMutationResponse> {
     try {
       logger.debug("🧺✏️ API: Update basket:", payload);
 
-      const result = await this.request<{ success: true; message: string }>("/basket/update", {
+      const result = await this.request<BasketMutationResponse>("/basket/update", {
         method: "POST",
         body: JSON.stringify(payload),
       });

@@ -61,11 +61,7 @@ export const useSalesConfirm = () => {
 // POST /sales/cancel
 export const useSalesCancel = () => {
   const qc = useQueryClient();
-  return useMutation<
-    { success: true; message: string },
-    unknown,
-    SalesCancelRequest
-  >({
+  return useMutation<{ success: true; message: string }, unknown, SalesCancelRequest>({
     mutationFn: (payload) => apiService.cancelSale(payload),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({

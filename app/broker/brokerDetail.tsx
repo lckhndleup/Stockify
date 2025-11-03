@@ -29,6 +29,7 @@ import {
 } from "@/src/hooks/api/useBrokers";
 import { validateBrokerForm } from "@/src/validations/brokerValidation";
 import { BrokerTargetDay } from "@/src/types/broker";
+import { useAppStore } from "@/src/stores/appStore";
 
 const TARGET_DAY_OPTIONS: SelectBoxOption[] = [
   { label: "Pazartesi", value: "MONDAY" },
@@ -49,6 +50,7 @@ export default function BrokerDetailPage() {
   // ✅ HOOKS - DOĞRU SIRADA ÇAĞRILMALI
   const { brokerId } = useLocalSearchParams();
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const { showGlobalToast } = useAppStore();
 
   // ✅ BACKEND HOOKS - DOĞRU SIRADA
   const {
@@ -309,7 +311,7 @@ export default function BrokerDetailPage() {
               router.push("/brokers");
 
               logger.debug("🎉 Show success message");
-              showSuccess(`${brokerName} başarıyla silindi!`);
+              showGlobalToast(`${brokerName} başarıyla silindi!`, "success");
             } catch (error) {
               logger.error("❌ Delete broker error:", error);
               showError("Aracı silinirken bir hata oluştu.");

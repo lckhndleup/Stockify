@@ -14,11 +14,7 @@ import {
 } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
-import {
-  useSalesCalculate,
-  useSalesConfirm,
-  useSalesCancel,
-} from "@/src/hooks/api/useSales";
+import { useSalesCalculate, useSalesConfirm, useSalesCancel } from "@/src/hooks/api/useSales";
 import type { SalesSummary } from "@/src/types/sales";
 import type { SalesItemParam } from "@/src/types/salesUI";
 
@@ -31,7 +27,7 @@ export default function ConfirmSales() {
 
   const parsedSalesData: SalesItemParam[] = useMemo(
     () => (params.salesData ? JSON.parse(params.salesData as string) : []),
-    [params.salesData]
+    [params.salesData],
   );
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,7 +38,7 @@ export default function ConfirmSales() {
   const {
     data: brokers = [],
     isLoading: brokersLoading,
-    error: brokersError,
+    error: _brokersError,
   } = useActiveBrokers();
 
   const broker = brokers.find((b) => String(b.id) === String(brokerId));
@@ -69,38 +65,34 @@ export default function ConfirmSales() {
       }
     };
     run();
-  }, [brokerId, willCreateInvoice]);
+  }, [brokerId, willCreateInvoice, calcMutation]);
 
   const handleCancel = () => {
-    Alert.alert(
-      "Satışı İptal Et",
-      "Satış işlemini iptal etmek istediğinize emin misiniz?",
-      [
-        { text: "Geri Dön", style: "cancel" },
-        {
-          text: "İptal Et",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setIsProcessing(true);
-              await cancelMutation.mutateAsync({
-                brokerId: Number(brokerId),
-                createInvoice: willCreateInvoice,
-              });
-              showSuccess("Satış iptal edildi.");
-              router.push({
-                pathname: "/broker/brokerDetail",
-                params: { brokerId },
-              });
-            } catch {
-              showError("Satış iptal edilirken hata oluştu.");
-            } finally {
-              setIsProcessing(false);
-            }
-          },
+    Alert.alert("Satışı İptal Et", "Satış işlemini iptal etmek istediğinize emin misiniz?", [
+      { text: "Geri Dön", style: "cancel" },
+      {
+        text: "İptal Et",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setIsProcessing(true);
+            await cancelMutation.mutateAsync({
+              brokerId: Number(brokerId),
+              createInvoice: willCreateInvoice,
+            });
+            showSuccess("Satış iptal edildi.");
+            router.push({
+              pathname: "/broker/brokerDetail",
+              params: { brokerId },
+            });
+          } catch {
+            showError("Satış iptal edilirken hata oluştu.");
+          } finally {
+            setIsProcessing(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleEdit = () => router.back();
@@ -151,9 +143,7 @@ export default function ConfirmSales() {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="flex-1 items-center justify-center">
-          <Typography className="text-stock-text">
-            Aracı bulunamadı...
-          </Typography>
+          <Typography className="text-stock-text">Aracı bulunamadı...</Typography>
         </View>
       </Container>
     );
@@ -162,16 +152,12 @@ export default function ConfirmSales() {
   // --- UI ---
   const subTotalLocal = parsedSalesData.reduce(
     (s, i) => s + (i.totalPriceWithTax ?? i.totalPrice),
-    0
+    0,
   );
 
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-      />
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <ScrollView showsVerticalScrollIndicator={false} className="mt-4">
         {/* 1) ARACI İSMİ */}
         <View className="items-center mb-4">
@@ -190,8 +176,7 @@ export default function ConfirmSales() {
               brokerBalance >= 0 ? "text-stock-red" : "text-stock-green"
             } text-center mt-0`}
           >
-            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺
-            {Math.abs(brokerBalance).toLocaleString()}
+            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺{Math.abs(brokerBalance).toLocaleString()}
           </Typography>
         </View>
         {/* 2) BAKİYE SATIRI (| ile iki sütun) */}
@@ -243,14 +228,12 @@ export default function ConfirmSales() {
                   </Typography>
                   {item.taxRate != null && (
                     <Typography className="text-stock-text">
-                      KDV %{item.taxRate} = ₺
-                      {(item.taxPrice ?? 0).toLocaleString()}
+                      KDV %{item.taxRate} = ₺{(item.taxPrice ?? 0).toLocaleString()}
                     </Typography>
                   )}
                 </View>
                 <Typography weight="bold" className="text-stock-dark">
-                  ₺
-                  {(item.totalPriceWithTax ?? item.totalPrice).toLocaleString()}
+                  ₺{(item.totalPriceWithTax ?? item.totalPrice).toLocaleString()}
                 </Typography>
               </View>
             </View>
@@ -282,9 +265,7 @@ export default function ConfirmSales() {
           )}
 
           <View className="flex-row justify-between py-1">
-            <Typography className="text-stock-dark">
-              Ara Toplam (KDV hariç):
-            </Typography>
+            <Typography className="text-stock-dark">Ara Toplam (KDV hariç):</Typography>
             <Typography weight="semibold" className="text-stock-dark">
               ₺{(summary?.totalPrice ?? 0).toLocaleString()}
             </Typography>
@@ -300,11 +281,7 @@ export default function ConfirmSales() {
           <Divider className="my-3" />
 
           <View className="flex-row justify-between items-center">
-            <Typography
-              variant="body"
-              weight="bold"
-              className="text-stock-black"
-            >
+            <Typography variant="body" weight="bold" className="text-stock-black">
               Genel Toplam (KDV dahil):
             </Typography>
             <Typography variant="h3" weight="bold" className="text-stock-red">
@@ -327,14 +304,7 @@ export default function ConfirmSales() {
               className="bg-stock-gray"
               disabled={isProcessing}
               onPress={handleEdit}
-              leftIcon={
-                <Icon
-                  family="MaterialIcons"
-                  name="edit"
-                  size={20}
-                  color="#67686A"
-                />
-              }
+              leftIcon={<Icon family="MaterialIcons" name="edit" size={20} color="#67686A" />}
             >
               <Typography className="text-stock-dark" weight="bold">
                 DÜZENLE
@@ -352,19 +322,12 @@ export default function ConfirmSales() {
               loading={isProcessing && cancelMutation.isPending}
               leftIcon={
                 !(isProcessing && cancelMutation.isPending) ? (
-                  <Icon
-                    family="MaterialIcons"
-                    name="cancel"
-                    size={20}
-                    color="#E3001B"
-                  />
+                  <Icon family="MaterialIcons" name="cancel" size={20} color="#E3001B" />
                 ) : undefined
               }
             >
               <Typography className="text-stock-red" weight="bold">
-                {isProcessing && cancelMutation.isPending
-                  ? "İŞLEM..."
-                  : "İPTAL ET"}
+                {isProcessing && cancelMutation.isPending ? "İŞLEM..." : "İPTAL ET"}
               </Typography>
             </Button>
           </View>
@@ -379,19 +342,12 @@ export default function ConfirmSales() {
           loading={isProcessing && confirmMutation.isPending}
           leftIcon={
             !(isProcessing && confirmMutation.isPending) ? (
-              <Icon
-                family="MaterialIcons"
-                name="check-circle"
-                size={20}
-                color="white"
-              />
+              <Icon family="MaterialIcons" name="check-circle" size={20} color="white" />
             ) : undefined
           }
         >
           <Typography className="text-white" weight="bold">
-            {isProcessing && confirmMutation.isPending
-              ? "İŞLEM..."
-              : "ONAYLA VE DEVAM ET"}
+            {isProcessing && confirmMutation.isPending ? "İŞLEM..." : "ONAYLA VE DEVAM ET"}
           </Typography>
         </Button>
       </ScrollView>

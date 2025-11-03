@@ -1,7 +1,7 @@
 import React from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import Typography from "./typography";
-import type { TabItem, TabProps } from "@/src/types/ui";
+import type { TabProps } from "@/src/types/ui";
 
 export default function Tab({
   tabs,
@@ -12,7 +12,7 @@ export default function Tab({
   size = "md",
 }: TabProps) {
   // Dinamik font size hesaplama
-  const calculateFontSize = (tabCount: number, baseSize: string) => {
+  const calculateFontSize = (tabCount: number) => {
     const baseSizes = { sm: 14, md: 16, lg: 18 };
     const baseValue = baseSizes[size];
 
@@ -31,7 +31,7 @@ export default function Tab({
     return "px-2 py-1"; // 5+ tab için daha az padding
   };
 
-  const dynamicFontSize = calculateFontSize(tabs.length, size);
+  const dynamicFontSize = calculateFontSize(tabs.length);
   const dynamicPadding = calculatePadding(tabs.length);
 
   const sizeClasses = {
@@ -71,9 +71,10 @@ export default function Tab({
     <View className={`w-full ${className}`}>
       <View className={currentVariant.container}>
         <View className="flex-row">
-          {tabs.map((tab, index) => {
+          {tabs.map((tab) => {
             const isActive = tab.id === activeTab;
             const isDisabled = tab.disabled;
+            const roundedClass = variant === "pills" || variant === "default" ? "rounded-md" : "";
 
             return (
               <TouchableOpacity
@@ -84,11 +85,7 @@ export default function Tab({
                   flex-1 items-center justify-center
                   ${currentSize.padding}
                   ${isActive ? currentVariant.active : currentVariant.inactive}
-                  ${
-                    variant === "pills" || variant === "default"
-                      ? "rounded-md"
-                      : ""
-                  }
+                  ${roundedClass}
                   ${isDisabled ? "opacity-50" : ""}
                 `}
                 activeOpacity={0.8}
@@ -97,11 +94,7 @@ export default function Tab({
                   variant="body"
                   weight={isActive ? "semibold" : "medium"}
                   className={`
-                    ${
-                      isActive
-                        ? currentVariant.activeText
-                        : currentVariant.inactiveText
-                    }
+                    ${isActive ? currentVariant.activeText : currentVariant.inactiveText}
                     ${isDisabled ? "opacity-60" : ""}
                   `}
                   style={{

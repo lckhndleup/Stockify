@@ -57,14 +57,7 @@ export interface CategoryDisplay {
 // UI Component Props
 export interface ButtonProps extends TouchableOpacityProps {
   children: React.ReactNode;
-  variant?:
-    | "primary"
-    | "secondary"
-    | "success"
-    | "danger"
-    | "warning"
-    | "outline"
-    | "ghost";
+  variant?: "primary" | "secondary" | "success" | "danger" | "warning" | "outline" | "ghost";
   size?: "sm" | "md" | "lg" | "xl";
   fullWidth?: boolean;
   loading?: boolean;
@@ -162,17 +155,7 @@ export interface DividerProps {
 export interface TypographyProps extends TextProps {
   children: React.ReactNode;
   variant?: "h1" | "h2" | "h3" | "h4" | "body" | "caption" | "overline";
-  size?:
-    | "xs"
-    | "sm"
-    | "base"
-    | "lg"
-    | "xl"
-    | "2xl"
-    | "3xl"
-    | "4xl"
-    | "5xl"
-    | "6xl";
+  size?: "xs" | "sm" | "base" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl";
   weight?: "light" | "normal" | "medium" | "semibold" | "bold";
   color?:
     | "primary"

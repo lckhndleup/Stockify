@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from "react";
-import { View, StyleProp, ViewStyle } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View } from "react-native";
 import LottieView from "lottie-react-native";
 import Typography from "./typography";
 import type { LoadingProps } from "@/src/types/ui";
@@ -20,7 +20,6 @@ export default function Loading({
 
   const animationSize = sizeMapping[size];
   const animationRef = useRef<LottieView>(null);
-  const [animationKey, setAnimationKey] = useState(0);
 
   // Animasyon bittiğinde hemen yeniden başlatma işlevi
   const handleAnimationFinish = () => {
@@ -49,7 +48,6 @@ export default function Loading({
   const content = (
     <View className={`items-center justify-center ${className}`} style={style}>
       <LottieView
-        key={animationKey}
         ref={animationRef}
         source={require("../../assets/loadingAnimation.json")}
         autoPlay={true}
@@ -63,11 +61,7 @@ export default function Loading({
         resizeMode="contain"
       />
       {text && text.trim() && (
-        <Typography
-          variant="body"
-          className="mt-3 text-stock-text"
-          align="center"
-        >
+        <Typography variant="body" className="mt-3 text-stock-text" align="center">
           {text}
         </Typography>
       )}
@@ -77,9 +71,7 @@ export default function Loading({
   if (overlay) {
     return (
       <View className="absolute inset-0 bg-black/20 items-center justify-center z-50">
-        <View className="bg-white rounded-lg p-6 items-center shadow-lg">
-          {content}
-        </View>
+        <View className="bg-white rounded-lg p-6 items-center shadow-lg">{content}</View>
       </View>
     );
   }

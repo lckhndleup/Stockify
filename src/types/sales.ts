@@ -19,18 +19,15 @@ export interface SalesProductDisplayItem {
   unitPrice: number;
   taxRate: number;
 }
-export const adaptSalesProductForUI = (
-  p: SalesProduct
-): SalesProductDisplayItem => ({
+export const adaptSalesProductForUI = (p: SalesProduct): SalesProductDisplayItem => ({
   id: p.productId,
   name: p.productName,
   stock: p.productCount,
   unitPrice: p.price,
   taxRate: p.taxRate,
 });
-export const adaptSalesProductsForUI = (
-  list: SalesProduct[]
-): SalesProductDisplayItem[] => list.map(adaptSalesProductForUI);
+export const adaptSalesProductsForUI = (list: SalesProduct[]): SalesProductDisplayItem[] =>
+  list.map(adaptSalesProductForUI);
 
 // ---------- Request DTOs ----------
 export interface SalesCalculateRequest {

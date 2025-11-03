@@ -17,6 +17,7 @@ import {
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
+import { useAppStore } from "@/src/stores/appStore";
 import logger from "@/src/utils/logger";
 import type { DropdownProps } from "@/src/types/ui";
 import { useActiveCategories, useCreateCategory } from "@/src/hooks/api/useCategories";
@@ -254,7 +255,8 @@ export default function ProductsPage() {
   const createCategoryMutation = useCreateCategory();
 
   // Toast
-  const { toast, showSuccess, showError, hideToast } = useToast();
+  const { toast, showError, hideToast } = useToast();
+  const { globalToast, showGlobalToast, hideGlobalToast } = useAppStore();
 
   // LOG ACTIVE PRODUCTS FROM BACKEND API
   useEffect(() => {
@@ -372,7 +374,7 @@ export default function ProductsPage() {
 
               if (result && result.productId) {
                 handleProductModalClose();
-                showSuccess("Ürün başarıyla eklendi!");
+                showGlobalToast("Ürün başarıyla eklendi!", "success");
 
                 // Aktif ürünleri yenile
                 refetchActiveProducts();
@@ -441,7 +443,7 @@ export default function ProductsPage() {
               await updateProductMutation.mutateAsync(productUpdateData);
 
               handleEditProductModalClose();
-              showSuccess("Ürün başarıyla güncellendi!");
+              showGlobalToast("Ürün başarıyla güncellendi!", "success");
 
               // Tab'a göre ilgili ürünleri yenile
               if (activeTab === "active") {
@@ -475,7 +477,7 @@ export default function ProductsPage() {
               // Backend'den sil (status PASSIVE yapılır)
               await deleteProductMutation.mutateAsync(Number(product.id));
 
-              showSuccess("Ürün başarıyla silindi!");
+              showGlobalToast("Ürün başarıyla silindi!", "success");
 
               // Her iki listeyi de yenile (aktif listeden çıkar, pasif listeye girer)
               refetchActiveProducts();
@@ -573,7 +575,7 @@ export default function ProductsPage() {
               // Listeyi yenile ve modalı kapat
               await refetchCategories();
               handleCategoryModalClose();
-              showSuccess("Kategori başarıyla eklendi!");
+              showGlobalToast("Kategori başarıyla eklendi!", "success");
             } catch {
               showError("Kategori eklenirken bir hata oluştu.");
             }
@@ -620,6 +622,18 @@ export default function ProductsPage() {
   if (isLoading) {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
+        <Toast
+          visible={toast.visible}
+          message={toast.message}
+          type={toast.type}
+          onHide={hideToast}
+        />
+        <Toast
+          visible={globalToast.visible}
+          message={globalToast.message}
+          type={globalToast.type}
+          onHide={hideGlobalToast}
+        />
         <View className="flex-1 justify-center items-center -mt-20">
           <Loading size="large" />
         </View>
@@ -640,6 +654,12 @@ export default function ProductsPage() {
           message={toast.message}
           type={toast.type}
           onHide={hideToast}
+        />
+        <Toast
+          visible={globalToast.visible}
+          message={globalToast.message}
+          type={globalToast.type}
+          onHide={hideGlobalToast}
         />
         <View className="items-center justify-center py-12">
           <Icon
@@ -667,6 +687,12 @@ export default function ProductsPage() {
     <Container className="bg-white" padding="sm" safeTop={false}>
       {/* Toast Notification */}
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
+      <Toast
+        visible={globalToast.visible}
+        message={globalToast.message}
+        type={globalToast.type}
+        onHide={hideGlobalToast}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
         {/* Search ve Add Butonu */}

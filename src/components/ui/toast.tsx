@@ -1,9 +1,7 @@
-import React, { useEffect, useRef } from "react";
-import { View, Animated, Dimensions } from "react-native";
+import React, { useCallback, useEffect, useRef } from "react";
+import { View, Animated } from "react-native";
 import { Typography, Icon } from "@/src/components/ui";
 import type { ToastProps } from "@/src/types/ui";
-
-const { width } = Dimensions.get("window");
 
 export default function Toast({
   visible,
@@ -15,8 +13,22 @@ export default function Toast({
   // Sadece opacity animasyonu kullan, translateY kaldırıldı
   const opacity = useRef(new Animated.Value(0)).current;
 
+  const hideToast = useCallback(() => {
+    // Sadece opacity animasyonu
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      // State update'ini bir sonraki render cycle'a ertele
+      setTimeout(() => {
+        onHide?.();
+      }, 0);
+    });
+  }, [opacity, onHide]);
+
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     if (visible) {
       // Toast'ı göster (sadece opacity animasyonu, daha hızlı)
@@ -35,21 +47,7 @@ export default function Toast({
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [visible, duration]);
-
-  const hideToast = () => {
-    // Sadece opacity animasyonu
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      // State update'ini bir sonraki render cycle'a ertele
-      setTimeout(() => {
-        onHide?.();
-      }, 0);
-    });
-  };
+  }, [visible, duration, hideToast, opacity]);
 
   const getToastStyle = () => {
     switch (type) {

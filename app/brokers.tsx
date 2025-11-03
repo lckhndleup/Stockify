@@ -298,6 +298,18 @@ export default function BrokersPage() {
   if (brokersLoading && !brokersError) {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
+        <Toast
+          visible={toast.visible}
+          message={toast.message}
+          type={toast.type}
+          onHide={hideToast}
+        />
+        <Toast
+          visible={globalToast.visible}
+          message={globalToast.message}
+          type={globalToast.type}
+          onHide={hideGlobalToast}
+        />
         <View className="flex-1 justify-center items-center -mt-16">
           <Loading size="large" />
         </View>

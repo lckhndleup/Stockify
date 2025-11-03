@@ -21,6 +21,7 @@ export default function Checkbox({
   };
 
   const currentSize = sizeConfig[size];
+  const activeColor = color ?? "#E3001B";
 
   const handleToggle = () => {
     if (!disabled) {
@@ -37,31 +38,24 @@ export default function Checkbox({
     >
       <View
         className={`border-2 rounded flex items-center justify-center ${
-          checked
-            ? "bg-stock-red border-stock-red"
-            : "bg-transparent border-stock-border"
+          checked ? "" : "bg-transparent border-stock-border"
         } ${disabled ? "opacity-50" : ""}`}
         style={{
           width: currentSize.size,
           height: currentSize.size,
+          backgroundColor: checked ? activeColor : undefined,
+          borderColor: checked ? activeColor : undefined,
         }}
       >
         {checked && (
-          <Icon
-            family="MaterialIcons"
-            name="check"
-            size={currentSize.iconSize}
-            color="#FFFEFF"
-          />
+          <Icon family="MaterialIcons" name="check" size={currentSize.iconSize} color="#FFFEFF" />
         )}
       </View>
 
       {label && (
         <Typography
           variant="body"
-          className={`ml-2 text-stock-dark ${
-            disabled ? "opacity-50" : ""
-          } ${labelClassName}`}
+          className={`ml-2 text-stock-dark ${disabled ? "opacity-50" : ""} ${labelClassName}`}
         >
           {label}
         </Typography>
