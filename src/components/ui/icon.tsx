@@ -7,7 +7,7 @@ import {
   AntDesign,
   Ionicons,
 } from "@expo/vector-icons";
-import type { IconFamily, IconProps } from "@/src/types/ui";
+import type { IconProps } from "@/src/types/ui";
 
 export default function Icon({
   family = "MaterialIcons",
@@ -28,12 +28,7 @@ export default function Icon({
   }[family];
 
   const iconElement = (
-    <IconComponent
-      name={name as any}
-      size={size}
-      color={color}
-      className={className}
-    />
+    <IconComponent name={name as any} size={size} color={color} className={className} />
   );
 
   if (pressable || onPress) {
@@ -48,9 +43,5 @@ export default function Icon({
     );
   }
 
-  return (
-    <View className={`items-center justify-center ${containerClassName}`}>
-      {iconElement}
-    </View>
-  );
+  return <View className={`items-center justify-center ${containerClassName}`}>{iconElement}</View>;
 }

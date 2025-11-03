@@ -1,6 +1,7 @@
 // src/validations/brokerValidation.ts
 
 import { z } from "zod";
+import { BROKER_TARGET_DAY_VALUES } from "@/src/types/broker";
 
 // Broker ekleme form validasyonu
 export const brokerSchema = z.object({
@@ -22,10 +23,12 @@ export const brokerSchema = z.object({
     .min(10, "VKN en az 10 haneli olmalıdır")
     .max(11, "VKN en fazla 11 haneli olabilir")
     .regex(/^\d+$/, "VKN sadece rakamlardan oluşmalıdır"),
+  tkn: z.string().min(1, "TKN zorunludur").max(50, "TKN en fazla 50 karakter olabilir").trim(),
   discountRate: z
     .number()
     .min(0, "İskonto oranı 0'dan küçük olamaz")
     .max(100, "İskonto oranı 100'den büyük olamaz"),
+  targetDayOfWeek: z.enum(BROKER_TARGET_DAY_VALUES),
 });
 
 // Broker güncelleme form validasyonu
@@ -48,10 +51,12 @@ export const editBrokerSchema = z.object({
     .min(10, "VKN en az 10 haneli olmalıdır")
     .max(11, "VKN en fazla 11 haneli olabilir")
     .regex(/^\d+$/, "VKN sadece rakamlardan oluşmalıdır"),
+  tkn: z.string().min(1, "TKN zorunludur").max(50, "TKN en fazla 50 karakter olabilir").trim(),
   discountRate: z
     .number()
     .min(0, "İskonto oranı 0'dan küçük olamaz")
     .max(100, "İskonto oranı 100'den büyük olamaz"),
+  targetDayOfWeek: z.enum(BROKER_TARGET_DAY_VALUES),
 });
 
 // Discount rate güncelleme validasyonu
@@ -70,6 +75,8 @@ export const validateBrokerForm = (
   vkn: string,
   tckn: string,
   discountRate: string,
+  tkn: string,
+  targetDayOfWeek: string,
 ) => {
   const errors: Record<string, string> = {};
 
@@ -113,6 +120,18 @@ export const validateBrokerForm = (
     Number(discountRate) > 100
   ) {
     errors.discountRate = "İskonto oranı 0-100 arası olmalıdır";
+  }
+
+  if (!tkn.trim()) {
+    errors.tkn = "TKN zorunludur";
+  } else if (tkn.trim().length > 50) {
+    errors.tkn = "TKN en fazla 50 karakter olabilir";
+  }
+
+  if (!targetDayOfWeek || !targetDayOfWeek.trim()) {
+    errors.targetDayOfWeek = "Tahsilat günü zorunludur";
+  } else if (!BROKER_TARGET_DAY_VALUES.includes(targetDayOfWeek as any)) {
+    errors.targetDayOfWeek = "Geçerli bir tahsilat günü seçin";
   }
 
   return { isValid: Object.keys(errors).length === 0, errors };

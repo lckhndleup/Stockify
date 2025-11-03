@@ -9,6 +9,7 @@ import {
   BrokerFormData,
   BrokerUpdateData,
   BrokerDiscountRateUpdateData,
+  BrokerTargetDay,
   adaptBrokerForUI,
   adaptBroker,
   adaptBrokerUpdate,
@@ -119,8 +120,8 @@ export const useUpdateBroker = () => {
         email: string;
         vkn: string;
         tkn: string;
-        targetDayOfWeek: string;
         discountRate: number;
+        targetDayOfWeek: BrokerTargetDay;
       };
     }) => {
       logger.debug("✏️ Updating broker:", params);

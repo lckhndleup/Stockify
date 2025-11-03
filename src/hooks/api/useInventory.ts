@@ -3,16 +3,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
 import { queryKeys } from "./queryKeys";
 import logger from "@/src/utils/logger";
-import {
+import { adaptInventoryListForUI, adaptInventoryForUI } from "@/src/types/inventory";
+import type {
   InventoryItem,
   InventoryUpdateRequest,
   InventoryDisplayItem,
-  adaptInventoryListForUI,
-  adaptInventoryForUI,
+  InventoryCreateRequest,
 } from "@/src/types/inventory";
 
 // Types export
-export type { InventoryItem, InventoryUpdateRequest, InventoryDisplayItem };
+export type { InventoryItem, InventoryUpdateRequest, InventoryDisplayItem, InventoryCreateRequest };
 
 // Hooks
 
@@ -107,6 +107,11 @@ export const useUpdateInventory = () => {
     onSuccess: (data, variables) => {
       // Tüm inventory query'lerini invalidate et
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+
+      // Durum bazlı listeleri de invalidate et
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.available() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.critical() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.outOfStock() });
 
       // Güncellenmiş inventory'nin detay cache'ini de temizle
       queryClient.invalidateQueries({

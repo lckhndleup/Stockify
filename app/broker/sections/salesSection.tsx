@@ -1,5 +1,5 @@
 // app/broker/sections/salesSection.tsx
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { View, ScrollView, Alert, TouchableOpacity, Text } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -30,6 +30,7 @@ import {
   useRemoveFromBasket,
   useUpdateBasket,
 } from "@/src/hooks/api/useBasket";
+import { parseApiError } from "@/src/utils/apiError";
 
 // tipler (swagger ile uyumlu)
 import type { SalesSummary } from "@/src/types/sales";
@@ -63,8 +64,14 @@ export default function SalesSection() {
   const updateBasketMutation = useUpdateBasket();
 
   // BACKEND: calculate
-  const calcMutation = useSalesCalculate();
+  const { mutateAsync: calculateSale } = useSalesCalculate();
+  const calculateSaleRef = useRef(calculateSale);
+  const isRecalculatingRef = useRef(false);
   const [summary, setSummary] = useState<SalesSummary | null>(null);
+
+  useEffect(() => {
+    calculateSaleRef.current = calculateSale;
+  }, [calculateSale]);
 
   const updateDiscountRateMutation = useUpdateBrokerDiscountRate();
 
@@ -206,18 +213,34 @@ export default function SalesSection() {
 
   // Toplamı /sales/calculate ile güncelle
   const recalcTotals = useCallback(async () => {
-    if (!brokerIdNum) return;
+    if (!brokerIdNum || isRecalculatingRef.current) return;
+
+    isRecalculatingRef.current = true;
+
     try {
-      const res = await calcMutation.mutateAsync({
+      const result = await calculateSaleRef.current({
         brokerId: brokerIdNum,
         createInvoice,
       });
-      setSummary(res);
-    } catch {
-      // sepet boş vs.
+      setSummary(result);
+    } catch (error) {
+      const apiError = parseApiError(error);
+
+      if (apiError.status === 404) {
+        setSummary(null);
+        return;
+      }
+
+      if (apiError.status === 0) {
+        // Network timeout; keep previous summary but avoid spamming
+        return;
+      }
+
       setSummary(null);
+    } finally {
+      isRecalculatingRef.current = false;
     }
-  }, [brokerIdNum, createInvoice, calcMutation]);
+  }, [brokerIdNum, createInvoice]);
 
   // Ürün ekle (POST /basket/add)
   const handleAddProduct = async () => {
@@ -565,7 +588,7 @@ export default function SalesSection() {
                   fullWidth
                   className="bg-stock-red"
                   onPress={handleAddProduct}
-                  disabled={!quantity || !!quantityError || parseInt(quantity, 10) <= 0}
+                  disabled={!quantity || !!quantityError}
                 >
                   <Typography className="text-white" weight="semibold">
                     EKLE

@@ -17,12 +17,7 @@ export type AppRoute = "/" | "/stock" | "/brokers" | "/products";
 
 export interface NavigationItem {
   icon: {
-    family:
-      | "MaterialIcons"
-      | "MaterialCommunityIcons"
-      | "Feather"
-      | "AntDesign"
-      | "Ionicons";
+    family: "MaterialIcons" | "MaterialCommunityIcons" | "Feather" | "AntDesign" | "Ionicons";
     name: string;
   };
   label: string;

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, TouchableOpacity, Modal, ScrollView } from "react-native";
 import Typography from "./typography";
 import Icon from "./icon";
-import type { SelectBoxOption, SelectBoxProps } from "@/src/types/ui";
+import type { SelectBoxProps } from "@/src/types/ui";
 
 export default function SelectBox({
   label,
@@ -90,11 +90,7 @@ export default function SelectBox({
   return (
     <View className={`${fullWidth ? "w-full" : ""} ${className}`}>
       {label && (
-        <Typography
-          variant="caption"
-          weight="medium"
-          className="mb-2 text-stock-dark"
-        >
+        <Typography variant="caption" weight="medium" className="mb-2 text-stock-dark">
           {label}
         </Typography>
       )}
@@ -138,12 +134,7 @@ export default function SelectBox({
       )}
 
       {/* Dropdown Modal */}
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={handleModalClose}
-      >
+      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={handleModalClose}>
         <TouchableOpacity
           className="flex-1 bg-black/20"
           activeOpacity={1}
@@ -156,20 +147,14 @@ export default function SelectBox({
                   <TouchableOpacity
                     key={option.value}
                     className={`px-4 py-4 ${
-                      index !== options.length - 1
-                        ? "border-b border-stock-border"
-                        : ""
+                      index !== options.length - 1 ? "border-b border-stock-border" : ""
                     } ${value === option.value ? "bg-stock-gray" : "bg-white"}`}
                     onPress={() => handleSelect(option.value)}
                     activeOpacity={0.8}
                   >
                     <Typography
                       variant="body"
-                      className={`${
-                        value === option.value
-                          ? "text-stock-red"
-                          : "text-stock-dark"
-                      }`}
+                      className={`${value === option.value ? "text-stock-red" : "text-stock-dark"}`}
                       weight={value === option.value ? "semibold" : "normal"}
                     >
                       {option.label}

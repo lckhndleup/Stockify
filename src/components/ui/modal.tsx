@@ -30,13 +30,7 @@ export default function Modal({
   };
 
   return (
-    <RNModal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      {...props}
-    >
+    <RNModal visible={visible} transparent animationType="fade" statusBarTranslucent {...props}>
       <TouchableOpacity
         className="flex-1 bg-black/50 items-center justify-center px-6 py-8"
         activeOpacity={1}
@@ -51,11 +45,7 @@ export default function Modal({
           {(title || showCloseButton) && (
             <View className="flex-row items-center justify-between px-6 py-4 border-b border-stock-border">
               {title && (
-                <Typography
-                  variant="h4"
-                  className="flex-1 text-stock-dark"
-                  weight="semibold"
-                >
+                <Typography variant="h4" className="flex-1 text-stock-dark" weight="semibold">
                   {title}
                 </Typography>
               )}

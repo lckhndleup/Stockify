@@ -10,17 +10,14 @@ export const useToast = () => {
   });
 
   const showToast = useCallback(
-    (
-      message: string,
-      type: "success" | "error" | "warning" | "info" = "info"
-    ) => {
+    (message: string, type: "success" | "error" | "warning" | "info" = "info") => {
       setToast({
         visible: true,
         message,
         type,
       });
     },
-    []
+    [],
   );
 
   const hideToast = useCallback(() => {
@@ -34,28 +31,28 @@ export const useToast = () => {
     (message: string) => {
       showToast(message, "success");
     },
-    [showToast]
+    [showToast],
   );
 
   const showError = useCallback(
     (message: string) => {
       showToast(message, "error");
     },
-    [showToast]
+    [showToast],
   );
 
   const showWarning = useCallback(
     (message: string) => {
       showToast(message, "warning");
     },
-    [showToast]
+    [showToast],
   );
 
   const showInfo = useCallback(
     (message: string) => {
       showToast(message, "info");
     },
-    [showToast]
+    [showToast],
   );
 
   return {

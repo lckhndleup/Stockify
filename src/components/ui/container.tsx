@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ViewProps, StyleSheet } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ContainerProps } from "@/src/types/ui";
 
@@ -25,9 +25,7 @@ export default function Container({
   };
 
   // Base classes (padding class'larını kaldırdık)
-  const baseClasses = ["flex-1", center && "justify-center items-center"]
-    .filter(Boolean)
-    .join(" ");
+  const baseClasses = ["flex-1", center && "justify-center items-center"].filter(Boolean).join(" ");
 
   // className'i ayrı handle et
   const finalClassName = `${baseClasses} ${className}`;

@@ -75,9 +75,7 @@ export default function Input({
       // Birden fazla nokta varsa sadece ilkini tut
       const parts = normalizedText.split(".");
       const finalText =
-        parts.length > 2
-          ? parts[0] + "." + parts.slice(1).join("")
-          : normalizedText;
+        parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : normalizedText;
 
       // Orijinal onChangeText fonksiyonunu çağır
       onChangeText?.(finalText);
@@ -90,11 +88,7 @@ export default function Input({
   return (
     <View className={`${fullWidth ? "w-full" : ""} ${className}`}>
       {label && (
-        <Typography
-          variant="caption"
-          weight="medium"
-          className="mb-2 text-stock-dark"
-        >
+        <Typography variant="caption" weight="medium" className="mb-2 text-stock-dark">
           {label}
         </Typography>
       )}
@@ -106,8 +100,7 @@ export default function Input({
           className={`flex-1 ${textSizes[size]} text-stock-dark font-normal`}
           placeholderTextColor="#73767A"
           textAlign={
-            style?.textAlign ||
-            (numericOnly || props.keyboardType === "numeric" ? "left" : "left")
+            style?.textAlign || (numericOnly || props.keyboardType === "numeric" ? "left" : "left")
           }
           textAlignVertical="center"
           style={{
