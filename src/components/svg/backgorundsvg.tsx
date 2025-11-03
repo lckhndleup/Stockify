@@ -30,7 +30,7 @@ export default function BackgroundSvg({
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
 
     // Dalga animasyonu (sağa-sola hafif hareket)
@@ -48,14 +48,14 @@ export default function BackgroundSvg({
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
 
     return () => {
       floatAnimation.stopAnimation();
       waveAnimation.stopAnimation();
     };
-  }, []);
+  }, [floatAnimation, waveAnimation]);
 
   // SVG'yi ekstra genişletip, sol tarafa taşırarak boşluk oluşmasını önleyelim
   const svgWidth = width * 1.4; // Daha fazla genişletilmiş

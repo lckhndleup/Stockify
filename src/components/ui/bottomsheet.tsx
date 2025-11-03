@@ -67,25 +67,8 @@ export default function BottomSheet({
           }).start();
         }
       },
-    })
+    }),
   ).current;
-
-  const openBottomSheet = () => {
-    // Daha doğal hissettiren animasyon
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 150, // Daha hızlı
-        useNativeDriver: true,
-      }),
-      Animated.spring(translateY, {
-        toValue: 0,
-        tension: 65, // Daha doğal bir açılma
-        friction: 10, // Daha az zıplama etkisi
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
 
   const closeBottomSheet = () => {
     Animated.parallel([
@@ -109,9 +92,21 @@ export default function BottomSheet({
     if (visible) {
       translateY.setValue(sheetHeight);
       opacity.setValue(0);
-      openBottomSheet();
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          tension: 65,
+          friction: 10,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
-  }, [visible]);
+  }, [visible, opacity, sheetHeight, translateY]);
 
   const handleOverlayPress = () => {
     if (overlayClosable) {
@@ -138,16 +133,13 @@ export default function BottomSheet({
           opacity: opacity,
         }}
       >
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          activeOpacity={1}
-          onPress={handleOverlayPress}
-        >
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={handleOverlayPress}>
           <View style={{ flex: 1 }} />
         </TouchableOpacity>
 
         {/* BottomSheet Content - TÜM ALAN DRAG'LANABİLİR */}
         <Animated.View
+          className={className}
           style={{
             height: sheetHeight,
             transform: [{ translateY }],
@@ -201,11 +193,7 @@ export default function BottomSheet({
                 }}
               >
                 {title && (
-                  <Typography
-                    variant="h4"
-                    className="flex-1 text-stock-dark"
-                    weight="semibold"
-                  >
+                  <Typography variant="h4" className="flex-1 text-stock-dark" weight="semibold">
                     {title}
                   </Typography>
                 )}
@@ -219,12 +207,7 @@ export default function BottomSheet({
                     }}
                     activeOpacity={0.7}
                   >
-                    <Icon
-                      family="MaterialIcons"
-                      name="close"
-                      size={24}
-                      color="#6D706F"
-                    />
+                    <Icon family="MaterialIcons" name="close" size={24} color="#6D706F" />
                   </TouchableOpacity>
                 )}
               </View>

@@ -14,6 +14,8 @@ import {
   Modal,
   Input,
   Loading,
+  SelectBox,
+  type SelectBoxOption,
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
@@ -28,8 +30,22 @@ import {
   useUpdateBroker,
   BrokerDisplayItem,
 } from "@/src/hooks/api/useBrokers";
-import { BrokerFormData } from "@/src/types/broker";
+import { BrokerFormData, BrokerTargetDay } from "@/src/types/broker";
 import { validateBrokerForm } from "@/src/validations/brokerValidation";
+
+const TARGET_DAY_OPTIONS: SelectBoxOption[] = [
+  { label: "Pazartesi", value: "MONDAY" },
+  { label: "Salı", value: "TUESDAY" },
+  { label: "Çarşamba", value: "WEDNESDAY" },
+  { label: "Perşembe", value: "THURSDAY" },
+  { label: "Cuma", value: "FRIDAY" },
+  { label: "Cumartesi", value: "SATURDAY" },
+  { label: "Pazar", value: "SUNDAY" },
+];
+
+function getTargetDayLabel(value: BrokerTargetDay | "") {
+  return TARGET_DAY_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
 
 export default function BrokersPage() {
   const [searchText, setSearchText] = useState("");
@@ -43,6 +59,8 @@ export default function BrokersPage() {
   const [brokerSurname, setBrokerSurname] = useState("");
   const [brokerEmail, setBrokerEmail] = useState("");
   const [brokerVkn, setBrokerVkn] = useState("");
+  const [brokerTkn, setBrokerTkn] = useState("");
+  const [brokerTargetDay, setBrokerTargetDay] = useState<BrokerTargetDay | "">("");
   const [brokerDiscount, setBrokerDiscount] = useState(""); // Yeni iskonto alanı
   const [editingBroker, setEditingBroker] = useState<BrokerDisplayItem | null>(null);
 
@@ -108,6 +126,8 @@ export default function BrokersPage() {
     setBrokerDiscount("");
     setBrokerEmail("");
     setBrokerVkn("");
+    setBrokerTkn("");
+    setBrokerTargetDay("");
     setValidationErrors({});
     setIsBrokerModalVisible(true);
   };
@@ -132,6 +152,8 @@ export default function BrokersPage() {
       brokerEmail,
       brokerVkn,
       brokerDiscount || "0",
+      brokerTkn,
+      brokerTargetDay || "",
     );
     setValidationErrors(validation.errors);
 
@@ -141,12 +163,13 @@ export default function BrokersPage() {
     }
 
     const discountRate = brokerDiscount ? parseFloat(brokerDiscount) : 0;
+    const targetDayLabel = getTargetDayLabel(brokerTargetDay);
 
     Alert.alert(
       "Aracı Ekle",
       `"${brokerName} ${brokerSurname}" aracısını eklemek istediğinizden emin misiniz?${
         discountRate > 0 ? `\n\nİskonto Oranı: %${discountRate}` : ""
-      }`,
+      }${targetDayLabel ? `\n\nTahsilat Günü: ${targetDayLabel}` : ""}`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -158,7 +181,9 @@ export default function BrokersPage() {
                 lastName: brokerSurname.trim(),
                 email: brokerEmail.trim(),
                 vkn: brokerVkn.trim(),
+                tkn: brokerTkn.trim(),
                 discountRate: discountRate,
+                targetDayOfWeek: brokerTargetDay as BrokerTargetDay,
               };
 
               logger.debug("🎯 Creating broker with backend:", brokerData);
@@ -188,6 +213,8 @@ export default function BrokersPage() {
       brokerEmail,
       brokerVkn,
       brokerDiscount || "0",
+      brokerTkn,
+      brokerTargetDay || "",
     );
     setValidationErrors(validation.errors);
 
@@ -197,12 +224,13 @@ export default function BrokersPage() {
     }
 
     const discountRate = brokerDiscount ? parseFloat(brokerDiscount) : 0;
+    const targetDayLabel = getTargetDayLabel(brokerTargetDay);
 
     Alert.alert(
       "Aracı Güncelle",
       `"${brokerName} ${brokerSurname}" aracısını güncellemek istediğinizden emin misiniz?${
         discountRate > 0 ? `\n\nİskonto Oranı: %${discountRate}` : ""
-      }`,
+      }${targetDayLabel ? `\n\nTahsilat Günü: ${targetDayLabel}` : ""}`,
       [
         { text: "İptal", style: "cancel" },
         {
@@ -217,7 +245,9 @@ export default function BrokersPage() {
                   lastName: brokerSurname.trim(),
                   email: brokerEmail.trim(),
                   vkn: brokerVkn.trim(),
+                  tkn: brokerTkn.trim(),
                   discountRate: discountRate,
+                  targetDayOfWeek: brokerTargetDay as BrokerTargetDay,
                 },
               });
               logger.debug("✅ Broker updated via backend");
@@ -240,6 +270,8 @@ export default function BrokersPage() {
     setBrokerSurname("");
     setBrokerEmail("");
     setBrokerVkn("");
+    setBrokerTkn("");
+    setBrokerTargetDay("");
     setBrokerDiscount(""); // İskonto alanını da temizle
     setValidationErrors({});
   };
@@ -251,6 +283,8 @@ export default function BrokersPage() {
     setBrokerSurname("");
     setBrokerEmail("");
     setBrokerVkn("");
+    setBrokerTkn("");
+    setBrokerTargetDay("");
     setBrokerDiscount(""); // İskonto alanını da temizle
     setValidationErrors({});
   };
@@ -264,6 +298,18 @@ export default function BrokersPage() {
   if (brokersLoading && !brokersError) {
     return (
       <Container className="bg-white flex-1" padding="none" safeTop={false}>
+        <Toast
+          visible={toast.visible}
+          message={toast.message}
+          type={toast.type}
+          onHide={hideToast}
+        />
+        <Toast
+          visible={globalToast.visible}
+          message={globalToast.message}
+          type={globalToast.type}
+          onHide={hideGlobalToast}
+        />
         <View className="flex-1 justify-center items-center -mt-16">
           <Loading size="large" />
         </View>
@@ -404,6 +450,26 @@ export default function BrokersPage() {
           />
 
           <Input
+            label="TKN"
+            value={brokerTkn}
+            onChangeText={setBrokerTkn}
+            placeholder="Aracının TKN bilgisini girin..."
+            variant="outlined"
+            className="mb-4"
+            error={validationErrors.tkn}
+          />
+
+          <SelectBox
+            label="Tahsilat Günü"
+            value={brokerTargetDay || ""}
+            onSelect={(value) => setBrokerTargetDay(value as BrokerTargetDay)}
+            options={TARGET_DAY_OPTIONS}
+            placeholder="Tahsilat günü seçiniz"
+            className="mb-4"
+            error={validationErrors.targetDayOfWeek}
+          />
+
+          <Input
             label="İskonto Oranı (%) - İsteğe Bağlı"
             value={brokerDiscount}
             onChangeText={setBrokerDiscount}
@@ -491,6 +557,26 @@ export default function BrokersPage() {
             numericOnly={true}
             className="mb-4"
             error={validationErrors.vkn}
+          />
+
+          <Input
+            label="TKN"
+            value={brokerTkn}
+            onChangeText={setBrokerTkn}
+            placeholder="Aracının TKN bilgisini girin..."
+            variant="outlined"
+            className="mb-4"
+            error={validationErrors.tkn}
+          />
+
+          <SelectBox
+            label="Tahsilat Günü"
+            value={brokerTargetDay || ""}
+            onSelect={(value) => setBrokerTargetDay(value as BrokerTargetDay)}
+            options={TARGET_DAY_OPTIONS}
+            placeholder="Tahsilat günü seçiniz"
+            className="mb-4"
+            error={validationErrors.targetDayOfWeek}
           />
 
           <Input

@@ -8,6 +8,7 @@ import logger from "@/src/utils/logger";
 export * from "./usePayments";
 export * from "./useSales"; // NEW
 export * from "./useBasket"; // NEW
+export * from "./useTransactions"; // Transaction ekranı için
 
 // Hook factory'ler için base type'lar
 export type QueryHook<TData, TParams = void> = TParams extends void

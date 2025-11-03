@@ -11,7 +11,7 @@ const middleware = persist<LangStore>(
   {
     name: "stockify-language",
     storage: createJSONStorage(() => AsyncStorage),
-  }
+  },
 );
 
 export const useLangStore = create<LangStore>()(middleware);

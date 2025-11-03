@@ -49,4 +49,5 @@ export type SalesSummaryResult = {
   totalTaxPrice?: number; // toplam KDV
   totalPriceWithTax: number; // KDV dahil genel toplam
   downloadUrl?: string;
+  invoiceDownloadUrl?: string;
 };

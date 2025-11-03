@@ -8,9 +8,7 @@ export type NormalizedApiError = {
 };
 
 const looksLikeApiError = (err: any) =>
-  err &&
-  typeof err === "object" &&
-  ("message" in err || "status" in err || "code" in err);
+  err && typeof err === "object" && ("message" in err || "status" in err || "code" in err);
 
 export function parseApiError(error: unknown): NormalizedApiError {
   if (looksLikeApiError(error)) {
