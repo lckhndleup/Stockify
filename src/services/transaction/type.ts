@@ -11,8 +11,10 @@ export interface TransactionItem {
   price: number;
   balance: number;
   type: "SALE" | "PAYMENT";
-  downloadUrl: string;
+  downloadDocumentUrl: string;
   createdDate: number;
+  paymentType: "CASH" | "CREDIT_CARD" | "CARD" | "BANK_TRANSFER" | "CHECK" | "OTHER";
+  requestedInvoice: boolean;
 }
 
 export interface TransactionSort {

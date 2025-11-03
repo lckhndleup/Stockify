@@ -1,17 +1,13 @@
 // app/broker/sections/statementSection.tsx
 import React, { useState, useMemo } from "react";
-import { View, ScrollView, TouchableOpacity, FlatList, TextInput, Modal } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { View, ScrollView, TouchableOpacity, FlatList, TextInput } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { WebView } from "react-native-webview";
 import { Container, Typography, Card, Button, Loading, Toast, Divider } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
 import { useTransactions } from "@/src/hooks/api/useTransactions";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import type { TransactionItem } from "@/src/services/transaction/type";
-import apiService from "@/src/services/api";
-import { Paths, File } from "expo-file-system";
-import * as Sharing from "expo-sharing";
 
 // Tab types
 type TabType = "bilgiler" | "hareketler" | "ozet";
@@ -41,11 +37,8 @@ export default function StatementSection() {
   const [activeTab, setActiveTab] = useState<TabType>("hareketler");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRange, setSelectedRange] = useState<string>(DATE_RANGES.MONTH);
-  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
+  const [downloadingDocId, _setDownloadingDocId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [pdfModalVisible, setPdfModalVisible] = useState(false);
-  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
-  const [currentPdfUri, setCurrentPdfUri] = useState<string | null>(null);
 
   // Get date range timestamps
   const { startDate, endDate } = useMemo(() => {
@@ -100,8 +93,16 @@ export default function StatementSection() {
       const fullName = `${item.firstName} ${item.lastName}`.toLowerCase();
       const price = item.price.toString();
       const balance = item.balance.toString();
+      const paymentType = item.paymentType?.toLowerCase() || "";
+      const type = item.type.toLowerCase();
 
-      return fullName.includes(query) || price.includes(query) || balance.includes(query);
+      return (
+        fullName.includes(query) ||
+        price.includes(query) ||
+        balance.includes(query) ||
+        paymentType.includes(query) ||
+        type.includes(query)
+      );
     });
   }, [transactions, searchQuery]);
 
@@ -123,86 +124,22 @@ export default function StatementSection() {
   }, [transactions]);
 
   // Handle authenticated document download and share/save
-  const handleDownload = async (url: string, timestamp: number) => {
-    const docId = `${timestamp}`;
-    setDownloadingDocId(docId);
-
-    try {
-      showSuccess("Belge indiriliyor...");
-
-      // Use the provided URL from backend
-      const downloadUrl = url;
-
-      // Create file reference using new API
-      const fileName = `hesap_ozeti_${timestamp}.pdf`;
-      const file = new File(Paths.document, fileName);
-
-      // Get auth headers
-      const headers = apiService.getAuthHeaders();
-
-      // Download using fetch with auth
-      const response = await fetch(downloadUrl, {
-        method: "GET",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw {
-          status: response.status,
-          message: "Belge indirilemedi",
-        };
-      }
-
-      // Get blob and write to file
-      const blob = await response.blob();
-
-      // Use FileReader to convert blob to arrayBuffer in React Native
-      const reader = new FileReader();
-      reader.readAsArrayBuffer(blob);
-
-      await new Promise((resolve, reject) => {
-        reader.onloadend = async () => {
-          try {
-            const arrayBuffer = reader.result as ArrayBuffer;
-            const uint8Array = new Uint8Array(arrayBuffer);
-            await file.write(uint8Array);
-            resolve(true);
-          } catch (error) {
-            reject(error);
-          }
-        };
-        reader.onerror = reject;
-      });
-
-      // Directly open in viewer without alert
-      try {
-        hideToast();
-
-        // Read file bytes and convert to base64
-        const bytes = await file.bytes();
-        const base64 = btoa(String.fromCharCode(...bytes));
-
-        setPdfBase64(base64);
-        setCurrentPdfUri(file.uri);
-        setPdfModalVisible(true);
-      } catch (error) {
-        console.error("Base64 conversion error:", error);
-        showError("Belge açılamadı");
-      }
-    } catch (error: any) {
-      console.error("❌ Download error:", error);
-      if (error?.status === 401) {
-        showError("Oturum süresi dolmuş, lütfen tekrar giriş yapın");
-      } else if (error?.status === 404) {
-        showError("Belge bulunamadı");
-      } else if (error?.status === 403) {
-        showError("Bu belgeye erişim yetkiniz yok");
-      } else {
-        showError(error?.message || "İndirme başarısız oldu");
-      }
-    } finally {
-      setDownloadingDocId(null);
+  const handleDownload = (url: string, timestamp: number) => {
+    if (!url) {
+      showError("İndirilecek belge bulunamadı.");
+      return;
     }
+
+    // Navigate to DocumentViewer with the PDF URL and a title
+    const docTitle = `Hesap Özeti - ${formatDate(timestamp)}`;
+    
+    router.push({
+      pathname: "/broker/sections/documentViewer",
+      params: {
+        url: url,
+        title: docTitle,
+      },
+    });
   }; // Format date
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -226,10 +163,14 @@ export default function StatementSection() {
   // Render transaction item
   const renderTransactionItem = ({ item }: { item: TransactionItem }) => {
     const isSale = item.type === "SALE";
-    const hasDocument = item.downloadUrl && item.downloadUrl.length > 0;
+    const hasDocument =
+      item.downloadDocumentUrl &&
+      item.downloadDocumentUrl.length > 0 &&
+      item.downloadDocumentUrl.startsWith("http");
 
     return (
       <View className="bg-white border-b border-gray-200 px-4 py-3">
+        {/* Main Row */}
         <View className="flex-row items-center justify-between">
           {/* Date */}
           <View className="flex-1">
@@ -267,7 +208,7 @@ export default function StatementSection() {
             <View className="w-6 items-center">
               {hasDocument && (
                 <TouchableOpacity
-                  onPress={() => handleDownload(item.downloadUrl, item.createdDate)}
+                  onPress={() => handleDownload(item.downloadDocumentUrl, item.createdDate)}
                   disabled={downloadingDocId === `${item.createdDate}`}
                   className="p-1"
                   style={{
@@ -278,6 +219,48 @@ export default function StatementSection() {
                 </TouchableOpacity>
               )}
             </View>
+          </View>
+        </View>
+
+        {/* Additional Info Row */}
+        <View className="flex-row items-center justify-between mt-2">
+          {/* Customer Name */}
+          <View className="flex-1">
+            <Typography variant="caption" className="text-gray-500" style={{ fontSize: 12 }}>
+              {item.firstName} {item.lastName}
+            </Typography>
+          </View>
+
+          {/* Payment Type - Only show for payments */}
+          <View className="flex-1 items-center">
+            {!isSale && item.paymentType && (
+              <View className="bg-blue-50 px-2 py-1 rounded">
+                <Typography variant="caption" className="text-blue-700" style={{ fontSize: 11 }}>
+                  {item.paymentType === "CASH"
+                    ? "Nakit"
+                    : item.paymentType === "CARD"
+                      ? "Kart"
+                      : item.paymentType === "CREDIT_CARD"
+                        ? "Kredi Kartı"
+                        : item.paymentType === "BANK_TRANSFER"
+                          ? "Havale"
+                          : item.paymentType === "CHECK"
+                            ? "Çek"
+                            : item.paymentType}
+                </Typography>
+              </View>
+            )}
+          </View>
+
+          {/* Invoice Status */}
+          <View className="flex-1 flex-row justify-end">
+            {item.requestedInvoice && (
+              <View className="bg-green-50 px-2 py-1 rounded">
+                <Typography variant="caption" className="text-green-700" style={{ fontSize: 11 }}>
+                  Faturalı
+                </Typography>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -314,123 +297,6 @@ export default function StatementSection() {
   return (
     <Container className="bg-white" padding="none" safeTop={false}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
-
-      {/* PDF Viewer Modal - 80% Height Bottom Sheet */}
-      <Modal
-        visible={pdfModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
-          setPdfModalVisible(false);
-          setPdfBase64(null);
-          setCurrentPdfUri(null);
-        }}
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl overflow-hidden" style={{ height: "80%" }}>
-            {/* Drag Handle */}
-            <View className="items-center py-2">
-              <View className="w-12 h-1 bg-gray-300 rounded-full" />
-            </View>
-
-            {/* Header */}
-            <View className="bg-white px-4 py-3 flex-row items-center justify-between border-b border-gray-200">
-              <Typography variant="h3" weight="bold" className="text-stock-dark">
-                Belge Görüntüleyici
-              </Typography>
-              <View className="flex-row gap-3">
-                {currentPdfUri && (
-                  <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        await Sharing.shareAsync(currentPdfUri, {
-                          mimeType: "application/pdf",
-                          dialogTitle: "Belgeyi Paylaş",
-                          UTI: "com.adobe.pdf",
-                        });
-                        showSuccess("Paylaşıldı");
-                      } catch {
-                        showError("Paylaşım başarısız");
-                      }
-                    }}
-                    className="p-2"
-                  >
-                    <Ionicons name="share-outline" size={24} color="#7C3AED" />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  onPress={() => {
-                    setPdfModalVisible(false);
-                    setPdfBase64(null);
-                    setCurrentPdfUri(null);
-                  }}
-                  className="p-2"
-                >
-                  <Ionicons name="close" size={28} color="#1a1a1a" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* PDF WebView with Base64 */}
-            {pdfBase64 && (
-              <WebView
-                source={{
-                  html: `
-                    <!DOCTYPE html>
-                    <html>
-                      <head>
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-                        <style>
-                          * {
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                          }
-                          body {
-                            background-color: #525659;
-                            overflow: auto;
-                            touch-action: pan-x pan-y pinch-zoom;
-                          }
-                          iframe {
-                            width: 100vw;
-                            height: 100vh;
-                            border: none;
-                          }
-                        </style>
-                      </head>
-                      <body>
-                        <iframe src="data:application/pdf;base64,${pdfBase64}" type="application/pdf"></iframe>
-                      </body>
-                    </html>
-                  `,
-                }}
-                style={{ flex: 1, backgroundColor: "#525659" }}
-                startInLoadingState={true}
-                renderLoading={() => (
-                  <View className="absolute inset-0 items-center justify-center bg-gray-900">
-                    <Loading size="large" />
-                    <Typography variant="body" className="text-white mt-4">
-                      PDF yükleniyor...
-                    </Typography>
-                  </View>
-                )}
-                onError={(syntheticEvent) => {
-                  const { nativeEvent } = syntheticEvent;
-                  console.error("WebView error: ", nativeEvent);
-                  showError("PDF yüklenemedi");
-                }}
-                allowFileAccess={true}
-                allowUniversalAccessFromFileURLs={true}
-                originWhitelist={["*"]}
-                scalesPageToFit={true}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={true}
-                bounces={true}
-              />
-            )}
-          </View>
-        </View>
-      </Modal>
 
       {/* Header */}
       <View className="bg-white px-4 pt-4 pb-2">

@@ -17,8 +17,6 @@ const requestLogin = async (credentials: LoginRequest): Promise<LoginResponse> =
 
 // 👈 YENİ: Logout API method
 const requestLogout = async (): Promise<LogoutResponse> => {
-  alert("wdsf requestLogout");
-
   if (!getToken()) {
     return { success: true, message: "Zaten çıkış yapılmış" };
   }

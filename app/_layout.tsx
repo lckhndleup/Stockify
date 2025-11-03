@@ -91,7 +91,9 @@ export default function RootLayout() {
       const isDevMode = process.env.NODE_ENV === "development";
       if (isDevMode) logger.debug("🔄 Starting auth initialization...");
 
-      initializeAuth();
+      initializeAuth().catch((err) => {
+        logger.error("❌ Auth initialization failed:", err);
+      });
       authInitialized.current = true;
     }
   }, [isNavigationReady, initializeAuth]);
