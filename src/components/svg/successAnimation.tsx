@@ -2,25 +2,14 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { StyleProp, ViewStyle } from "react-native";
 import LottieView from "lottie-react-native";
-import type {
-  LottieProps,
-  SuccessAnimationRef,
-  SuccessAnimationProps,
-} from "@/src/types/svg";
+import type { SuccessAnimationRef, SuccessAnimationProps } from "@/src/types/svg";
 
-type Props = {
-  /** Boş bırakılırsa ./Checked.json kullanılır */
-  source?: LottieProps["source"];
+type Props = SuccessAnimationProps & {
   /** Kare boyut (width & height birlikte) */
   size?: number;
   width?: number;
   height?: number;
   style?: StyleProp<ViewStyle>;
-  autoPlay?: LottieProps["autoPlay"];
-  loop?: LottieProps["loop"];
-  speed?: LottieProps["speed"];
-  onFinish?: LottieProps["onAnimationFinish"];
-  testID?: string;
 };
 
 const SuccessAnimation = forwardRef<SuccessAnimationRef, Props>(
@@ -34,10 +23,11 @@ const SuccessAnimation = forwardRef<SuccessAnimationRef, Props>(
       autoPlay = true,
       loop = false,
       speed = 1,
-      onFinish,
+      onAnimationFinish,
       testID,
+      ...rest
     },
-    ref
+    ref,
   ) => {
     const lottieRef = useRef<LottieView>(null);
 
@@ -47,10 +37,7 @@ const SuccessAnimation = forwardRef<SuccessAnimationRef, Props>(
       reset: () => lottieRef.current?.reset?.(),
     }));
 
-    const resolvedSource = useMemo(
-      () => source ?? require("./Checked.json"),
-      [source]
-    );
+    const resolvedSource = useMemo(() => source ?? require("./Checked.json"), [source]);
 
     return (
       <LottieView
@@ -60,11 +47,12 @@ const SuccessAnimation = forwardRef<SuccessAnimationRef, Props>(
         loop={loop}
         speed={speed}
         style={[{ width: width ?? size, height: height ?? size }, style]}
-        onAnimationFinish={onFinish}
+        onAnimationFinish={onAnimationFinish}
         testID={testID}
+        {...rest}
       />
     );
-  }
+  },
 );
 
 export default SuccessAnimation;

@@ -59,12 +59,7 @@ export default function SquareCard({
             className="p-1"
             activeOpacity={0.7}
           >
-            <Icon
-              family="MaterialIcons"
-              name="delete"
-              size={20}
-              color="#FFFEFF"
-            />
+            <Icon family="MaterialIcons" name="delete" size={20} color="#FFFEFF" />
           </TouchableOpacity>
         )}
       </View>

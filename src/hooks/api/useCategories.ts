@@ -3,28 +3,32 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService, ApiError } from "@/src/services/api";
 import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
-import type { Category, CategoryFormData, CategoryUpdateData } from "@/src/types/category";
+import {
+  adaptCategoriesForUI,
+  adaptCategoryForUI,
+  adaptCategoryResponse,
+  type Category,
+  type CategoryDisplayItem,
+  type CategoryFormData,
+  type CategoryResponse,
+  type CategoryUpdateData,
+} from "@/src/types/category";
 
-// Backend'den gelen data'yı UI format'ına çevir
-export const adaptCategoryForUI = (category: Category) => ({
-  id: category.categoryId.toString(),
-  name: category.name,
-  taxRate: category.taxRate,
-  createdDate: category.createdDate,
-  isActive: true, // Backend'den gelen tüm kategoriler aktif
-});
+const normalizeCategories = (categories: CategoryResponse[]): Category[] =>
+  categories.map(adaptCategoryResponse);
 
 // Hooks
 
 // Tüm kategorileri getir
 export const useCategories = (options?: { enabled?: boolean }) => {
-  return useQuery({
+  return useQuery<Category[]>({
     queryKey: queryKeys.categories.all,
     queryFn: async () => {
       logger.debug("🏷️ Fetching categories from API...");
       const categories = await apiService.getCategories();
-      logger.debug("✅ Categories fetched:", categories);
-      return categories as Category[];
+      const normalized = normalizeCategories(categories);
+      logger.debug("✅ Categories fetched:", normalized);
+      return normalized;
     },
     ...options,
   });
@@ -32,12 +36,14 @@ export const useCategories = (options?: { enabled?: boolean }) => {
 
 // Aktif kategorileri getir (UI için adapter ile)
 export const useActiveCategories = (options?: { enabled?: boolean }) => {
-  return useQuery({
+  return useQuery<CategoryDisplayItem[]>({
     queryKey: queryKeys.categories.active(),
     queryFn: async () => {
       logger.debug("🏷️ Fetching active categories...");
       const categories = await apiService.getCategories();
-      return categories.map(adaptCategoryForUI);
+      const normalized = normalizeCategories(categories);
+      const activeCategories = normalized.filter((category) => category.status === "ACTIVE");
+      return adaptCategoriesForUI(activeCategories);
     },
     ...options,
   });
@@ -145,11 +151,12 @@ export const useInvalidateCategories = () => {
 
 // Category by ID için gelecekte kullanılabilir
 export const useCategoryById = (categoryId: string, options?: { enabled?: boolean }) => {
-  return useQuery({
+  return useQuery<CategoryDisplayItem | null>({
     queryKey: queryKeys.categories.detail(categoryId),
     queryFn: async () => {
       const categories = await apiService.getCategories();
-      const category = categories.find((c: Category) => c.categoryId.toString() === categoryId);
+      const normalized = normalizeCategories(categories);
+      const category = normalized.find((c) => c.categoryId.toString() === categoryId);
       return category ? adaptCategoryForUI(category) : null;
     },
     enabled: !!categoryId && (options?.enabled ?? true),

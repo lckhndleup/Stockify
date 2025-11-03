@@ -91,6 +91,7 @@ export default function StockDetailPage() {
       price: result.data.price,
       productCount: result.data.productCount,
       criticalProductCount: result.data.criticalProductCount,
+      active: inventoryDetail.active,
     };
 
     Alert.alert(

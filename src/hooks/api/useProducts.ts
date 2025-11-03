@@ -11,6 +11,10 @@ import {
   ProductSearchParams,
   ProductDisplayItem,
   adaptProductForUI,
+  adaptProductsResponse,
+  adaptProductResponse,
+  adaptProduct,
+  adaptProductUpdate,
 } from "@/src/types/product";
 
 // Types
@@ -31,7 +35,7 @@ export const useProducts = (params?: ProductSearchParams, options?: { enabled?: 
       logger.debug("🛍️ Fetching products from API...");
       const products = await apiService.getProducts(params);
       logger.debug("✅ Products fetched:", products);
-      return products as Product[];
+      return adaptProductsResponse(products);
     },
     ...options,
   });
@@ -44,7 +48,8 @@ export const useActiveProducts = (options?: { enabled?: boolean }) => {
     queryFn: async () => {
       logger.debug("🛍️ Fetching active products...");
       const products = await apiService.getProducts({ status: "ACTIVE" });
-      return adaptProductsForUI(products);
+      const normalized = adaptProductsResponse(products);
+      return adaptProductsForUI(normalized);
     },
     ...options,
   });
@@ -58,7 +63,8 @@ export const usePassiveProducts = (options?: { enabled?: boolean }) => {
       logger.debug("🛍️ Fetching passive products...");
       const products = await apiService.getProducts({ status: "PASSIVE" });
       logger.debug("✅ Passive products fetched:", products);
-      return adaptProductsForUI(products);
+      const normalized = adaptProductsResponse(products);
+      return adaptProductsForUI(normalized);
     },
     ...options,
   });
@@ -71,7 +77,7 @@ export const useProductDetail = (productId: string, options?: { enabled?: boolea
     queryFn: async () => {
       logger.debug("🛍️ Fetching product detail for ID:", productId);
       const product = await apiService.getProductDetail(productId);
-      return product ? adaptProductForUI(product) : null;
+      return product ? adaptProductForUI(adaptProductResponse(product)) : null;
     },
     enabled: !!productId && (options?.enabled ?? true),
   });
@@ -91,7 +97,8 @@ export const useSearchProducts = (
         productText: searchText,
         status: status,
       });
-      return adaptProductsForUI(products);
+      const normalized = adaptProductsResponse(products);
+      return adaptProductsForUI(normalized);
     },
     enabled: !!searchText && searchText.length > 0 && (options?.enabled ?? true),
   });
@@ -106,7 +113,8 @@ export const useCreateProduct = () => {
       logger.debug("➕ Creating product:", productData);
 
       try {
-        const result = await apiService.saveProduct(productData);
+        const payload = adaptProduct(productData);
+        const result = await apiService.saveProduct(payload);
         logger.debug("✅ Product created - RAW RESPONSE:", result);
         logger.debug("✅ Response type:", typeof result);
         logger.debug("✅ Response keys:", result ? Object.keys(result) : "null");
@@ -172,7 +180,8 @@ export const useUpdateProduct = () => {
   return useMutation({
     mutationFn: async (productData: ProductUpdateData) => {
       logger.debug("✏️ Updating product:", productData);
-      const result = await apiService.updateProduct(productData);
+      const payload = adaptProductUpdate(productData);
+      const result = await apiService.updateProduct(payload);
       logger.debug("✅ Product updated:", result);
       return result;
     },

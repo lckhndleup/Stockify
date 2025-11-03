@@ -8,7 +8,7 @@ import { Container, Typography, Card, Button, Loading, Toast, Divider } from "@/
 import { useToast } from "@/src/hooks/useToast";
 import { useTransactions } from "@/src/hooks/api/useTransactions";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
-import type { TransactionItem } from "@/src/types/apiTypes";
+import type { TransactionItem } from "@/src/services/transaction/type";
 import apiService from "@/src/services/api";
 import { Paths, File } from "expo-file-system";
 import * as Sharing from "expo-sharing";
@@ -87,7 +87,7 @@ export default function StatementSection() {
   const broker = brokers.find((b) => String(b.id) === brokerId);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const transactions = transactionData?.content || [];
+  const transactions: TransactionItem[] = transactionData?.content ?? [];
   const totalPages = transactionData?.totalPages || 0;
   const currentPage = transactionData?.number || 0;
 
@@ -349,7 +349,7 @@ export default function StatementSection() {
                           UTI: "com.adobe.pdf",
                         });
                         showSuccess("Paylaşıldı");
-                      } catch (error) {
+                      } catch {
                         showError("Paylaşım başarısız");
                       }
                     }}
