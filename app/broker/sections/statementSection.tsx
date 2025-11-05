@@ -375,7 +375,7 @@ export default function StatementSection() {
         <View
           className="flex-row p-1"
           style={{
-            backgroundColor: "#F8F9FA",
+            backgroundColor: "#FFFFFF",
             borderRadius: 12,
             borderWidth: 1,
             borderColor: "#E5E7EB",
@@ -386,7 +386,7 @@ export default function StatementSection() {
             onPress={() => setActiveTab("bilgiler")}
             className="flex-1 py-2 items-center justify-center"
             style={{
-              backgroundColor: activeTab === "bilgiler" ? "#222222" : "transparent",
+              backgroundColor: activeTab === "bilgiler" ? "#222222" : "#FFFFFF",
               borderRadius: 12,
             }}
             activeOpacity={0.8}
@@ -407,7 +407,7 @@ export default function StatementSection() {
             onPress={() => setActiveTab("hareketler")}
             className="flex-1 py-2 items-center justify-center"
             style={{
-              backgroundColor: activeTab === "hareketler" ? "#222222" : "transparent",
+              backgroundColor: activeTab === "hareketler" ? "#222222" : "#FFFFFF",
               borderRadius: 12,
             }}
             activeOpacity={0.8}
@@ -428,7 +428,7 @@ export default function StatementSection() {
             onPress={() => setActiveTab("ozet")}
             className="flex-1 py-2 items-center justify-center"
             style={{
-              backgroundColor: activeTab === "ozet" ? "#222222" : "transparent",
+              backgroundColor: activeTab === "ozet" ? "#222222" : "#FFFFFF",
               borderRadius: 12,
             }}
             activeOpacity={0.8}
@@ -580,7 +580,7 @@ export default function StatementSection() {
                   <View
                     className="flex-1 flex-row items-center px-4 py-3 rounded-lg"
                     style={{
-                      backgroundColor: "#F8F9FA",
+                      backgroundColor: "#FFFFFF",
                       borderWidth: 1,
                       borderColor: "#E5E7EB",
                       borderRadius: 12,
