@@ -1,5 +1,5 @@
 // app/broker/sections/statementSection.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, FlatList, TextInput } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -47,6 +47,10 @@ export default function StatementSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRange, setSelectedRange] = useState<string>(DATE_RANGES.MONTH);
   const [showFilters, setShowFilters] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPageNum, setCurrentPageNum] = useState(0);
+  const [allTransactions, setAllTransactions] = useState<TransactionItem[]>([]);
 
   // Document Modal State
   const [documentModalVisible, setDocumentModalVisible] = useState(false);
@@ -87,6 +91,8 @@ export default function StatementSection() {
     brokerId: Number(brokerId),
     startDate,
     endDate,
+    page: currentPageNum,
+    size: 20,
   });
 
   // Get broker info
@@ -97,12 +103,32 @@ export default function StatementSection() {
   const totalPages = transactionData?.totalPages || 0;
   const currentPage = transactionData?.number || 0;
 
+  // Update allTransactions when new data arrives
+  useEffect(() => {
+    if (transactionData?.content) {
+      if (currentPageNum === 0) {
+        // First page or refresh - replace all
+        setAllTransactions(transactionData.content);
+      } else {
+        // Pagination - append to existing
+        setAllTransactions((prev) => [...prev, ...transactionData.content]);
+      }
+    }
+  }, [transactionData, currentPageNum]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPageNum(0);
+    setAllTransactions([]);
+  }, [selectedRange, brokerId]);
+
   // Filter transactions based on search
   const filteredTransactions = useMemo(() => {
-    if (!searchQuery.trim()) return transactions;
+    const dataToFilter = allTransactions.length > 0 ? allTransactions : transactions;
+    if (!searchQuery.trim()) return dataToFilter;
 
     const query = searchQuery.toLowerCase();
-    return transactions.filter((item) => {
+    return dataToFilter.filter((item) => {
       const fullName = `${item.firstName} ${item.lastName}`.toLowerCase();
       const price = item.price.toString();
       const balance = item.balance.toString();
@@ -117,12 +143,13 @@ export default function StatementSection() {
         type.includes(query)
       );
     });
-  }, [transactions, searchQuery]);
+  }, [allTransactions, transactions, searchQuery]);
 
   // Calculate summary
   const summary = useMemo(() => {
-    const sales = transactions.filter((t) => t.type === "SALE");
-    const payments = transactions.filter((t) => t.type === "PAYMENT");
+    const dataToSummarize = allTransactions.length > 0 ? allTransactions : transactions;
+    const sales = dataToSummarize.filter((t) => t.type === "SALE");
+    const payments = dataToSummarize.filter((t) => t.type === "PAYMENT");
 
     const totalSales = sales.reduce((sum, t) => sum + t.price, 0);
     const totalPayments = payments.reduce((sum, t) => sum + t.price, 0);
@@ -134,7 +161,7 @@ export default function StatementSection() {
       paymentsCount: payments.length,
       netBalance: totalSales - totalPayments,
     };
-  }, [transactions]);
+  }, [allTransactions, transactions]);
 
   // Format date
   const formatDate = (timestamp: number) => {
@@ -161,6 +188,28 @@ export default function StatementSection() {
     setDocumentModalVisible(true);
   };
 
+  // Handle refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setCurrentPageNum(0);
+    setAllTransactions([]);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  // Handle load more (pagination)
+  const handleLoadMore = () => {
+    if (loadingMore || currentPage >= totalPages - 1 || transactionsLoading) return;
+
+    setLoadingMore(true);
+    setCurrentPageNum((prev) => prev + 1);
+
+    // Loading state will be reset by useEffect when new data arrives
+    setTimeout(() => {
+      setLoadingMore(false);
+    }, 500);
+  };
+
   // Format currency
   const formatCurrency = (amount: number) => {
     return `₺${amount.toLocaleString("tr-TR", {
@@ -176,6 +225,10 @@ export default function StatementSection() {
       item.downloadDocumentUrl &&
       item.downloadDocumentUrl.length > 0 &&
       item.downloadDocumentUrl.startsWith("http");
+    const hasInvoice =
+      item.downloadInvoiceUrl &&
+      item.downloadInvoiceUrl.length > 0 &&
+      item.downloadInvoiceUrl.startsWith("http");
 
     return (
       <View className="bg-white border-b border-gray-200 px-4 py-3">
@@ -201,8 +254,8 @@ export default function StatementSection() {
             </Typography>
           </View>
 
-          {/* Balance and Icon Group - Right Aligned */}
-          <View className="flex-1 flex-row items-center justify-end gap-3">
+          {/* Balance and Icons Group - Right Aligned */}
+          <View className="flex-1 flex-row items-center justify-end gap-2">
             {/* Balance */}
             <Typography
               variant="body"
@@ -213,15 +266,27 @@ export default function StatementSection() {
               {formatCurrency(item.balance)}
             </Typography>
 
-            {/* Document Icon */}
-            <View className="w-6 items-center">
+            {/* Document Icons */}
+            <View className="flex-row items-center gap-1">
+              {/* Receipt/Fiş Icon */}
               {hasDocument && (
                 <TouchableOpacity
                   onPress={() => handleDownload(item.downloadDocumentUrl, item.createdDate)}
                   className="p-1"
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="document-text-outline" size={20} color="#E3001B" />
+                  <Ionicons name="receipt-outline" size={20} color="#E3001B" />
+                </TouchableOpacity>
+              )}
+
+              {/* Invoice/Fatura Icon */}
+              {hasInvoice && (
+                <TouchableOpacity
+                  onPress={() => handleDownload(item.downloadInvoiceUrl, item.createdDate)}
+                  className="p-1"
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="document-text" size={20} color="#222222" />
                 </TouchableOpacity>
               )}
             </View>
@@ -274,7 +339,7 @@ export default function StatementSection() {
   };
 
   // Loading state
-  if (brokersLoading || transactionsLoading) {
+  if (brokersLoading || (transactionsLoading && currentPageNum === 0 && !refreshing)) {
     return (
       <Container className="bg-white" padding="sm" safeTop={false}>
         <View className="items-center justify-center flex-1">
@@ -381,7 +446,7 @@ export default function StatementSection() {
       </View>
 
       {/* Content */}
-      {brokersLoading || transactionsLoading ? (
+      {brokersLoading || (transactionsLoading && currentPageNum === 0 && !refreshing) ? (
         <View className="items-center justify-center flex-1">
           <Loading size="large" />
           <Typography variant="body" className="text-gray-600 mt-4">
@@ -616,12 +681,13 @@ export default function StatementSection() {
                     Tutar
                   </Typography>
                 </View>
-                <View className="flex-1 flex-row items-center justify-end gap-3">
+                <View className="flex-1 flex-row items-center justify-end gap-2">
                   <Typography variant="caption" weight="bold" className="text-gray-700">
                     Bakiye
                   </Typography>
-                  <View className="w-6 items-center">
-                    <Ionicons name="document-text-outline" size={16} color="#6B7280" />
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons name="receipt-outline" size={16} color="#E3001B" />
+                    <Ionicons name="document-text" size={16} color="#222222" />
                   </View>
                 </View>
               </View>
@@ -643,7 +709,26 @@ export default function StatementSection() {
                   scrollEnabled={true}
                   showsVerticalScrollIndicator={true}
                   ItemSeparatorComponent={() => null}
-                  contentContainerStyle={{ flexGrow: 1, paddingBottom: 88 }}
+                  contentContainerStyle={{ flexGrow: 1, paddingBottom: 140 }}
+                  // Pull to refresh
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  // Pagination
+                  onEndReached={handleLoadMore}
+                  onEndReachedThreshold={0.5}
+                  ListFooterComponent={() => {
+                    if (loadingMore && currentPage < totalPages - 1) {
+                      return (
+                        <View className="py-6 items-center bg-white border-t border-gray-200">
+                          <Loading size="small" />
+                          <Typography variant="body" weight="medium" className="text-gray-700 mt-3">
+                            Daha fazla yükleniyor...
+                          </Typography>
+                        </View>
+                      );
+                    }
+                    return null;
+                  }}
                 />
               )}
 
