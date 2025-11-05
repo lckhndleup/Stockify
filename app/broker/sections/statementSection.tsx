@@ -382,7 +382,7 @@ export default function StatementSection() {
         >
           <TouchableOpacity
             onPress={() => setActiveTab("bilgiler")}
-            className="flex-1 py-3 items-center justify-center"
+            className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "bilgiler" ? "#222222" : "transparent",
               borderRadius: 10,
@@ -403,7 +403,7 @@ export default function StatementSection() {
 
           <TouchableOpacity
             onPress={() => setActiveTab("hareketler")}
-            className="flex-1 py-3 items-center justify-center"
+            className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "hareketler" ? "#222222" : "transparent",
               borderRadius: 10,
@@ -424,7 +424,7 @@ export default function StatementSection() {
 
           <TouchableOpacity
             onPress={() => setActiveTab("ozet")}
-            className="flex-1 py-3 items-center justify-center"
+            className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "ozet" ? "#222222" : "transparent",
               borderRadius: 10,
