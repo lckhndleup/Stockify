@@ -375,8 +375,10 @@ export default function StatementSection() {
         <View
           className="flex-row p-1"
           style={{
-            backgroundColor: "#F4F7FB",
-            borderRadius: 8,
+            backgroundColor: "#F8F9FA",
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: "#E5E7EB",
             gap: 6,
           }}
         >
@@ -385,7 +387,7 @@ export default function StatementSection() {
             className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "bilgiler" ? "#222222" : "transparent",
-              borderRadius: 8,
+              borderRadius: 12,
             }}
             activeOpacity={0.8}
           >
@@ -406,7 +408,7 @@ export default function StatementSection() {
             className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "hareketler" ? "#222222" : "transparent",
-              borderRadius: 8,
+              borderRadius: 12,
             }}
             activeOpacity={0.8}
           >
@@ -427,7 +429,7 @@ export default function StatementSection() {
             className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "ozet" ? "#222222" : "transparent",
-              borderRadius: 8,
+              borderRadius: 12,
             }}
             activeOpacity={0.8}
           >
@@ -577,7 +579,12 @@ export default function StatementSection() {
                   {/* Search Input */}
                   <View
                     className="flex-1 flex-row items-center px-4 py-3 rounded-lg"
-                    style={{ backgroundColor: "#F4F7FB" }}
+                    style={{
+                      backgroundColor: "#F8F9FA",
+                      borderWidth: 1,
+                      borderColor: "#E5E7EB",
+                      borderRadius: 12,
+                    }}
                   >
                     <Ionicons name="search" size={20} color="#73767A" />
                     <TextInput
