@@ -305,8 +305,8 @@ export default function StatementSection() {
           {/* Payment Type - Only show for payments */}
           <View className="flex-1 items-center">
             {!isSale && item.paymentType && (
-              <View className="px-2 py-1 rounded" style={{ backgroundColor: "#222222" }}>
-                <Typography variant="caption" className="text-white" style={{ fontSize: 11 }}>
+              <View className="px-2 py-1 rounded" style={{ backgroundColor: "#E5E7EB" }}>
+                <Typography variant="caption" className="text-gray-700" style={{ fontSize: 11 }}>
                   {item.paymentType === "CASH"
                     ? "Nakit"
                     : item.paymentType === "CARD"
@@ -681,14 +681,10 @@ export default function StatementSection() {
                     Tutar
                   </Typography>
                 </View>
-                <View className="flex-1 flex-row items-center justify-end gap-2">
+                <View className="flex-1 flex-row items-center justify-end">
                   <Typography variant="caption" weight="bold" className="text-gray-700">
                     Bakiye
                   </Typography>
-                  <View className="flex-row items-center gap-1">
-                    <Ionicons name="receipt-outline" size={16} color="#E3001B" />
-                    <Ionicons name="document-text" size={16} color="#222222" />
-                  </View>
                 </View>
               </View>
 
