@@ -1,13 +1,23 @@
 // app/broker/sections/statementSection.tsx
 import React, { useState, useMemo } from "react";
 import { View, ScrollView, TouchableOpacity, FlatList, TextInput } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Container, Typography, Card, Button, Loading, Toast, Divider } from "@/src/components/ui";
+import {
+  Container,
+  Typography,
+  Card,
+  Button,
+  Loading,
+  Toast,
+  Divider,
+  DocumentModal,
+} from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
 import { useTransactions } from "@/src/hooks/api/useTransactions";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import type { TransactionItem } from "@/src/services/transaction/type";
+import apiService from "@/src/services/api";
 
 // Tab types
 type TabType = "bilgiler" | "hareketler" | "ozet";
@@ -37,8 +47,12 @@ export default function StatementSection() {
   const [activeTab, setActiveTab] = useState<TabType>("hareketler");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRange, setSelectedRange] = useState<string>(DATE_RANGES.MONTH);
-  const [downloadingDocId, _setDownloadingDocId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Document Modal State
+  const [documentModalVisible, setDocumentModalVisible] = useState(false);
+  const [currentDocumentUrl, setCurrentDocumentUrl] = useState("");
+  const [currentDocumentTitle, setCurrentDocumentTitle] = useState("");
 
   // Get date range timestamps
   const { startDate, endDate } = useMemo(() => {
@@ -123,24 +137,7 @@ export default function StatementSection() {
     };
   }, [transactions]);
 
-  // Handle authenticated document download and share/save
-  const handleDownload = (url: string, timestamp: number) => {
-    if (!url) {
-      showError("İndirilecek belge bulunamadı.");
-      return;
-    }
-
-    // Navigate to DocumentViewer with the PDF URL and a title
-    const docTitle = `Hesap Özeti - ${formatDate(timestamp)}`;
-    
-    router.push({
-      pathname: "/broker/sections/documentViewer",
-      params: {
-        url: url,
-        title: docTitle,
-      },
-    });
-  }; // Format date
+  // Format date
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleDateString("tr-TR", {
@@ -150,6 +147,19 @@ export default function StatementSection() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Handle document open
+  const handleDownload = (url: string, timestamp: number) => {
+    if (!url) {
+      showError("İndirilecek belge bulunamadı.");
+      return;
+    }
+
+    const docTitle = `Hesap Özeti - ${formatDate(timestamp)}`;
+    setCurrentDocumentUrl(url);
+    setCurrentDocumentTitle(docTitle);
+    setDocumentModalVisible(true);
   };
 
   // Format currency
@@ -209,11 +219,8 @@ export default function StatementSection() {
               {hasDocument && (
                 <TouchableOpacity
                   onPress={() => handleDownload(item.downloadDocumentUrl, item.createdDate)}
-                  disabled={downloadingDocId === `${item.createdDate}`}
                   className="p-1"
-                  style={{
-                    opacity: downloadingDocId === `${item.createdDate}` ? 0.6 : 1,
-                  }}
+                  activeOpacity={0.7}
                 >
                   <Ionicons name="document-text-outline" size={20} color="#7C3AED" />
                 </TouchableOpacity>
@@ -630,6 +637,15 @@ export default function StatementSection() {
           )}
         </>
       )}
+
+      {/* Document Modal */}
+      <DocumentModal
+        visible={documentModalVisible}
+        onClose={() => setDocumentModalVisible(false)}
+        documentUrl={currentDocumentUrl}
+        title={currentDocumentTitle}
+        headers={apiService.getAuthHeaders()}
+      />
     </Container>
   );
 }
