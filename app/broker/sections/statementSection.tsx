@@ -10,7 +10,6 @@ import {
   Button,
   Loading,
   Toast,
-  Divider,
   DocumentModal,
 } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
@@ -222,7 +221,7 @@ export default function StatementSection() {
                   className="p-1"
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="document-text-outline" size={20} color="#7C3AED" />
+                  <Ionicons name="document-text-outline" size={20} color="#E3001B" />
                 </TouchableOpacity>
               )}
             </View>
@@ -241,8 +240,8 @@ export default function StatementSection() {
           {/* Payment Type - Only show for payments */}
           <View className="flex-1 items-center">
             {!isSale && item.paymentType && (
-              <View className="bg-blue-50 px-2 py-1 rounded">
-                <Typography variant="caption" className="text-blue-700" style={{ fontSize: 11 }}>
+              <View className="px-2 py-1 rounded" style={{ backgroundColor: "#222222" }}>
+                <Typography variant="caption" className="text-white" style={{ fontSize: 11 }}>
                   {item.paymentType === "CASH"
                     ? "Nakit"
                     : item.paymentType === "CARD"
@@ -302,23 +301,36 @@ export default function StatementSection() {
   }
 
   return (
-    <Container className="bg-white" padding="none" safeTop={false}>
+    <Container className="bg-[#F8F9FA]" padding="none" safeTop={false}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
-      {/* Header */}
-      <View className="bg-white px-4 pt-4 pb-2">
-        {/* Tabs */}
-        <View className="flex-row border-b border-gray-200">
+      {/* Modern Header with Tabs */}
+      <View className="bg-white px-4 pt-5 pb-3">
+        {/* Tabs - Modern Pill Style */}
+        <View
+          className="flex-row p-1"
+          style={{
+            backgroundColor: "#F4F7FB",
+            borderRadius: 12,
+            gap: 6,
+          }}
+        >
           <TouchableOpacity
             onPress={() => setActiveTab("bilgiler")}
-            className={`flex-1 py-3 items-center ${
-              activeTab === "bilgiler" ? "border-b-2 border-purple-700" : ""
-            }`}
+            className="flex-1 py-3 items-center justify-center"
+            style={{
+              backgroundColor: activeTab === "bilgiler" ? "#222222" : "transparent",
+              borderRadius: 10,
+            }}
+            activeOpacity={0.8}
           >
             <Typography
               variant="body"
-              weight={activeTab === "bilgiler" ? "bold" : "medium"}
-              className={activeTab === "bilgiler" ? "text-purple-700" : "text-gray-600"}
+              weight="semibold"
+              style={{
+                color: activeTab === "bilgiler" ? "#FFFEFF" : "#73767A",
+                fontSize: 14,
+              }}
             >
               Bilgiler
             </Typography>
@@ -326,14 +338,20 @@ export default function StatementSection() {
 
           <TouchableOpacity
             onPress={() => setActiveTab("hareketler")}
-            className={`flex-1 py-3 items-center ${
-              activeTab === "hareketler" ? "border-b-2 border-purple-700" : ""
-            }`}
+            className="flex-1 py-3 items-center justify-center"
+            style={{
+              backgroundColor: activeTab === "hareketler" ? "#222222" : "transparent",
+              borderRadius: 10,
+            }}
+            activeOpacity={0.8}
           >
             <Typography
               variant="body"
-              weight={activeTab === "hareketler" ? "bold" : "medium"}
-              className={activeTab === "hareketler" ? "text-purple-700" : "text-gray-600"}
+              weight="semibold"
+              style={{
+                color: activeTab === "hareketler" ? "#FFFEFF" : "#73767A",
+                fontSize: 14,
+              }}
             >
               Hareketler
             </Typography>
@@ -341,100 +359,146 @@ export default function StatementSection() {
 
           <TouchableOpacity
             onPress={() => setActiveTab("ozet")}
-            className={`flex-1 py-3 items-center ${
-              activeTab === "ozet" ? "border-b-2 border-purple-700" : ""
-            }`}
+            className="flex-1 py-3 items-center justify-center"
+            style={{
+              backgroundColor: activeTab === "ozet" ? "#222222" : "transparent",
+              borderRadius: 10,
+            }}
+            activeOpacity={0.8}
           >
             <Typography
               variant="body"
-              weight={activeTab === "ozet" ? "bold" : "medium"}
-              className={activeTab === "ozet" ? "text-purple-700" : "text-gray-600"}
+              weight="semibold"
+              style={{
+                color: activeTab === "ozet" ? "#FFFEFF" : "#73767A",
+                fontSize: 14,
+              }}
             >
               Özet
             </Typography>
           </TouchableOpacity>
         </View>
-
-        {/* Search and Filter - Only show in Hareketler tab */}
-        {activeTab === "hareketler" && (
-          <View className="flex-row items-center gap-2 mt-3">
-            <View className="flex-1 flex-row items-center bg-gray-50 rounded-lg px-3 py-2">
-              <Ionicons name="search" size={20} color="#9CA3AF" />
-              <TextInput
-                placeholder="Hesap Hareketi Ara"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                className="flex-1 ml-2 text-base"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-            <TouchableOpacity
-              onPress={() => setShowFilters(!showFilters)}
-              className="bg-purple-700 p-3 rounded-lg"
-            >
-              <Ionicons name="filter" size={20} color="white" />
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       {/* Content */}
       {brokersLoading || transactionsLoading ? (
         <View className="items-center justify-center flex-1">
           <Loading size="large" />
-          <Typography variant="body" className="text-stock-text mt-4">
+          <Typography variant="body" className="text-gray-600 mt-4">
             Yükleniyor...
           </Typography>
         </View>
       ) : !broker ? (
         <View className="items-center justify-center flex-1">
-          <Typography variant="body" className="text-stock-text">
-            Aracı bulunamadı...
-          </Typography>
+          <View className="p-6 rounded-3xl" style={{ backgroundColor: "#222222" }}>
+            <Typography variant="body" className="text-white text-center">
+              Aracı bulunamadı
+            </Typography>
+          </View>
         </View>
       ) : (
         <>
           {/* Bilgiler Tab */}
           {activeTab === "bilgiler" && (
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-              <View className="p-4">
-                <Card variant="default" padding="lg" className="border border-gray-200">
-                  <View className="mb-4">
-                    <Typography variant="caption" className="text-gray-500 mb-1">
-                      Aracı Adı
-                    </Typography>
-                    <Typography variant="h3" weight="bold" className="text-stock-dark">
-                      {broker.name} {broker.surname}
-                    </Typography>
-                  </View>
-
-                  <Divider className="my-4" />
-
-                  <View className="mb-4">
-                    <Typography variant="caption" className="text-gray-500 mb-1">
-                      İndirim Oranı
-                    </Typography>
-                    <Typography variant="body" weight="semibold" className="text-stock-dark">
-                      %{broker.discountRate || 0}
-                    </Typography>
-                  </View>
-
-                  <Divider className="my-4" />
-
-                  <View>
-                    <Typography variant="caption" className="text-gray-500 mb-1">
-                      Güncel Bakiye
-                    </Typography>
-                    <Typography
-                      variant="h2"
-                      weight="bold"
-                      className={broker.balance >= 0 ? "text-red-600" : "text-green-600"}
-                    >
-                      {broker.balance >= 0 ? "" : "-"}
-                      {formatCurrency(Math.abs(broker.balance))}
+            <ScrollView
+              className="flex-1"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ padding: 16, gap: 16 }}
+            >
+              {/* Broker Info Card - Modern Design */}
+              <View
+                className="p-6 rounded-3xl"
+                style={{
+                  backgroundColor: "#222222",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 12,
+                  elevation: 5,
+                }}
+              >
+                <View className="items-center mb-6">
+                  <View
+                    className="w-20 h-20 rounded-full items-center justify-center mb-4"
+                    style={{ backgroundColor: "#E3001B" }}
+                  >
+                    <Typography variant="h1" weight="bold" className="text-white">
+                      {broker.name[0]}
+                      {broker.surname[0]}
                     </Typography>
                   </View>
-                </Card>
+                  <Typography variant="h3" weight="bold" className="text-white text-center">
+                    {broker.name} {broker.surname}
+                  </Typography>
+                </View>
+
+                <View className="rounded-2xl p-4 mb-3" style={{ backgroundColor: "#2A2A2A" }}>
+                  <Typography variant="caption" className="text-gray-400 mb-1">
+                    İndirim Oranı
+                  </Typography>
+                  <Typography variant="h3" weight="bold" className="text-white">
+                    %{broker.discountRate || 0}
+                  </Typography>
+                </View>
+
+                <View className="rounded-2xl p-4" style={{ backgroundColor: "#2A2A2A" }}>
+                  <Typography variant="caption" className="text-gray-400 mb-2">
+                    Güncel Bakiye
+                  </Typography>
+                  <Typography
+                    variant="h1"
+                    weight="bold"
+                    style={{
+                      color: broker.balance >= 0 ? "#E3001B" : "#22c55e",
+                    }}
+                  >
+                    {broker.balance >= 0 ? "" : "-"}
+                    {formatCurrency(Math.abs(broker.balance))}
+                  </Typography>
+                </View>
+              </View>
+
+              {/* Quick Stats */}
+              <View className="flex-row gap-3">
+                <View
+                  className="flex-1 p-4 rounded-2xl"
+                  style={{
+                    backgroundColor: "#fff",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <Ionicons name="trending-up" size={24} color="#E3001B" />
+                  <Typography variant="h3" weight="bold" className="text-gray-900 mt-2">
+                    {summary.salesCount}
+                  </Typography>
+                  <Typography variant="caption" className="text-gray-500 mt-1">
+                    Satış
+                  </Typography>
+                </View>
+
+                <View
+                  className="flex-1 p-4 rounded-2xl"
+                  style={{
+                    backgroundColor: "#fff",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <Ionicons name="cash" size={24} color="#22c55e" />
+                  <Typography variant="h3" weight="bold" className="text-gray-900 mt-2">
+                    {summary.paymentsCount}
+                  </Typography>
+                  <Typography variant="caption" className="text-gray-500 mt-1">
+                    Tahsilat
+                  </Typography>
+                </View>
               </View>
             </ScrollView>
           )}
@@ -442,33 +506,80 @@ export default function StatementSection() {
           {/* Hareketler Tab */}
           {activeTab === "hareketler" && (
             <View className="flex-1">
-              {/* Filters */}
-              {showFilters && (
-                <View className="bg-gray-50 p-4 border-b border-gray-200">
-                  <Typography variant="body" weight="semibold" className="mb-3">
-                    Tarih Aralığı
-                  </Typography>
-                  <View className="flex-row flex-wrap gap-2">
-                    {Object.entries(DATE_RANGE_LABELS).map(([key, label]) => (
-                      <TouchableOpacity
-                        key={key}
-                        onPress={() => setSelectedRange(key)}
-                        className={`px-4 py-2 rounded-lg ${
-                          selectedRange === key
-                            ? "bg-purple-700"
-                            : "bg-white border border-gray-300"
-                        }`}
-                      >
-                        <Typography
-                          variant="caption"
-                          weight="medium"
-                          className={selectedRange === key ? "text-white" : "text-gray-700"}
-                        >
-                          {label}
-                        </Typography>
+              {/* Search and Filter Bar - Modern */}
+              <View className="bg-white px-4 py-3">
+                <View className="flex-row items-center gap-2">
+                  {/* Search Input */}
+                  <View
+                    className="flex-1 flex-row items-center px-4 py-3 rounded-2xl"
+                    style={{ backgroundColor: "#F4F7FB" }}
+                  >
+                    <Ionicons name="search" size={20} color="#73767A" />
+                    <TextInput
+                      placeholder="Ara..."
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      className="flex-1 ml-2 text-base"
+                      placeholderTextColor="#73767A"
+                      style={{ color: "#1e293b" }}
+                    />
+                    {searchQuery.length > 0 && (
+                      <TouchableOpacity onPress={() => setSearchQuery("")}>
+                        <Ionicons name="close-circle" size={20} color="#73767A" />
                       </TouchableOpacity>
-                    ))}
+                    )}
                   </View>
+
+                  {/* Filter Button */}
+                  <TouchableOpacity
+                    onPress={() => setShowFilters(!showFilters)}
+                    className="rounded-2xl items-center justify-center"
+                    style={{
+                      backgroundColor: showFilters ? "#E3001B" : "#222222",
+                      width: 48,
+                      height: 48,
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="options" size={22} color="#FFFEFF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Date Range Filters - Modern Horizontal Scroll */}
+              {showFilters && (
+                <View className="bg-white px-4 pb-3">
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 8 }}
+                  >
+                    {Object.entries(DATE_RANGE_LABELS).map(([key, label]) => {
+                      const isSelected = selectedRange === key;
+                      return (
+                        <TouchableOpacity
+                          key={key}
+                          onPress={() => setSelectedRange(key)}
+                          className="px-5 py-2.5 rounded-full"
+                          style={{
+                            backgroundColor: isSelected ? "#222222" : "#F4F7FB",
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <Typography
+                            variant="body"
+                            weight={isSelected ? "semibold" : "medium"}
+                            style={{
+                              color: isSelected ? "#FFFEFF" : "#73767A",
+                              fontSize: 13,
+                            }}
+                          >
+                            {label}
+                          </Typography>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
               )}
 
@@ -517,7 +628,7 @@ export default function StatementSection() {
 
               {/* Transactions List - Scrollable */}
               {filteredTransactions.length === 0 ? (
-                <View className="p-8 items-center">
+                <View className="flex-1 p-8 items-center justify-center">
                   <Typography variant="body" className="text-gray-500 text-center">
                     {searchQuery
                       ? "Arama sonucu bulunamadı"
@@ -532,17 +643,26 @@ export default function StatementSection() {
                   scrollEnabled={true}
                   showsVerticalScrollIndicator={true}
                   ItemSeparatorComponent={() => null}
-                  contentContainerStyle={{ flexGrow: 1 }}
+                  contentContainerStyle={{ flexGrow: 1, paddingBottom: 88 }}
                 />
               )}
 
-              {/* Export Button */}
-              <View className="p-4 bg-white border-t border-gray-200">
+              {/* Fixed Export Button at Bottom */}
+              <View
+                className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: -2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}
+              >
                 <Button
                   variant="primary"
                   size="lg"
                   fullWidth
-                  className="bg-purple-700"
+                  className="bg-stock-red"
                   onPress={() => showSuccess("Ekstre gönderme özelliği yakında eklenecek")}
                 >
                   <Typography className="text-white" weight="bold">
@@ -555,83 +675,110 @@ export default function StatementSection() {
 
           {/* Özet Tab */}
           {activeTab === "ozet" && (
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-              <View className="p-4 gap-4">
-                {/* Summary Cards */}
-                <Card variant="default" padding="lg" className="border border-gray-200">
-                  <Typography variant="h4" weight="bold" className="text-gray-700 mb-4">
-                    İşlem Özeti
+            <ScrollView
+              className="flex-1"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ padding: 16, gap: 16 }}
+            >
+              {/* Summary Header Card */}
+              <View
+                className="p-6 rounded-3xl"
+                style={{
+                  backgroundColor: "#222222",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 12,
+                  elevation: 5,
+                }}
+              >
+                <Typography variant="caption" className="text-gray-400 mb-2">
+                  Net Bakiye
+                </Typography>
+                <Typography
+                  variant="h1"
+                  weight="bold"
+                  style={{
+                    color: summary.netBalance >= 0 ? "#E3001B" : "#22c55e",
+                    fontSize: 36,
+                  }}
+                >
+                  {summary.netBalance >= 0 ? "" : "-"}
+                  {formatCurrency(Math.abs(summary.netBalance))}
+                </Typography>
+
+                <View className="flex-row mt-6 gap-3">
+                  <View className="flex-1 rounded-2xl p-3" style={{ backgroundColor: "#2A2A2A" }}>
+                    <Ionicons name="arrow-down-circle" size={24} color="#E3001B" />
+                    <Typography variant="body" weight="bold" className="text-white mt-2">
+                      {formatCurrency(summary.totalSales)}
+                    </Typography>
+                    <Typography variant="caption" className="text-gray-400 mt-1">
+                      Satışlar ({summary.salesCount})
+                    </Typography>
+                  </View>
+
+                  <View className="flex-1 rounded-2xl p-3" style={{ backgroundColor: "#2A2A2A" }}>
+                    <Ionicons name="arrow-up-circle" size={24} color="#22c55e" />
+                    <Typography variant="body" weight="bold" className="text-white mt-2">
+                      {formatCurrency(summary.totalPayments)}
+                    </Typography>
+                    <Typography variant="caption" className="text-gray-400 mt-1">
+                      Tahsilatlar ({summary.paymentsCount})
+                    </Typography>
+                  </View>
+                </View>
+              </View>
+
+              {/* Period Info Card */}
+              <View
+                className="rounded-2xl overflow-hidden"
+                style={{
+                  backgroundColor: "#fff",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 2,
+                }}
+              >
+                <View className="p-4 flex-row items-center justify-between border-b border-gray-100">
+                  <Typography variant="body" className="text-gray-600">
+                    Toplam İşlem
                   </Typography>
-
-                  <View className="flex-row justify-between items-center mb-3">
-                    <Typography variant="body" className="text-gray-600">
-                      Toplam Satış ({summary.salesCount} işlem)
-                    </Typography>
-                    <Typography variant="body" weight="bold" className="text-red-600">
-                      -{formatCurrency(summary.totalSales)}
-                    </Typography>
-                  </View>
-
-                  <View className="flex-row justify-between items-center mb-3">
-                    <Typography variant="body" className="text-gray-600">
-                      Toplam Tahsilat ({summary.paymentsCount} işlem)
-                    </Typography>
-                    <Typography variant="body" weight="bold" className="text-green-600">
-                      +{formatCurrency(summary.totalPayments)}
-                    </Typography>
-                  </View>
-
-                  <Divider className="my-3" />
-
-                  <View className="flex-row justify-between items-center">
-                    <Typography variant="body" weight="bold" className="text-gray-700">
-                      Net Bakiye
-                    </Typography>
-                    <Typography
-                      variant="h3"
-                      weight="bold"
-                      className={summary.netBalance >= 0 ? "text-red-600" : "text-green-600"}
-                    >
-                      {summary.netBalance >= 0 ? "" : "-"}
-                      {formatCurrency(Math.abs(summary.netBalance))}
-                    </Typography>
-                  </View>
-                </Card>
-
-                <Card variant="default" padding="lg" className="border border-gray-200">
-                  <Typography variant="h4" weight="bold" className="text-gray-700 mb-4">
-                    Dönem Bilgileri
-                  </Typography>
-
-                  <View className="flex-row justify-between items-center mb-3">
-                    <Typography variant="body" className="text-gray-600">
-                      Toplam İşlem
-                    </Typography>
-                    <Typography variant="body" weight="bold" className="text-gray-800">
+                  <View className="px-4 py-1.5 rounded-full" style={{ backgroundColor: "#F4F7FB" }}>
+                    <Typography variant="body" weight="bold" className="text-gray-900">
                       {transactionData?.totalElements || 0}
                     </Typography>
                   </View>
+                </View>
 
-                  <View className="flex-row justify-between items-center mb-3">
-                    <Typography variant="body" className="text-gray-600">
-                      Tarih Aralığı
-                    </Typography>
-                    <Typography variant="body" weight="bold" className="text-gray-800">
+                <View className="p-4 flex-row items-center justify-between border-b border-gray-100">
+                  <Typography variant="body" className="text-gray-600">
+                    Tarih Aralığı
+                  </Typography>
+                  <View className="px-4 py-1.5 rounded-full" style={{ backgroundColor: "#222222" }}>
+                    <Typography variant="caption" weight="semibold" className="text-white">
                       {DATE_RANGE_LABELS[selectedRange as keyof typeof DATE_RANGE_LABELS]}
                     </Typography>
                   </View>
+                </View>
 
-                  {totalPages > 1 && (
-                    <View className="flex-row justify-between items-center">
-                      <Typography variant="body" className="text-gray-600">
-                        Sayfa
-                      </Typography>
-                      <Typography variant="body" weight="bold" className="text-gray-800">
+                {totalPages > 1 && (
+                  <View className="p-4 flex-row items-center justify-between">
+                    <Typography variant="body" className="text-gray-600">
+                      Sayfa
+                    </Typography>
+                    <View
+                      className="px-4 py-1.5 rounded-full"
+                      style={{ backgroundColor: "#F4F7FB" }}
+                    >
+                      <Typography variant="body" weight="bold" className="text-gray-900">
                         {currentPage + 1} / {totalPages}
                       </Typography>
                     </View>
-                  )}
-                </Card>
+                  </View>
+                )}
               </View>
             </ScrollView>
           )}
