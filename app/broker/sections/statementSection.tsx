@@ -370,13 +370,13 @@ export default function StatementSection() {
       <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
 
       {/* Modern Header with Tabs */}
-      <View className="bg-white px-4 pt-5 pb-3">
+      <View className="bg-white px-4 pt-4 pb-2">
         {/* Tabs - Modern Pill Style */}
         <View
           className="flex-row p-1"
           style={{
             backgroundColor: "#F4F7FB",
-            borderRadius: 12,
+            borderRadius: 8,
             gap: 6,
           }}
         >
@@ -385,7 +385,7 @@ export default function StatementSection() {
             className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "bilgiler" ? "#222222" : "transparent",
-              borderRadius: 10,
+              borderRadius: 8,
             }}
             activeOpacity={0.8}
           >
@@ -406,7 +406,7 @@ export default function StatementSection() {
             className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "hareketler" ? "#222222" : "transparent",
-              borderRadius: 10,
+              borderRadius: 8,
             }}
             activeOpacity={0.8}
           >
@@ -427,7 +427,7 @@ export default function StatementSection() {
             className="flex-1 py-2 items-center justify-center"
             style={{
               backgroundColor: activeTab === "ozet" ? "#222222" : "transparent",
-              borderRadius: 10,
+              borderRadius: 8,
             }}
             activeOpacity={0.8}
           >
@@ -572,11 +572,11 @@ export default function StatementSection() {
           {activeTab === "hareketler" && (
             <View className="flex-1">
               {/* Search and Filter Bar - Modern */}
-              <View className="bg-white px-4 py-3">
+              <View className="bg-white px-4 py-2">
                 <View className="flex-row items-center gap-2">
                   {/* Search Input */}
                   <View
-                    className="flex-1 flex-row items-center px-4 py-3 rounded-2xl"
+                    className="flex-1 flex-row items-center px-4 py-3 rounded-lg"
                     style={{ backgroundColor: "#F4F7FB" }}
                   >
                     <Ionicons name="search" size={20} color="#73767A" />
@@ -598,7 +598,7 @@ export default function StatementSection() {
                   {/* Filter Button */}
                   <TouchableOpacity
                     onPress={() => setShowFilters(!showFilters)}
-                    className="rounded-2xl items-center justify-center"
+                    className="rounded-lg items-center justify-center"
                     style={{
                       backgroundColor: showFilters ? "#E3001B" : "#222222",
                       width: 48,
@@ -613,7 +613,7 @@ export default function StatementSection() {
 
               {/* Date Range Filters - Modern Horizontal Scroll */}
               {showFilters && (
-                <View className="bg-white px-4 pb-3">
+                <View className="bg-white px-4 pb-2">
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -625,7 +625,7 @@ export default function StatementSection() {
                         <TouchableOpacity
                           key={key}
                           onPress={() => setSelectedRange(key)}
-                          className="px-5 py-2.5 rounded-full"
+                          className="px-5 py-2.5 rounded-lg"
                           style={{
                             backgroundColor: isSelected ? "#222222" : "#F4F7FB",
                           }}
