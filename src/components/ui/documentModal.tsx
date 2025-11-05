@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Modal as RNModal, View, TouchableOpacity, Platform } from "react-native";
+import { Modal as RNModal, View, TouchableOpacity, Platform, Alert } from "react-native";
 import WebView from "react-native-webview";
 import LottieView from "lottie-react-native";
+import { File, Paths } from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import * as Print from "expo-print";
 import Typography from "./typography";
 import Icon from "./icon";
 import logger from "@/src/utils/logger";
@@ -24,12 +27,194 @@ export default function DocumentModal({
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Loading animation ref
   const loadingAnimationRef = useRef<LottieView>(null);
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reset states when modal opens/closes
+  // Download document
+  const handleDownload = async () => {
+    try {
+      setIsActionLoading(true);
+      logger.debug("📥 Starting download:", documentUrl);
+
+      const filename = `belge_${Date.now()}.pdf`;
+      const file = new File(Paths.document, filename);
+
+      // Use XMLHttpRequest to get binary data as ArrayBuffer
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", documentUrl, true);
+        xhr.responseType = "arraybuffer";
+
+        // Set headers
+        Object.entries(headers).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.response as ArrayBuffer);
+          } else {
+            reject(new Error(`HTTP error! status: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network request failed"));
+        xhr.send();
+      });
+
+      // Convert ArrayBuffer to Uint8Array
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      // Write as TypedArray
+      await file.write(uint8Array);
+
+      logger.debug("✅ Download successful:", file.uri);
+
+      // Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        // Show alert with share option
+        Alert.alert("Başarılı", "Belge hazır! Kaydetmek veya paylaşmak ister misiniz?", [
+          {
+            text: "Paylaş/Kaydet",
+            onPress: async () => {
+              try {
+                await Sharing.shareAsync(file.uri, {
+                  mimeType: "application/pdf",
+                  dialogTitle: title,
+                  UTI: "com.adobe.pdf",
+                });
+              } catch (shareError) {
+                logger.error("❌ Share after download error:", shareError);
+              }
+            },
+          },
+          {
+            text: "Tamam",
+            style: "cancel",
+          },
+        ]);
+      } else {
+        Alert.alert("Başarılı", "Belge başarıyla hazırlandı!");
+      }
+    } catch (error) {
+      logger.error("❌ Download error:", error);
+      Alert.alert("Hata", "Belge indirilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Share document
+  const handleShare = async () => {
+    try {
+      setIsActionLoading(true);
+      logger.debug("📤 Starting share:", documentUrl);
+
+      // Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert("Uyarı", "Bu cihazda paylaşım özelliği kullanılamıyor.");
+        return;
+      }
+
+      const filename = `belge_${Date.now()}.pdf`;
+      const file = new File(Paths.document, filename);
+
+      // Use XMLHttpRequest to get binary data
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", documentUrl, true);
+        xhr.responseType = "arraybuffer";
+
+        Object.entries(headers).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.response as ArrayBuffer);
+          } else {
+            reject(new Error(`HTTP error! status: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network request failed"));
+        xhr.send();
+      });
+
+      const uint8Array = new Uint8Array(arrayBuffer);
+      await file.write(uint8Array);
+
+      logger.debug("✅ File ready for sharing:", file.uri);
+
+      // Share the file - This will show native share sheet with all available apps
+      await Sharing.shareAsync(file.uri, {
+        mimeType: "application/pdf",
+        dialogTitle: title,
+        UTI: "com.adobe.pdf",
+      });
+    } catch (error) {
+      logger.error("❌ Share error:", error);
+      Alert.alert("Hata", "Belge paylaşılamadı. Lütfen tekrar deneyin.");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Print document
+  const handlePrint = async () => {
+    try {
+      setIsActionLoading(true);
+      logger.debug("🖨️ Starting print:", documentUrl);
+
+      const filename = `belge_${Date.now()}.pdf`;
+      const file = new File(Paths.document, filename);
+
+      // Use XMLHttpRequest to get binary data
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", documentUrl, true);
+        xhr.responseType = "arraybuffer";
+
+        Object.entries(headers).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.response as ArrayBuffer);
+          } else {
+            reject(new Error(`HTTP error! status: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network request failed"));
+        xhr.send();
+      });
+
+      const uint8Array = new Uint8Array(arrayBuffer);
+      await file.write(uint8Array);
+
+      logger.debug("✅ File ready for printing:", file.uri);
+
+      // Open native print dialog
+      const result = await Print.printAsync({
+        uri: file.uri,
+      });
+
+      // Log result silently
+      logger.debug("🖨️ Print result:", result);
+    } catch (error: any) {
+      // Just log errors, don't show any alerts to user
+      logger.error("❌ Print error:", error);
+    } finally {
+      setIsActionLoading(false);
+    }
+  }; // Reset states when modal opens/closes
   useEffect(() => {
     if (visible) {
       setIsLoading(true);
@@ -111,13 +296,56 @@ export default function DocumentModal({
                   {title}
                 </Typography>
 
-                <TouchableOpacity
-                  onPress={handleClose}
-                  className="ml-4 p-2 rounded-full bg-gray-100"
-                  activeOpacity={0.7}
-                >
-                  <Icon family="MaterialIcons" name="close" size={22} color="#374151" />
-                </TouchableOpacity>
+                {/* Action Icons */}
+                <View className="flex-row items-center gap-x-2">
+                  {/* Download Icon */}
+                  <TouchableOpacity
+                    onPress={handleDownload}
+                    disabled={isActionLoading || isLoading || hasError}
+                    className="p-2 rounded-full bg-gray-100"
+                    activeOpacity={0.7}
+                    style={{
+                      opacity: isActionLoading || isLoading || hasError ? 0.5 : 1,
+                    }}
+                  >
+                    <Icon family="MaterialIcons" name="download" size={22} color="#374151" />
+                  </TouchableOpacity>
+
+                  {/* Share Icon */}
+                  <TouchableOpacity
+                    onPress={handleShare}
+                    disabled={isActionLoading || isLoading || hasError}
+                    className="p-2 rounded-full bg-gray-100"
+                    activeOpacity={0.7}
+                    style={{
+                      opacity: isActionLoading || isLoading || hasError ? 0.5 : 1,
+                    }}
+                  >
+                    <Icon family="MaterialIcons" name="share" size={22} color="#374151" />
+                  </TouchableOpacity>
+
+                  {/* Print Icon */}
+                  <TouchableOpacity
+                    onPress={handlePrint}
+                    disabled={isActionLoading || isLoading || hasError}
+                    className="p-2 rounded-full bg-gray-100"
+                    activeOpacity={0.7}
+                    style={{
+                      opacity: isActionLoading || isLoading || hasError ? 0.5 : 1,
+                    }}
+                  >
+                    <Icon family="MaterialIcons" name="print" size={22} color="#374151" />
+                  </TouchableOpacity>
+
+                  {/* Close Icon */}
+                  <TouchableOpacity
+                    onPress={handleClose}
+                    className="p-2 rounded-full bg-gray-100"
+                    activeOpacity={0.7}
+                  >
+                    <Icon family="MaterialIcons" name="close" size={22} color="#374151" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
