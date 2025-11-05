@@ -27,7 +27,6 @@ export default function DocumentModal({
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Loading animation ref
   const loadingAnimationRef = useRef<LottieView>(null);
@@ -36,7 +35,6 @@ export default function DocumentModal({
   // Download document
   const handleDownload = async () => {
     try {
-      setIsActionLoading(true);
       logger.debug("📥 Starting download:", documentUrl);
 
       const filename = `belge_${Date.now()}.pdf`;
@@ -103,15 +101,12 @@ export default function DocumentModal({
     } catch (error) {
       logger.error("❌ Download error:", error);
       Alert.alert("Hata", "Belge indirilemedi. Lütfen tekrar deneyin.");
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
   // Share document
   const handleShare = async () => {
     try {
-      setIsActionLoading(true);
       logger.debug("📤 Starting share:", documentUrl);
 
       // Check if sharing is available
@@ -160,15 +155,12 @@ export default function DocumentModal({
     } catch (error) {
       logger.error("❌ Share error:", error);
       Alert.alert("Hata", "Belge paylaşılamadı. Lütfen tekrar deneyin.");
-    } finally {
-      setIsActionLoading(false);
     }
   };
 
   // Print document
   const handlePrint = async () => {
     try {
-      setIsActionLoading(true);
       logger.debug("🖨️ Starting print:", documentUrl);
 
       const filename = `belge_${Date.now()}.pdf`;
@@ -211,10 +203,10 @@ export default function DocumentModal({
     } catch (error: any) {
       // Just log errors, don't show any alerts to user
       logger.error("❌ Print error:", error);
-    } finally {
-      setIsActionLoading(false);
     }
-  }; // Reset states when modal opens/closes
+  };
+
+  // Reset states when modal opens/closes
   useEffect(() => {
     if (visible) {
       setIsLoading(true);
@@ -291,61 +283,70 @@ export default function DocumentModal({
           >
             {/* Header */}
             <View className="px-5 py-4 border-b border-stock-border bg-white">
-              <View className="flex-row items-center justify-between">
-                <Typography variant="h4" className="flex-1 text-stock-dark" weight="bold">
+              {/* Top Row - Tarih ve Kapat */}
+              <View className="flex-row items-center justify-between mb-3">
+                <Typography variant="body" className="text-gray-600" weight="medium">
                   {title}
                 </Typography>
 
-                {/* Action Icons */}
-                <View className="flex-row items-center gap-x-2">
-                  {/* Download Icon */}
-                  <TouchableOpacity
-                    onPress={handleDownload}
-                    disabled={isActionLoading || isLoading || hasError}
-                    className="p-2 rounded-full bg-gray-100"
-                    activeOpacity={0.7}
-                    style={{
-                      opacity: isActionLoading || isLoading || hasError ? 0.5 : 1,
-                    }}
-                  >
-                    <Icon family="MaterialIcons" name="download" size={22} color="#374151" />
-                  </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleClose}
+                  className="p-2 rounded-full bg-gray-100"
+                  activeOpacity={0.7}
+                >
+                  <Icon family="MaterialIcons" name="close" size={20} color="#374151" />
+                </TouchableOpacity>
+              </View>
 
-                  {/* Share Icon */}
-                  <TouchableOpacity
-                    onPress={handleShare}
-                    disabled={isActionLoading || isLoading || hasError}
-                    className="p-2 rounded-full bg-gray-100"
-                    activeOpacity={0.7}
-                    style={{
-                      opacity: isActionLoading || isLoading || hasError ? 0.5 : 1,
-                    }}
-                  >
-                    <Icon family="MaterialIcons" name="share" size={22} color="#374151" />
-                  </TouchableOpacity>
+              {/* Bottom Row - Action Icons */}
+              <View className="flex-row items-center justify-center gap-x-4">
+                {/* Download Icon */}
+                <TouchableOpacity
+                  onPress={handleDownload}
+                  disabled={isLoading || hasError}
+                  className="flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl bg-gray-50 border border-gray-200"
+                  activeOpacity={0.7}
+                  style={{
+                    opacity: isLoading || hasError ? 0.5 : 1,
+                  }}
+                >
+                  <Icon family="MaterialIcons" name="download" size={20} color="#374151" />
+                  <Typography className="text-gray-700 ml-1.5" weight="semibold" variant="caption">
+                    İndir
+                  </Typography>
+                </TouchableOpacity>
 
-                  {/* Print Icon */}
-                  <TouchableOpacity
-                    onPress={handlePrint}
-                    disabled={isActionLoading || isLoading || hasError}
-                    className="p-2 rounded-full bg-gray-100"
-                    activeOpacity={0.7}
-                    style={{
-                      opacity: isActionLoading || isLoading || hasError ? 0.5 : 1,
-                    }}
-                  >
-                    <Icon family="MaterialIcons" name="print" size={22} color="#374151" />
-                  </TouchableOpacity>
+                {/* Share Icon */}
+                <TouchableOpacity
+                  onPress={handleShare}
+                  disabled={isLoading || hasError}
+                  className="flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl bg-gray-50 border border-gray-200"
+                  activeOpacity={0.7}
+                  style={{
+                    opacity: isLoading || hasError ? 0.5 : 1,
+                  }}
+                >
+                  <Icon family="MaterialIcons" name="share" size={20} color="#374151" />
+                  <Typography className="text-gray-700 ml-1.5" weight="semibold" variant="caption">
+                    Paylaş
+                  </Typography>
+                </TouchableOpacity>
 
-                  {/* Close Icon */}
-                  <TouchableOpacity
-                    onPress={handleClose}
-                    className="p-2 rounded-full bg-gray-100"
-                    activeOpacity={0.7}
-                  >
-                    <Icon family="MaterialIcons" name="close" size={22} color="#374151" />
-                  </TouchableOpacity>
-                </View>
+                {/* Print Icon */}
+                <TouchableOpacity
+                  onPress={handlePrint}
+                  disabled={isLoading || hasError}
+                  className="flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl bg-gray-50 border border-gray-200"
+                  activeOpacity={0.7}
+                  style={{
+                    opacity: isLoading || hasError ? 0.5 : 1,
+                  }}
+                >
+                  <Icon family="MaterialIcons" name="print" size={20} color="#374151" />
+                  <Typography className="text-gray-700 ml-1.5" weight="semibold" variant="caption">
+                    Yazdır
+                  </Typography>
+                </TouchableOpacity>
               </View>
             </View>
 
