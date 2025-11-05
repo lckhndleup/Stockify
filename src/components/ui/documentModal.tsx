@@ -263,8 +263,8 @@ export default function DocumentModal({
     >
       {/* Overlay */}
       <View className="flex-1 bg-black/60">
-        {/* Modal Container - ~65% ekran yüksekliği */}
-        <View className="flex-1 pt-32">
+        {/* Modal Container - ~60% ekran yüksekliği */}
+        <View className="flex-1 pt-40">
           <View
             className="flex-1 bg-white rounded-t-3xl overflow-hidden"
             style={{
