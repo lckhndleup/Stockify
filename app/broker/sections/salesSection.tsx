@@ -599,6 +599,51 @@ export default function SalesSection() {
           </View>
         )}
 
+        {/* Hiç ürün yoksa stok takibe yönlendir */}
+        {salesProducts.length === 0 && !salesProductsLoading && (
+          <View className="mb-4 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <View className="items-center mb-4">
+              <Icon
+                family="MaterialCommunityIcons"
+                name="package-variant-closed"
+                size={48}
+                color="#EAB308"
+                containerClassName="mb-3"
+              />
+              <Typography
+                variant="body"
+                className="text-yellow-800 text-center mb-2"
+                weight="semibold"
+              >
+                Stokta Ürün Bulunamadı
+              </Typography>
+              <Typography variant="caption" className="text-yellow-700 text-center mb-4">
+                Satış yapabilmek için önce stok takip sayfasından ürün eklemeniz gerekmektedir.
+              </Typography>
+            </View>
+            <Button
+              variant="primary"
+              size="md"
+              fullWidth
+              className="bg-stock-red"
+              onPress={() => router.push("/stock")}
+            >
+              <View className="flex-row items-center justify-center">
+                <Icon
+                  family="MaterialIcons"
+                  name="inventory-2"
+                  size={20}
+                  color="#FFFFFF"
+                  containerClassName="mr-2"
+                />
+                <Typography className="text-white" weight="semibold">
+                  Stok Takibe Git
+                </Typography>
+              </View>
+            </Button>
+          </View>
+        )}
+
         {/* Tüm ürünler sepete eklendiğinde gösterilecek mesaj */}
         {availableProducts.length === 0 && addedProducts.length > 0 && (
           <View className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
