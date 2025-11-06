@@ -230,6 +230,53 @@ export default function StatementSection() {
       item.downloadInvoiceUrl.length > 0 &&
       item.downloadInvoiceUrl.startsWith("http");
 
+    let paymentTypeLabel: string | null = null;
+    if (!isSale && item.paymentType) {
+      switch (item.paymentType) {
+        case "CASH":
+          paymentTypeLabel = "Nakit";
+          break;
+        case "CARD":
+          paymentTypeLabel = "Kart";
+          break;
+        case "CREDIT_CARD":
+          paymentTypeLabel = "Kredi Kartı";
+          break;
+        case "BANK_TRANSFER":
+          paymentTypeLabel = "Havale";
+          break;
+        case "CHECK":
+          paymentTypeLabel = "Çek";
+          break;
+        default:
+          paymentTypeLabel = item.paymentType;
+      }
+    }
+
+    const renderDocumentBadge = (
+      label: string,
+      icon: keyof typeof Ionicons.glyphMap,
+      color: string,
+      url: string | null | undefined,
+    ) => (
+      <TouchableOpacity
+        onPress={() => handleDownload(url ?? "", item.createdDate)}
+        className="flex-row items-center gap-1 px-3 py-1 rounded-lg"
+        style={{ backgroundColor: "#F3F4F6", minHeight: 28 }}
+        activeOpacity={0.8}
+      >
+        <Typography
+          variant="caption"
+          weight="medium"
+          className="text-gray-700"
+          style={{ fontSize: 11 }}
+        >
+          {label}
+        </Typography>
+        <Ionicons name={icon} size={14} color={color} />
+      </TouchableOpacity>
+    );
+
     return (
       <View className="bg-white border-b border-gray-200 px-4 py-3">
         {/* Main Row */}
@@ -254,9 +301,8 @@ export default function StatementSection() {
             </Typography>
           </View>
 
-          {/* Balance and Icons Group - Right Aligned */}
-          <View className="flex-1 flex-row items-center justify-end gap-2">
-            {/* Balance */}
+          {/* Balance - Right Aligned */}
+          <View className="flex-1 flex-row items-center justify-end">
             <Typography
               variant="body"
               weight="medium"
@@ -265,73 +311,55 @@ export default function StatementSection() {
             >
               {formatCurrency(item.balance)}
             </Typography>
-
-            {/* Document Icons */}
-            <View className="flex-row items-center gap-1">
-              {/* Receipt/Fiş Icon */}
-              {hasDocument && (
-                <TouchableOpacity
-                  onPress={() => handleDownload(item.downloadDocumentUrl, item.createdDate)}
-                  className="p-1"
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="receipt-outline" size={20} color="#E3001B" />
-                </TouchableOpacity>
-              )}
-
-              {/* Invoice/Fatura Icon */}
-              {hasInvoice && (
-                <TouchableOpacity
-                  onPress={() => handleDownload(item.downloadInvoiceUrl, item.createdDate)}
-                  className="p-1"
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="document-text" size={20} color="#222222" />
-                </TouchableOpacity>
-              )}
-            </View>
           </View>
         </View>
 
         {/* Additional Info Row */}
         <View className="flex-row items-center justify-between mt-2">
-          {/* Customer Name */}
-          <View className="flex-1">
+          <View className="flex-1 justify-center">
             <Typography variant="caption" className="text-gray-500" style={{ fontSize: 12 }}>
               {item.firstName} {item.lastName}
             </Typography>
           </View>
 
-          {/* Payment Type - Only show for payments */}
-          <View className="flex-1 items-center">
-            {!isSale && item.paymentType && (
-              <View className="px-2 py-1 rounded" style={{ backgroundColor: "#E5E7EB" }}>
+          <View className="flex-1 items-center justify-center">
+            {isSale &&
+              hasDocument &&
+              renderDocumentBadge(
+                "Satış Fişi",
+                "receipt-outline",
+                "#E3001B",
+                item.downloadDocumentUrl,
+              )}
+            {!isSale && paymentTypeLabel && (
+              <View
+                className="px-3 py-1 rounded-lg"
+                style={{ backgroundColor: "#E5E7EB", minHeight: 28 }}
+              >
                 <Typography variant="caption" className="text-gray-700" style={{ fontSize: 11 }}>
-                  {item.paymentType === "CASH"
-                    ? "Nakit"
-                    : item.paymentType === "CARD"
-                      ? "Kart"
-                      : item.paymentType === "CREDIT_CARD"
-                        ? "Kredi Kartı"
-                        : item.paymentType === "BANK_TRANSFER"
-                          ? "Havale"
-                          : item.paymentType === "CHECK"
-                            ? "Çek"
-                            : item.paymentType}
+                  {paymentTypeLabel}
                 </Typography>
               </View>
             )}
           </View>
 
-          {/* Invoice Status */}
-          <View className="flex-1 flex-row justify-end">
-            {item.requestedInvoice && (
-              <View className="bg-green-50 px-2 py-1 rounded">
-                <Typography variant="caption" className="text-green-700" style={{ fontSize: 11 }}>
-                  Faturalı
-                </Typography>
-              </View>
-            )}
+          <View className="flex-1 items-end justify-center">
+            {isSale &&
+              hasInvoice &&
+              renderDocumentBadge(
+                "Fatura",
+                "document-text-outline",
+                "#1F2937",
+                item.downloadInvoiceUrl,
+              )}
+            {!isSale &&
+              hasDocument &&
+              renderDocumentBadge(
+                "Tahsilat Makbuzu",
+                "cash-outline",
+                "#16A34A",
+                item.downloadDocumentUrl,
+              )}
           </View>
         </View>
       </View>
