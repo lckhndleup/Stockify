@@ -1,7 +1,7 @@
 // app/stock.tsx - API entegrasyonu ile güncellenmiş
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { ScrollView, View, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import {
   Container,
@@ -54,6 +54,16 @@ export default function StockPage() {
     refetch: refetchOutOfStock,
   } = useInventoryOutOfStock();
 
+  // Sayfa focus olduğunda inventory'leri yenile (ürün eklendiğinde güncellenmesi için)
+  useFocusEffect(
+    useCallback(() => {
+      logger.debug("📦 Stock page focused, refreshing inventory data...");
+      refetchAll();
+      refetchCritical();
+      refetchOutOfStock();
+    }, [refetchAll, refetchCritical, refetchOutOfStock]),
+  );
+
   // Tab tanımları
   const tabs = [
     { id: "all", label: "Tüm Stoklar" },
@@ -99,10 +109,19 @@ export default function StockPage() {
         inventoryToFilter = allInventory;
     }
 
-    // Search filter
-    return inventoryToFilter.filter((item) =>
-      item.productName.toLowerCase().includes(searchText.toLowerCase()),
-    );
+    // Search filter - productName null/undefined kontrolü eklendi
+    return inventoryToFilter.filter((item) => {
+      if (!searchText.trim()) return true;
+
+      const searchLower = searchText.toLowerCase();
+      const productName = item.productName || "";
+      const categoryName = item.categoryName || "";
+
+      return (
+        productName.toLowerCase().includes(searchLower) ||
+        categoryName.toLowerCase().includes(searchLower)
+      );
+    });
   };
 
   const filteredInventory = getFilteredInventory();
@@ -242,7 +261,7 @@ export default function StockPage() {
           <View className="space-y-3 mb-6">
             {filteredInventory.map((item) => (
               <TouchableOpacity
-                key={item.id}
+                key={`inventory-${item.inventoryId}`}
                 onPress={() => handleProductPress(item)}
                 activeOpacity={0.7}
               >

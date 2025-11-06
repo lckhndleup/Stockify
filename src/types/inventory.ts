@@ -199,15 +199,20 @@ export const adaptInventoryResponse = (item: InventoryResponse): Inventory => {
   const totalPrice = ensureNumber(item.totalPrice, price * productCount);
   const status = deriveInventoryStatus(item.status, productCount, criticalProductCount);
 
+  // Güvenli string normalizasyonu - boş string yerine placeholder
+  const productName = sanitizeString(product.name, "İsimsiz Ürün");
+  const categoryName = sanitizeString(product.categoryName, "Kategori Yok");
+  const inventoryCode = sanitizeString(product.inventoryCode, "");
+
   return {
     inventoryId: ensureNumber(item.inventoryId, 0),
     product: {
       productId,
       categoryId,
-      categoryName: sanitizeString(product.categoryName, ""),
+      categoryName,
       taxRate: ensureNumber(product.taxRate, 0),
-      inventoryCode: sanitizeString(product.inventoryCode, ""),
-      name: sanitizeString(product.name, ""),
+      inventoryCode,
+      name: productName,
       status: (product.status ?? "ACTIVE") as ProductStatus,
       createdDate: parseEpoch(product.createdDate),
       lastModifiedDate: parseEpoch(product.lastModifiedDate),
@@ -258,13 +263,18 @@ export const adaptInventoryForUI = (item: InventoryResponse | Inventory): Invent
 
   const status = isOutOfStock ? "OUT_OF_INVENTORY" : isCritical ? "CRITICAL" : inventory.status;
 
+  // Güvenli string normalizasyonu
+  const productName = inventory.product?.name || "İsimsiz Ürün";
+  const categoryName = inventory.product?.categoryName || "Kategori Yok";
+  const inventoryCode = inventory.product?.inventoryCode || "";
+
   return {
     id: inventory.inventoryId.toString(),
     inventoryId: inventory.inventoryId,
     productId: inventory.product.productId,
-    productName: inventory.product.name,
-    categoryName: inventory.product.categoryName,
-    inventoryCode: inventory.product.inventoryCode,
+    productName,
+    categoryName,
+    inventoryCode,
     price: inventory.price,
     totalPrice: inventory.totalPrice,
     productCount: inventory.productCount,

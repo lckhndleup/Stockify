@@ -185,13 +185,24 @@ export const useCreateProduct = () => {
       });
       logger.debug("🔄 Products cache invalidated");
 
+      // ÖNEMLİ: Inventory cache'ini de invalidate et çünkü yeni ürün stok takipte görünmeli
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.inventory.all,
+        exact: false,
+      });
+      logger.debug("🔄 Inventory cache invalidated (new product added)");
+
       // Biraz bekle ve sonra refetch yap
       setTimeout(() => {
         queryClient.refetchQueries({
           queryKey: queryKeys.products.all,
           exact: false,
         });
-        logger.debug("🔄 Products force refetched");
+        queryClient.refetchQueries({
+          queryKey: queryKeys.inventory.all,
+          exact: false,
+        });
+        logger.debug("🔄 Products and Inventory force refetched");
       }, 500);
     },
     onError: (error: ApiError, _variables) => {
@@ -206,15 +217,23 @@ export const useCreateProduct = () => {
 
       // Her durumda cache'i temizle
       if (data && !error) {
-        logger.debug("🧹 Cleaning all related product caches...");
+        logger.debug("🧹 Cleaning all related product and inventory caches...");
         queryClient.removeQueries({
           queryKey: queryKeys.products.all,
+          exact: false,
+        });
+        queryClient.removeQueries({
+          queryKey: queryKeys.inventory.all,
           exact: false,
         });
         // Hemen yeniden fetch yap
         queryClient.prefetchQuery({
           queryKey: queryKeys.products.all,
           queryFn: () => apiService.getProducts(),
+        });
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.inventory.all,
+          queryFn: () => apiService.getInventoryAll(),
         });
       }
     },
@@ -240,7 +259,9 @@ export const useUpdateProduct = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.detail(variables.productId.toString()),
       });
-      logger.debug("🔄 Products cache invalidated");
+      // Inventory cache'ini de invalidate et (ürün adı veya kategori değişmiş olabilir)
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+      logger.debug("🔄 Products and Inventory cache invalidated");
     },
     onError: (error: ApiError) => {
       logger.error("❌ Update product error:", error);
@@ -266,7 +287,9 @@ export const useDeleteProduct = () => {
       queryClient.removeQueries({
         queryKey: queryKeys.products.detail(productId.toString()),
       });
-      logger.debug("🔄 Products cache invalidated after deletion");
+      // Inventory cache'ini de invalidate et (ürün pasif oldu, stokta görünmemeli)
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+      logger.debug("🔄 Products and Inventory cache invalidated after deletion");
     },
     onError: (error: ApiError) => {
       logger.error("❌ Delete product error:", error);
