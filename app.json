@@ -13,7 +13,18 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "50.114.185.206": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +41,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://stockify-gcsq.onrender.com",
+      "apiUrl": "http://50.114.185.206:8080",
       "apiTimeoutMs": 15000
     }
   }

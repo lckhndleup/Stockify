@@ -344,13 +344,6 @@ export default function BrokerDetailPage() {
     });
   };
 
-  const handleInvoicePress = () => {
-    router.push({
-      pathname: "/broker/sections/invoiceSection",
-      params: { brokerId: broker.id },
-    });
-  };
-
   logger.debug("🎨 Rendering BrokerDetailPage with broker:", broker.name);
 
   return (
@@ -478,33 +471,6 @@ export default function BrokerDetailPage() {
                   className="text-stock-white flex-1"
                 >
                   EKSTRELER
-                </Typography>
-              </View>
-              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
-            </View>
-          </Card>
-
-          {/* Faturalar Kartı */}
-          <Card
-            variant="default"
-            padding="none"
-            pressable
-            onPress={handleInvoicePress}
-            className="bg-stock-red border-0 px-4 py-4 mb-3"
-            radius="md"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1">
-                <View className="mr-3">
-                  <Icon family="MaterialCommunityIcons" name="receipt" size={22} color="#FFFEFF" />
-                </View>
-                <Typography
-                  variant="body"
-                  weight="semibold"
-                  size="lg"
-                  className="text-stock-white flex-1"
-                >
-                  FATURALAR
                 </Typography>
               </View>
               <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
