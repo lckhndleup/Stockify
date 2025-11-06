@@ -23,7 +23,7 @@ export interface AuthStore {
   clearError: () => void;
   checkTokenExpiry: () => void;
   refreshToken: () => Promise<void>;
-  initializeAuth: () => void;
+  initializeAuth: () => Promise<void>;
 }
 
 // App Store Types

@@ -1,7 +1,7 @@
 // app/products.tsx
-import React, { useState, useEffect } from "react";
-import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { View, Alert, TouchableOpacity, FlatList, ScrollView } from "react-native";
+import { router, useNavigation } from "expo-router";
 
 import {
   Container,
@@ -24,12 +24,10 @@ import { useActiveCategories, useCreateCategory } from "@/src/hooks/api/useCateg
 
 // Backend hooks - UPDATED: usePassiveProducts eklendi
 import {
-  useActiveProducts,
-  usePassiveProducts, // YENİ EKLENEN
+  useProductsPaginated,
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
-  useSearchProducts,
 } from "@/src/hooks/api/useProducts";
 import { ProductFormData, ProductUpdateData, ProductDisplayItem } from "@/src/types/product";
 
@@ -195,6 +193,8 @@ function Dropdown({
 }
 
 export default function ProductsPage() {
+  const navigation = useNavigation<any>();
+
   const [searchText, setSearchText] = useState("");
   const [activeTab, setActiveTab] = useState("active");
 
@@ -227,26 +227,148 @@ export default function ProductsPage() {
     refetch: refetchCategories,
   } = useActiveCategories();
 
-  // React Query Hook - BACKEND PRODUCTS - UPDATED: aktif ve pasif ayrı hook'lar
+  const PAGE_SIZE = 5;
+
+  // Pagination States
+  const [activePage, setActivePage] = useState(0);
+  const [activeRefreshKey, setActiveRefreshKey] = useState(0);
+  const [activeProductsData, setActiveProductsData] = useState<ProductDisplayItem[]>([]);
+  const [activeTotalPages, setActiveTotalPages] = useState(1);
+  const [activeLast, setActiveLast] = useState(false);
+
+  const [passivePage, setPassivePage] = useState(0);
+  const [passiveRefreshKey, setPassiveRefreshKey] = useState(0);
+  const [passiveProductsData, setPassiveProductsData] = useState<ProductDisplayItem[]>([]);
+  const [passiveTotalPages, setPassiveTotalPages] = useState(1);
+  const [passiveLast, setPassiveLast] = useState(false);
+  const [passiveInitialized, setPassiveInitialized] = useState(false);
+
+  const [loadingMoreActive, setLoadingMoreActive] = useState(false);
+  const [loadingMorePassive, setLoadingMorePassive] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshTarget, setRefreshTarget] = useState<"active" | "passive" | null>(null);
+
+  // Memoized query params to keep query keys stable
+  const activeQueryParams = useMemo(
+    () => ({
+      status: "ACTIVE" as const,
+      page: activePage,
+      size: PAGE_SIZE,
+      refreshKey: activeRefreshKey,
+    }),
+    [activePage, activeRefreshKey],
+  );
+
+  const passiveQueryParams = useMemo(
+    () => ({
+      status: "PASSIVE" as const,
+      page: passivePage,
+      size: PAGE_SIZE,
+      refreshKey: passiveRefreshKey,
+    }),
+    [passivePage, passiveRefreshKey],
+  );
+
+  // Paginated product queries
   const {
-    data: activeProducts = [],
-    isLoading: activeProductsLoading,
-    refetch: refetchActiveProducts,
-  } = useActiveProducts();
+    data: activePageData,
+    isLoading: activePageLoading,
+    isFetching: activeIsFetching,
+    error: activeError,
+  } = useProductsPaginated(activeQueryParams, { enabled: true });
 
   const {
-    data: passiveProducts = [],
-    isLoading: passiveProductsLoading,
-    refetch: refetchPassiveProducts,
-  } = usePassiveProducts();
+    data: passivePageData,
+    isLoading: passivePageLoading,
+    isFetching: passiveIsFetching,
+    error: passiveError,
+  } = useProductsPaginated(passiveQueryParams, { enabled: passiveInitialized });
 
-  // Search Products - UPDATED: status parametresi eklendi
-  const searchOptions = { enabled: false as const };
-  const {
-    data: searchResults = [],
-    isLoading: searchLoading,
-    refetch: refetchSearch,
-  } = useSearchProducts(searchText, activeTab === "active" ? "ACTIVE" : "PASSIVE", searchOptions);
+  // Active tab data aggregation
+  useEffect(() => {
+    if (!activePageData) {
+      return;
+    }
+
+    setActiveTotalPages(activePageData.totalPages ?? 1);
+    setActiveLast(activePageData.last ?? true);
+
+    if (activePage === 0) {
+      setActiveProductsData(activePageData.content);
+    } else {
+      setActiveProductsData((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id));
+        const merged = activePageData.content.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...merged];
+      });
+    }
+
+    if (refreshTarget === "active") {
+      setRefreshing(false);
+      setRefreshTarget(null);
+    }
+
+    if (loadingMoreActive) {
+      setLoadingMoreActive(false);
+    }
+  }, [activePageData, activePage, refreshTarget, loadingMoreActive]);
+
+  // Passive tab data aggregation (lazy initialized)
+  useEffect(() => {
+    if (!passivePageData) {
+      return;
+    }
+
+    setPassiveTotalPages(passivePageData.totalPages ?? 1);
+    setPassiveLast(passivePageData.last ?? true);
+
+    if (passivePage === 0) {
+      setPassiveProductsData(passivePageData.content);
+    } else {
+      setPassiveProductsData((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id));
+        const merged = passivePageData.content.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...merged];
+      });
+    }
+
+    if (refreshTarget === "passive") {
+      setRefreshing(false);
+      setRefreshTarget(null);
+    }
+
+    if (loadingMorePassive) {
+      setLoadingMorePassive(false);
+    }
+  }, [passivePageData, passivePage, refreshTarget, loadingMorePassive]);
+
+  // Enable passive fetch when tab becomes active
+  useEffect(() => {
+    if (activeTab === "passive" && !passiveInitialized) {
+      setPassiveInitialized(true);
+    }
+  }, [activeTab, passiveInitialized]);
+
+  // Reset loading flags when errors occur
+  useEffect(() => {
+    if (activeError && loadingMoreActive) {
+      setLoadingMoreActive(false);
+    }
+    if (activeError && refreshTarget === "active") {
+      setRefreshing(false);
+      setRefreshTarget(null);
+    }
+  }, [activeError, loadingMoreActive, refreshTarget]);
+
+  useEffect(() => {
+    if (passiveError && loadingMorePassive) {
+      setLoadingMorePassive(false);
+    }
+    if (passiveError && refreshTarget === "passive") {
+      setRefreshing(false);
+      setRefreshTarget(null);
+    }
+  }, [passiveError, loadingMorePassive, refreshTarget]);
 
   // Backend Mutations
   const createProductMutation = useCreateProduct();
@@ -258,13 +380,6 @@ export default function ProductsPage() {
   const { toast, showError, hideToast } = useToast();
   const { globalToast, showGlobalToast, hideGlobalToast } = useAppStore();
 
-  // LOG ACTIVE PRODUCTS FROM BACKEND API
-  useEffect(() => {
-    if (activeProducts && activeProducts.length > 0) {
-      logger.debug("🛍️ Backend Active Products:", JSON.stringify(activeProducts, null, 2));
-    }
-  }, [activeProducts]);
-
   // Tab tanımları
   const tabs = [
     { id: "active", label: "Aktif Ürünler" },
@@ -273,11 +388,6 @@ export default function ProductsPage() {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-
-    // Arama yapıldığında backend'den ara - UPDATED: aktif tab'a göre status değişir
-    if (text.trim().length > 0) {
-      refetchSearch();
-    }
   };
 
   // Product Actions - BACKEND ENTEGRELİ HALE GETİRİLDİ
@@ -376,8 +486,8 @@ export default function ProductsPage() {
                 handleProductModalClose();
                 showGlobalToast("Ürün başarıyla eklendi!", "success");
 
-                // Aktif ürünleri yenile
-                refetchActiveProducts();
+                // Aktif ürün listesini sıfırdan yükle
+                refreshActiveList();
               } else {
                 throw new Error("Backend'den geçersiz yanıt alındı");
               }
@@ -389,6 +499,19 @@ export default function ProductsPage() {
         },
       ],
     );
+  };
+
+  const refreshActiveList = () => {
+    setActivePage(0);
+    setActiveProductsData([]);
+    setActiveRefreshKey((key) => key + 1);
+  };
+
+  const refreshPassiveList = () => {
+    setPassivePage(0);
+    setPassiveProductsData([]);
+    setPassiveRefreshKey((key) => key + 1);
+    setPassiveInitialized(true);
   };
 
   const handleEditProduct = (product: ProductDisplayItem) => {
@@ -447,9 +570,9 @@ export default function ProductsPage() {
 
               // Tab'a göre ilgili ürünleri yenile
               if (activeTab === "active") {
-                refetchActiveProducts();
+                refreshActiveList();
               } else {
-                refetchPassiveProducts();
+                refreshPassiveList();
               }
             } catch (error) {
               logger.error("❌ Product update error:", error);
@@ -480,8 +603,8 @@ export default function ProductsPage() {
               showGlobalToast("Ürün başarıyla silindi!", "success");
 
               // Her iki listeyi de yenile (aktif listeden çıkar, pasif listeye girer)
-              refetchActiveProducts();
-              refetchPassiveProducts();
+              refreshActiveList();
+              refreshPassiveList();
             } catch (error) {
               logger.error("❌ Product delete error:", error);
               showError("Ürün silinirken bir hata oluştu!");
@@ -501,31 +624,43 @@ export default function ProductsPage() {
   };
 
   // Category Actions - Categories sayfasına yönlendirme
-  const handleCategoryManagement = () => {
-    // Modal açıksa kapat
-    if (isProductModalVisible) {
-      setIsProductModalVisible(false);
-      setSelectedCategoryId("");
-      setProductName("");
-      setValidationErrors({});
-    }
-    if (isEditProductModalVisible) {
-      setIsEditProductModalVisible(false);
-      setEditingProduct(null);
-      setSelectedCategoryId("");
-      setProductName("");
-      setValidationErrors({});
-    }
+  const handleCategoryManagement = useCallback(() => {
+    setIsProductModalVisible(false);
+    setIsEditProductModalVisible(false);
+    setEditingProduct(null);
+    setSelectedCategoryId("");
+    setProductName("");
+    setValidationErrors({});
 
-    // Categories sayfasına yönlendir
     setTimeout(() => {
       router.push("/categories");
     }, 100);
-  };
+  }, []);
 
   // const handleAddCategory = () => {
   //   setIsCategoryModalVisible(true);
   // };
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleCategoryManagement}
+          activeOpacity={0.8}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 17,
+            backgroundColor: "#222222",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon family="MaterialIcons" name="inventory-2" size={16} color="#FFFEFF" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, handleCategoryManagement]);
 
   const handleCategoryModalClose = () => {
     setIsCategoryModalVisible(false);
@@ -591,33 +726,159 @@ export default function ProductsPage() {
     value: category.id,
   }));
 
-  // PRODUCTS DATA SOURCE - UPDATED: Tab'a göre farklı backend data
-  const getFilteredProducts = () => {
-    let sourceProducts = [];
+  // Filtered data for active and passive lists
+  const activeFilteredProducts = useMemo(() => {
+    if (!searchText.trim()) {
+      return activeProductsData;
+    }
 
-    // Tab'a göre veri kaynağını belirle
+    const query = searchText.trim().toLowerCase();
+    return activeProductsData.filter((product) => {
+      const nameMatch = product.name.toLowerCase().includes(query);
+      const categoryMatch = product.categoryName.toLowerCase().includes(query);
+      return nameMatch || categoryMatch;
+    });
+  }, [activeProductsData, searchText]);
+
+  const passiveFilteredProducts = useMemo(() => {
+    if (!searchText.trim()) {
+      return passiveProductsData;
+    }
+
+    const query = searchText.trim().toLowerCase();
+    return passiveProductsData.filter((product) => {
+      const nameMatch = product.name.toLowerCase().includes(query);
+      const categoryMatch = product.categoryName.toLowerCase().includes(query);
+      return nameMatch || categoryMatch;
+    });
+  }, [passiveProductsData, searchText]);
+
+  const displayedProducts =
+    activeTab === "active" ? activeFilteredProducts : passiveFilteredProducts;
+
+  const activeInitialLoading =
+    activePage === 0 && activeProductsData.length === 0 && activePageLoading;
+  const passiveInitialLoading =
+    passiveInitialized &&
+    passivePage === 0 &&
+    passiveProductsData.length === 0 &&
+    passivePageLoading;
+
+  const isProductsLoading = activeTab === "active" ? activeInitialLoading : passiveInitialLoading;
+  const isLoading = categoriesLoading || isProductsLoading;
+
+  const currentError = activeTab === "active" ? activeError : passiveError;
+  const currentLoadingMore = activeTab === "active" ? loadingMoreActive : loadingMorePassive;
+  const currentLast = activeTab === "active" ? activeLast : passiveLast;
+  const currentIsFetching = activeTab === "active" ? activeIsFetching : passiveIsFetching;
+  const currentPage = activeTab === "active" ? activePage : passivePage;
+
+  const emptyMessage = searchText.trim()
+    ? "Arama kriterinize uygun ürün bulunamadı."
+    : activeTab === "active"
+      ? "Henüz aktif ürün eklenmemiş."
+      : "Pasif ürün bulunamadı.";
+
+  const listContentPadding = 120;
+
+  const handleLoadMore = () => {
     if (activeTab === "active") {
-      sourceProducts = activeProducts;
-    } else {
-      sourceProducts = passiveProducts;
+      if (loadingMoreActive || activeLast || activeIsFetching) {
+        return;
+      }
+
+      if (activePage >= activeTotalPages - 1) {
+        return;
+      }
+
+      setLoadingMoreActive(true);
+      setActivePage((prev) => prev + 1);
+      return;
     }
 
-    // Arama sonuçları varsa onları kullan
-    if (searchText.trim().length > 0 && searchResults.length > 0) {
-      sourceProducts = searchResults;
+    if (!passiveInitialized) {
+      setPassiveInitialized(true);
     }
 
-    // Search'e göre filtrele
-    return sourceProducts.filter((product) =>
-      product.name.toLowerCase().includes(searchText.toLowerCase()),
-    );
+    if (loadingMorePassive || passiveLast || passiveIsFetching) {
+      return;
+    }
+
+    if (passivePage >= passiveTotalPages - 1) {
+      return;
+    }
+
+    setLoadingMorePassive(true);
+    setPassivePage((prev) => prev + 1);
   };
 
-  const filteredProducts = getFilteredProducts();
+  const handleRefresh = () => {
+    const target = activeTab === "active" ? "active" : "passive";
+    setRefreshTarget(target);
+    setRefreshing(true);
 
-  // Loading state - UPDATED: tab'a göre loading
-  const isProductsLoading = activeTab === "active" ? activeProductsLoading : passiveProductsLoading;
-  const isLoading = categoriesLoading || isProductsLoading;
+    if (target === "active") {
+      setActivePage(0);
+      setActiveProductsData([]);
+      setActiveRefreshKey((key) => key + 1);
+    } else {
+      setPassivePage(0);
+      setPassiveProductsData([]);
+      setPassiveRefreshKey((key) => key + 1);
+      setPassiveInitialized(true);
+    }
+  };
+
+  const renderProductItem = ({ item }: { item: ProductDisplayItem }) => {
+    const category = getCategoryByIdFromAPI(item.categoryId);
+
+    return (
+      <Card
+        variant="default"
+        padding="sm"
+        className={`border border-stock-border mb-2 ${!item.isActive ? "opacity-60" : ""}`}
+        radius="md"
+      >
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1">
+            <Typography variant="body" weight="semibold" align="left" className="text-stock-dark">
+              {item.name}
+            </Typography>
+            <Typography variant="caption" size="sm" className="text-stock-text mt-1">
+              Kategori: {category?.name || "Kategori bulunamadı"}
+              {activeTab === "passive" && (
+                <Typography variant="caption" className="text-red-600 ml-2">
+                  • Pasif
+                </Typography>
+              )}
+            </Typography>
+          </View>
+
+          {activeTab === "active" && (
+            <View className="flex-row items-center">
+              <Icon
+                family="MaterialIcons"
+                name="edit"
+                size={18}
+                color="#67686A"
+                pressable
+                onPress={() => handleEditProduct(item)}
+                containerClassName="mr-2"
+              />
+              <Icon
+                family="MaterialIcons"
+                name="delete"
+                size={18}
+                color="#E3001B"
+                pressable
+                onPress={() => handleDeleteProduct(item)}
+              />
+            </View>
+          )}
+        </View>
+      </Card>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -694,11 +955,10 @@ export default function ProductsPage() {
         onHide={hideGlobalToast}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
+      <View className="flex-1 mt-3">
         {/* Search ve Add Butonu */}
         <View className="flex-row items-center mb-3">
           <SearchBar placeholder="Ürün ara..." onSearch={handleSearch} className="flex-1 mr-3" />
-          {/* Sadece aktif tab'da add butonu göster */}
           {activeTab === "active" && (
             <Icon
               family="MaterialIcons"
@@ -722,113 +982,68 @@ export default function ProductsPage() {
           className="mb-4"
         />
 
-        {/* Ürün Listesi */}
-        {searchLoading && searchText.trim().length > 0 ? (
-          <View className="items-center py-8">
-            <Loading size="large" />
-          </View>
-        ) : (
-          <View className="mt-3">
-            {filteredProducts.map((product) => {
-              // Backend kategoriden kategori bilgisi al
-              const category = getCategoryByIdFromAPI(product.categoryId);
-              return (
-                <Card
-                  key={product.id}
-                  variant="default"
-                  padding="sm"
-                  className={`border border-stock-border mb-2 ${
-                    !product.isActive ? "opacity-60" : ""
-                  }`}
-                  radius="md"
-                >
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-1">
-                      <Typography
-                        variant="body"
-                        weight="semibold"
-                        align="left"
-                        className="text-stock-dark"
-                      >
-                        {product.name}
-                      </Typography>
-                      <Typography variant="caption" size="sm" className="text-stock-text mt-1">
-                        Kategori: {category?.name || "Kategori bulunamadı"}
-                        {/* Pasif ürünlerde durum bilgisi ekleyelim */}
-                        {activeTab === "passive" && (
-                          <Typography variant="caption" className="text-red-600 ml-2">
-                            • Pasif
-                          </Typography>
-                        )}
-                      </Typography>
-                    </View>
-
-                    {/* Sadece aktif ürünlerde edit/delete göster */}
-                    {activeTab === "active" && (
-                      <View className="flex-row items-center">
-                        <Icon
-                          family="MaterialIcons"
-                          name="edit"
-                          size={18}
-                          color="#67686A"
-                          pressable
-                          onPress={() => handleEditProduct(product)}
-                          containerClassName="mr-2"
-                        />
-                        <Icon
-                          family="MaterialIcons"
-                          name="delete"
-                          size={18}
-                          color="#E3001B"
-                          pressable
-                          onPress={() => handleDeleteProduct(product)}
-                        />
-                      </View>
-                    )}
-                  </View>
-                </Card>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Empty State */}
-        {filteredProducts.length === 0 && (
-          <View className="items-center justify-center py-12">
-            <Icon
-              family="MaterialCommunityIcons"
-              name="package-variant"
-              size={64}
-              color="#ECECEC"
-              containerClassName="mb-4"
-            />
-            <Typography variant="body" className="text-stock-text text-center">
-              {searchText.trim()
-                ? "Arama kriterinize uygun ürün bulunamadı."
-                : activeTab === "active"
-                  ? "Henüz aktif ürün eklenmemiş."
-                  : "Pasif ürün bulunamadı."}
+        {currentError && (
+          <Card
+            variant="default"
+            padding="md"
+            className="bg-red-50 border border-red-200 mb-4"
+            radius="md"
+          >
+            <Typography variant="body" className="text-red-600 text-center" weight="medium">
+              ⚠️ Ürünler yüklenirken bir sorun oluştu
             </Typography>
-          </View>
+            <Button variant="outline" size="sm" onPress={handleRefresh} className="mt-3">
+              <Typography variant="caption" weight="medium">
+                Tekrar Dene
+              </Typography>
+            </Button>
+          </Card>
         )}
 
-        {/* Yeni Ürün Ekle Butonu - Sadece Aktif Tab'da */}
-        {activeTab === "active" && (
-          <View className="mt-4 mb-6">
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              className="bg-stock-red"
-              onPress={handleAddProduct}
-              loading={createProductMutation.isPending}
-              leftIcon={<Icon family="MaterialIcons" name="add" size={20} color="white" />}
-            >
-              Yeni Ürün Ekle
-            </Button>
-          </View>
-        )}
-      </ScrollView>
+        <View className="flex-1 mt-3">
+          <FlatList
+            data={displayedProducts}
+            renderItem={renderProductItem}
+            keyExtractor={(item) => item.id}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: listContentPadding, paddingTop: 4 }}
+            ListEmptyComponent={
+              currentIsFetching || refreshing ? (
+                <View className="items-center justify-center py-12">
+                  <Loading size="large" />
+                </View>
+              ) : (
+                <View className="items-center justify-center py-12">
+                  <Icon
+                    family="MaterialCommunityIcons"
+                    name="package-variant"
+                    size={64}
+                    color="#ECECEC"
+                    containerClassName="mb-4"
+                  />
+                  <Typography variant="body" className="text-stock-text text-center">
+                    {emptyMessage}
+                  </Typography>
+                </View>
+              )
+            }
+            ListFooterComponent={
+              !currentLast && (currentLoadingMore || (currentIsFetching && currentPage > 0)) ? (
+                <View className="py-6 items-center">
+                  <Loading size="small" />
+                  <Typography variant="body" weight="medium" className="text-gray-700 mt-3">
+                    Daha fazla yükleniyor...
+                  </Typography>
+                </View>
+              ) : null
+            }
+          />
+        </View>
+      </View>
 
       {/* Ürün Ekleme Modal'ı - Sadece kategori ve ürün adı */}
       <Modal

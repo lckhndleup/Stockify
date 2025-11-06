@@ -3,6 +3,8 @@ export interface TransactionRequest {
   brokerId: number;
   startDate: number;
   endDate: number;
+  page?: number;
+  size?: number;
 }
 
 export interface TransactionItem {
@@ -11,8 +13,11 @@ export interface TransactionItem {
   price: number;
   balance: number;
   type: "SALE" | "PAYMENT";
-  downloadUrl: string;
+  downloadDocumentUrl: string;
+  downloadInvoiceUrl: string;
   createdDate: number;
+  paymentType: "CASH" | "CREDIT_CARD" | "CARD" | "BANK_TRANSFER" | "CHECK" | "OTHER";
+  requestedInvoice: boolean;
 }
 
 export interface TransactionSort {

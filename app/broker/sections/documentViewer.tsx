@@ -1,3 +1,21 @@
+/**
+ * @deprecated Bu dosya artık kullanılmamaktadır.
+ * Belge görüntüleme işlemleri için DocumentModal komponenti kullanılmaktadır.
+ *
+ * @see /src/components/ui/documentModal.tsx
+ *
+ * Kullanım:
+ * import { DocumentModal } from "@/src/components/ui";
+ *
+ * <DocumentModal
+ *   visible={visible}
+ *   onClose={() => setVisible(false)}
+ *   documentUrl={url}
+ *   title="Belge Başlığı"
+ *   headers={apiService.getAuthHeaders()}
+ * />
+ */
+
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";

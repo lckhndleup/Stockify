@@ -36,8 +36,11 @@ const middleware = persist<AuthStore>(
         if (response.token) {
           logger.debug("🎯 Token received (content hidden)");
 
-          // Token'ı API service'e set et
+          // Token'ı hem API service'e hem base service'e set et
           apiService.setToken(response.token);
+          // 👈 YENİ: base.ts axios instance için de token set et
+          const { setToken: setBaseToken } = await import("@/src/services/base");
+          setBaseToken(response.token);
 
           // User objesi oluştur (API'den user bilgisi gelmediği için username'den oluşturuyoruz)
           const user: User = {
@@ -121,6 +124,9 @@ const middleware = persist<AuthStore>(
       } finally {
         // Her durumda local state'i ve token'ı temizle
         apiService.clearToken();
+        // 👈 YENİ: base.ts axios instance için de token temizle
+        const { clearToken: clearBaseToken } = await import("@/src/services/base");
+        clearBaseToken();
 
         set({
           user: null,
@@ -163,7 +169,7 @@ const middleware = persist<AuthStore>(
       }
     },
 
-    initializeAuth: () => {
+    initializeAuth: async () => {
       const state = get();
       logger.debug("🔄 Initializing auth:", {
         hasToken: !!state.token,
@@ -174,16 +180,19 @@ const middleware = persist<AuthStore>(
       });
 
       if (state.token && state.isAuthenticated) {
-        // Uygulama başlarken token'ı API service'e set et
+        // Uygulama başlarken token'ı hem API service'e hem base service'e set et
         apiService.setToken(state.token);
-        logger.debug("🔑 Token restored to API service");
+        // 👈 YENİ: base.ts axios instance için de token set et
+        const { setToken: setBaseToken } = await import("@/src/services/base");
+        setBaseToken(state.token);
+        logger.debug("🔑 Token restored to both API services");
       } else {
         logger.debug("ℹ️ No token to restore");
       }
     },
   }),
   {
-    name: "stockify-auth",
+    name: "envantra-auth",
     storage: createJSONStorage(() => AsyncStorage),
     // Sadece seri hale getirilebilir alanları sakla
     // rememberMe true ise user/token/isAuthenticated/rememberMe alanlarını persist et
@@ -225,14 +234,22 @@ const middleware = persist<AuthStore>(
         error: null,
       } as any;
     },
-    // Rehydrate sonrası token'ı API service'e aktar
+    // Rehydrate sonrası token'ı hem API service'e hem base service'e aktar
     onRehydrateStorage: () => (state) => {
       try {
         const token = state?.token;
         if (token) {
           apiService.setToken(token);
+          // 👈 YENİ: base.ts axios instance için de token set et
+          import("@/src/services/base").then(({ setToken: setBaseToken }) => {
+            setBaseToken(token);
+          });
         } else {
           apiService.clearToken();
+          // 👈 YENİ: base.ts axios instance için de token temizle
+          import("@/src/services/base").then(({ clearToken: clearBaseToken }) => {
+            clearBaseToken();
+          });
         }
       } catch {
         // noop

@@ -9,6 +9,7 @@ export { default as Input } from "./input";
 export { default as Icon } from "./icon";
 export { default as Loading } from "./loading";
 export { default as Modal } from "./modal";
+export { default as DocumentModal } from "./documentModal";
 export { default as SearchBar } from "./searchbar";
 export { default as Tab } from "./tab";
 export { default as BottomSheet } from "./bottomsheet";
