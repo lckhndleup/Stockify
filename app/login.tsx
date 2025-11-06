@@ -86,7 +86,7 @@ export default function LoginPage() {
               style={{ paddingBottom: 40 }}
             >
               <Typography variant="h1" size="4xl" weight="bold" className="text-stock-white mb-2">
-                Stockify
+                Envantra
               </Typography>
             </View>
           </View>

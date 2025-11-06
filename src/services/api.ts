@@ -14,7 +14,9 @@ import type {
 } from "@/src/types/category";
 import type {
   ProductCreateRequest,
+  ProductPageResponse,
   ProductResponse,
+  ProductSort,
   ProductUpdateRequest,
 } from "@/src/types/product";
 import type {
@@ -346,6 +348,70 @@ class ApiService {
       return result;
     } catch (error) {
       logger.error("🛍️ API: Product fetch error:", error);
+      throw error;
+    }
+  }
+
+  async getProductsPaginated(params?: {
+    productText?: string;
+    status?: "ACTIVE" | "PASSIVE";
+    page?: number;
+    size?: number;
+  }): Promise<ProductPageResponse> {
+    try {
+      logger.debug("🛍️ API: Fetching products (paginated) with params:", params);
+
+      const queryParams = new URLSearchParams();
+      if (params?.productText) {
+        queryParams.append("productText", params.productText);
+      }
+      if (params?.status) {
+        queryParams.append("status", params.status);
+      }
+      if (typeof params?.page === "number") {
+        queryParams.append("page", params.page.toString());
+      }
+      if (typeof params?.size === "number") {
+        queryParams.append("size", params.size.toString());
+      }
+
+      const queryString = queryParams.toString();
+      const url = `/product/all${queryString ? `?${queryString}` : ""}`;
+
+      const result = await this.request<ProductResponse[] | ProductPageResponse>(url, {
+        method: "GET",
+      });
+
+      if (Array.isArray(result)) {
+        const fallbackSize = params?.size ?? result.length;
+        const page = params?.page ?? 0;
+        const sortMeta: ProductSort = { empty: true, sorted: false, unsorted: true };
+
+        return {
+          content: result,
+          totalPages: 1,
+          totalElements: result.length,
+          size: fallbackSize,
+          number: page,
+          sort: sortMeta,
+          pageable: {
+            offset: page * fallbackSize,
+            pageNumber: page,
+            pageSize: fallbackSize,
+            paged: false,
+            unpaged: true,
+            sort: sortMeta,
+          },
+          numberOfElements: result.length,
+          first: page === 0,
+          last: true,
+          empty: result.length === 0,
+        };
+      }
+
+      return result;
+    } catch (error) {
+      logger.error("🛍️ API: Product paginated fetch error:", error);
       throw error;
     }
   }

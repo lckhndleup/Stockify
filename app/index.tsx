@@ -65,7 +65,7 @@ export default function HomePage() {
         <View className="flex-row items-start justify-between mb-4 mt-1">
           <View className="flex-1">
             <Typography variant="h1" weight="bold" size="xl" className="text-stock-red">
-              Stockify
+              Envantra
             </Typography>
             {user && (
               <Typography variant="caption" className="text-stock-text mt-1">

@@ -20,6 +20,38 @@ export interface ProductResponse {
 
 export type ProductsResponse = ProductResponse[];
 
+// Paginated response metadata for product listings
+export interface ProductSort {
+  empty: boolean;
+  sorted: boolean;
+  unsorted: boolean;
+}
+
+export interface ProductPageable {
+  offset: number;
+  sort: ProductSort;
+  pageNumber: number;
+  pageSize: number;
+  paged: boolean;
+  unpaged: boolean;
+}
+
+export interface ProductPageResponse {
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  content: ProductResponse[];
+  number: number;
+  sort: ProductSort;
+  pageable: ProductPageable;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+export type ProductListResponse = ProductResponse[] | ProductPageResponse;
+
 // Domain modeli (frontend içerisinde kullanılacak)
 export interface Product {
   productId: number;
@@ -114,8 +146,10 @@ export const adaptProductResponse = (product: ProductResponse): Product => ({
       : null,
 });
 
-export const adaptProductsResponse = (products: ProductResponse[]): Product[] =>
-  products.map(adaptProductResponse);
+export const adaptProductsResponse = (products: ProductListResponse): Product[] => {
+  const normalizedItems = Array.isArray(products) ? products : (products.content ?? []);
+  return normalizedItems.map(adaptProductResponse);
+};
 
 const toIsoString = (value: number): string => {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) {
