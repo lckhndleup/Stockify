@@ -14,6 +14,14 @@ const getTransactions = async (params: TransactionRequest): Promise<TransactionR
   queryParams.append("startDate", params.startDate.toString());
   queryParams.append("endDate", params.endDate.toString());
 
+  if (params.page !== undefined) {
+    queryParams.append("page", params.page.toString());
+  }
+
+  if (params.size !== undefined) {
+    queryParams.append("size", params.size.toString());
+  }
+
   const queryString = queryParams.toString();
   const url = `${TransactionEndpoint.GET_ALL}?${queryString}`;
 

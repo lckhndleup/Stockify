@@ -10,6 +10,7 @@ import {
   ProductUpdateData,
   ProductSearchParams,
   ProductDisplayItem,
+  ProductPageResponse,
   adaptProductForUI,
   adaptProductsResponse,
   adaptProductResponse,
@@ -19,6 +20,23 @@ import {
 
 // Types
 export type { Product, ProductFormData, ProductUpdateData, ProductSearchParams };
+
+export interface ProductsPaginatedRequest extends ProductSearchParams {
+  page?: number;
+  size?: number;
+  refreshKey?: number;
+}
+
+export interface ProductsPaginatedResult {
+  content: ProductDisplayItem[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+}
 
 // Backend'den gelen data'yı UI format'ına çevir - stock/price default 0
 export const adaptProductsForUI = (products: Product[]): ProductDisplayItem[] => {
@@ -37,6 +55,36 @@ export const useProducts = (params?: ProductSearchParams, options?: { enabled?: 
       logger.debug("✅ Products fetched:", products);
       return adaptProductsResponse(products);
     },
+    ...options,
+  });
+};
+
+export const useProductsPaginated = (
+  params: ProductsPaginatedRequest,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery<ProductsPaginatedResult>({
+    queryKey: queryKeys.products.list(params),
+    queryFn: async () => {
+      const { refreshKey: _refreshKey, ...apiParams } = params;
+      logger.debug("🛍️ Fetching paginated products with params:", apiParams);
+
+      const response: ProductPageResponse = await apiService.getProductsPaginated(apiParams);
+      const normalized = adaptProductsResponse(response.content);
+      const content = adaptProductsForUI(normalized);
+
+      return {
+        content,
+        totalPages: response.totalPages ?? 1,
+        totalElements: response.totalElements ?? content.length,
+        size: response.size ?? apiParams.size ?? content.length,
+        number: response.number ?? apiParams.page ?? 0,
+        numberOfElements: response.numberOfElements ?? content.length,
+        first: response.first ?? (apiParams.page ?? 0) === 0,
+        last: response.last ?? true,
+      };
+    },
+    enabled: options?.enabled ?? true,
     ...options,
   });
 };

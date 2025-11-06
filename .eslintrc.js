@@ -1,5 +1,5 @@
 /**
- * ESLint configuration for Stockify
+ * ESLint configuration for Envantra
  */
 module.exports = {
   root: true,

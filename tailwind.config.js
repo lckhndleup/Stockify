@@ -10,7 +10,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Stockify custom renkleri (dash ile)
+        // Envantra özel renkleri (dash ile)
         "stock-red": "#E3001B", // Ana kırmızı
         "stock-green": "#0a7029", // Pozitif bakiye için yeşil
         "stock-gray": "#F4F7FB", // Pasif buton/tab

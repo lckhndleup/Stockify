@@ -1,16 +1,23 @@
 // app/broker/sections/resultSales.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, BackHandler, ScrollView, View, Linking, Platform } from "react-native";
+import { Alert, BackHandler, ScrollView, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { Container, Typography, Card, Button, Icon, Divider, Loading } from "@/src/components/ui";
+import {
+  Container,
+  Typography,
+  Card,
+  Button,
+  Icon,
+  Divider,
+  Loading,
+  DocumentModal,
+} from "@/src/components/ui";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useSalesCalculate } from "@/src/hooks/api/useSales";
 import type { SalesSummaryResult } from "@/src/types/salesUI";
 import SuccessAnimation from "@/src/components/svg/successAnimation";
 import type { SuccessAnimationRef } from "@/src/types/svg";
 import logger from "@/src/utils/logger";
-import * as FileSystem from "expo-file-system";
-import * as Sharing from "expo-sharing";
 import apiService from "@/src/services/api";
 
 export default function ResultSales() {
@@ -50,10 +57,14 @@ export default function ResultSales() {
     }
   }, [summaryJSON]);
 
-  // ✅ Backend’den calculate sonucu da çek (confirm yoksa buradan göster)
+  // ✅ Backend'den calculate sonucu da çek (confirm yoksa buradan göster)
   const [calcSummary, setCalcSummary] = useState<SalesSummaryResult | null>(null);
   const calcMutation = useSalesCalculate();
-  const [downloadingDoc, setDownloadingDoc] = useState<"receipt" | "invoice" | null>(null);
+
+  // Document Modal State
+  const [documentModalVisible, setDocumentModalVisible] = useState(false);
+  const [currentDocumentUrl, setCurrentDocumentUrl] = useState("");
+  const [currentDocumentTitle, setCurrentDocumentTitle] = useState("");
 
   useEffect(() => {
     if (!isSuccess || !brokerId) return;
@@ -137,112 +148,17 @@ export default function ResultSales() {
       pathname: "/broker/sections/salesSection",
       params: { brokerId },
     });
-  const downloadAndOpenDocument = async (url: string, kind: "receipt" | "invoice") => {
+
+  const downloadAndOpenDocument = (url: string, kind: "receipt" | "invoice") => {
     if (!url) {
       Alert.alert("Uyarı", "İndirilecek belge bulunamadı.");
       return;
     }
 
-    const headers = {
-      Accept: "application/pdf",
-      ...apiService.getAuthHeaders(),
-    };
-    const sanitizedName = url.split("/").pop() || `${kind}_belgesi.pdf`;
-    const fileName = sanitizedName.endsWith(".pdf") ? sanitizedName : `${kind}_${Date.now()}.pdf`;
-    setDownloadingDoc(kind);
-    try {
-      if (Platform.OS === "web") {
-        const response = await fetch(url, {
-          method: "GET",
-          headers,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Sunucu ${response.status} yanıtı döndürdü`);
-        }
-
-        const blob = await response.blob();
-        const browser = globalThis as typeof globalThis & {
-          document?: any;
-          URL?: any;
-        };
-
-        if (!browser.document || !browser.URL?.createObjectURL) {
-          throw new Error("Tarayıcı indirme desteklenmiyor");
-        }
-
-        const blobUrl = browser.URL.createObjectURL(blob);
-        const anchor = browser.document.createElement("a");
-        anchor.href = blobUrl;
-        anchor.download = fileName;
-        browser.document.body.appendChild(anchor);
-        anchor.click();
-        browser.document.body.removeChild(anchor);
-        browser.URL.revokeObjectURL(blobUrl);
-        return;
-      }
-
-      const docDir = FileSystem.documentDirectory ?? null;
-      const cacheDir = FileSystem.cacheDirectory ?? null;
-      const tempDir = (FileSystem as any).temporaryDirectory ?? null;
-      const baseDir = docDir || cacheDir || tempDir;
-
-      logger.debug("📁 Belge indirme dizinleri", {
-        platform: Platform.OS,
-        docDir,
-        cacheDir,
-        tempDir,
-      });
-
-      if (!baseDir) {
-        logger.warn("📁 Yerel dizin bulunamadı, WebView ekranına yönlendiriliyor", {
-          platform: Platform.OS,
-        });
-        router.push({
-          pathname: "/broker/sections/documentViewer",
-          params: {
-            url,
-            title: kind === "invoice" ? "Fatura" : "Satış Fişi",
-          },
-        });
-        return;
-      }
-
-      const baseWithSlash = baseDir.endsWith("/") ? baseDir : `${baseDir}/`;
-      const normalizedDir = `${baseWithSlash}stockify-downloads/`;
-      try {
-        await FileSystem.makeDirectoryAsync(normalizedDir, { intermediates: true });
-      } catch (dirError) {
-        // Dizin zaten varsa hata dönebilir, loglayıp devam edelim
-        logger.debug("📁 Dizin oluşturma sonucu", dirError?.message ?? dirError);
-      }
-
-      const targetPath = `${normalizedDir}${fileName}`;
-      const downloadRes = await FileSystem.downloadAsync(url, targetPath, {
-        headers,
-      });
-
-      if (downloadRes.status && downloadRes.status >= 400) {
-        throw new Error(`Sunucu ${downloadRes.status} yanıtı döndürdü`);
-      }
-
-      const fileUri = downloadRes.uri;
-
-      // Tercihen paylaş / görüntüle
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: "application/pdf",
-          UTI: "com.adobe.pdf",
-        });
-      } else {
-        await Linking.openURL(fileUri);
-      }
-    } catch (error) {
-      logger.error("📄 Belge indirme hatası:", error);
-      Alert.alert("Hata", "Belge indirilirken bir sorun oluştu.");
-    } finally {
-      setDownloadingDoc(null);
-    }
+    const docTitle = kind === "invoice" ? "Fatura" : "Satış Fişi";
+    setCurrentDocumentUrl(url);
+    setCurrentDocumentTitle(docTitle);
+    setDocumentModalVisible(true);
   };
 
   // Loading guard
@@ -359,7 +275,7 @@ export default function ResultSales() {
           </Card>
         )}
 
-        {/* PDF / BELGE İNDİR – kartın hemen altında */}
+        {/* PDF / BELGE GÖRÜNTÜLE */}
         {isSuccess && (receiptUrl || invoiceUrl) && (
           <View className="mb-8 space-y-3">
             {receiptUrl ? (
@@ -369,15 +285,10 @@ export default function ResultSales() {
                 fullWidth
                 className="bg-white border border-stock-border"
                 onPress={() => downloadAndOpenDocument(receiptUrl, "receipt")}
-                loading={downloadingDoc === "receipt"}
-                leftIcon={
-                  downloadingDoc === "receipt" ? undefined : (
-                    <Icon family="MaterialIcons" name="download" size={20} color="#16A34A" />
-                  )
-                }
+                leftIcon={<Icon family="MaterialIcons" name="receipt" size={20} color="#16A34A" />}
               >
                 <Typography className="text-stock-dark" weight="bold">
-                  Satış Fişini İndir
+                  Satış Fişini Görüntüle
                 </Typography>
               </Button>
             ) : null}
@@ -389,15 +300,12 @@ export default function ResultSales() {
                 fullWidth
                 className="bg-white border border-stock-border"
                 onPress={() => downloadAndOpenDocument(invoiceUrl, "invoice")}
-                loading={downloadingDoc === "invoice"}
                 leftIcon={
-                  downloadingDoc === "invoice" ? undefined : (
-                    <Icon family="MaterialIcons" name="picture-as-pdf" size={20} color="#2563EB" />
-                  )
+                  <Icon family="MaterialIcons" name="picture-as-pdf" size={20} color="#2563EB" />
                 }
               >
                 <Typography className="text-stock-dark" weight="bold">
-                  Faturayı İndir
+                  Faturayı Görüntüle
                 </Typography>
               </Button>
             ) : null}
@@ -493,6 +401,15 @@ export default function ResultSales() {
           )}
         </View>
       </ScrollView>
+
+      {/* Document Modal */}
+      <DocumentModal
+        visible={documentModalVisible}
+        onClose={() => setDocumentModalVisible(false)}
+        documentUrl={currentDocumentUrl}
+        title={currentDocumentTitle}
+        headers={apiService.getAuthHeaders()}
+      />
     </Container>
   );
 }

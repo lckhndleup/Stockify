@@ -5,11 +5,11 @@ import type { LangStore } from "@/src/types/stores";
 
 const middleware = persist<LangStore>(
   (set) => ({
-    lang: "tr", // Stockify için varsayılan Türkçe
+    lang: "tr", // Envantra için varsayılan Türkçe
     setLang: (lang: string) => set({ lang: lang }),
   }),
   {
-    name: "stockify-language",
+    name: "envantra-language",
     storage: createJSONStorage(() => AsyncStorage),
   },
 );

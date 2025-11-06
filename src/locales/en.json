@@ -1,21 +1,21 @@
 {
-    "appName": "Stockify",
-    "tagline": "Simplify your stock management",
-    "version": "v1.0.0 - Development Mode",
-    "buttons": {
-        "viewProducts": "Products 📁",
-        "brokers": "Brokers ➕",
-        "stock": "Stock 📊",
-        "start": "Let's Start 🚀"
-    },
-    "common": {
-        "loading": "Loading...",
-        "error": "Error occurred",
-        "success": "Success",
-        "cancel": "Cancel",
-        "save": "Save",
-        "delete": "Delete",
-        "edit": "Edit",
-        "add": "Add"
-    }
+  "appName": "Envantra",
+  "tagline": "Simplify your stock management",
+  "version": "v1.0.0 - Development Mode",
+  "buttons": {
+    "viewProducts": "Products 📁",
+    "brokers": "Brokers ➕",
+    "stock": "Stock 📊",
+    "start": "Let's Start 🚀"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add"
+  }
 }
