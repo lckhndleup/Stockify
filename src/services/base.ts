@@ -8,7 +8,7 @@ import Constants from "expo-constants";
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
   Constants.expoConfig?.extra?.apiUrl ||
-  "https://stockify-gcsq.onrender.com";
+  "http://50.114.185.206:8080";
 
 const DEFAULT_TIMEOUT_MS = () => {
   const envValue = process.env.EXPO_PUBLIC_API_TIMEOUT_MS;

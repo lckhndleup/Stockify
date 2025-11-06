@@ -40,7 +40,7 @@ import Constants from "expo-constants";
 const API_BASE_URL =
   (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
   ((Constants.expoConfig?.extra as any)?.apiUrl as string | undefined) ||
-  "https://stockify-gcsq.onrender.com";
+  "http://50.114.185.206:8080";
 // Default network timeout for mobile networks (ms) - configurable via env/app.json
 const DEFAULT_TIMEOUT_MS = (() => {
   const envValue = process.env.EXPO_PUBLIC_API_TIMEOUT_MS;
