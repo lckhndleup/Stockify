@@ -192,7 +192,7 @@ const middleware = persist<AuthStore>(
     },
   }),
   {
-    name: "stockify-auth",
+    name: "envantra-auth",
     storage: createJSONStorage(() => AsyncStorage),
     // Sadece seri hale getirilebilir alanları sakla
     // rememberMe true ise user/token/isAuthenticated/rememberMe alanlarını persist et

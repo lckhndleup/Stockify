@@ -1,4 +1,5 @@
 // Auth API Types
+import type { Role } from "@/src/types/apiTypes";
 export interface LoginRequest {
   username: string;
   password: string;
@@ -7,6 +8,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  role?: Role;
 }
 
 export interface LogoutResponse {

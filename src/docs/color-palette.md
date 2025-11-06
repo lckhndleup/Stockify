@@ -1,4 +1,4 @@
-# Stockify Renk Paleti
+# Envantra Renk Paleti
 
 ## 🎯 Ana Renkler
 

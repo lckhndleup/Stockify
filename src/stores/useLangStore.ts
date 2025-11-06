@@ -9,7 +9,7 @@ const middleware = persist<LangStore>(
     setLang: (lang: string) => set({ lang: lang }),
   }),
   {
-    name: "stockify-language",
+    name: "envantra-language",
     storage: createJSONStorage(() => AsyncStorage),
   },
 );
