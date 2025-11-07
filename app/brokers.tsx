@@ -1,8 +1,9 @@
 // app/brokers.tsx
 
 import React, { useState, useEffect } from "react";
-import { ScrollView, View, Alert } from "react-native";
+import { ScrollView, View, Alert, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import {
   Container,
@@ -51,6 +52,7 @@ function getTargetDayLabel(value: BrokerTargetDay | "") {
 export default function BrokersPage() {
   const [searchText, setSearchText] = useState("");
   const [selectedDay, setSelectedDay] = useState<string>("ALL"); // Gün filtresi için state
+  const [showFilters, setShowFilters] = useState(false); // Filtre görünürlüğü için state
 
   // Modal states
   const [isBrokerModalVisible, setIsBrokerModalVisible] = useState(false);
@@ -367,32 +369,52 @@ export default function BrokersPage() {
       )}
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Search ve Add Butonu */}
+        {/* Search ve Add Butonu ve Filtre */}
         <View className="flex-row items-center mb-4">
-          <SearchBar placeholder="Aracı ara..." onSearch={handleSearch} className="flex-1 mr-3" />
-          <Icon
-            family="MaterialIcons"
-            name="add"
-            size={28}
-            color="#E3001B"
-            pressable
+          <SearchBar placeholder="Aracı ara..." onSearch={handleSearch} className="flex-1 mr-2" />
+          
+          {/* Filter Button */}
+          <TouchableOpacity
+            onPress={() => setShowFilters(!showFilters)}
+            className="rounded-lg items-center justify-center mr-2"
+            style={{
+              backgroundColor: showFilters ? "#E3001B" : "#222222",
+              width: 48,
+              height: 48,
+            }}
+            activeOpacity={0.95}
+          >
+            <Ionicons name="options" size={22} color="#FFFEFF" />
+          </TouchableOpacity>
+          
+          {/* Add Button */}
+          <TouchableOpacity
             onPress={handleAddBroker}
-            containerClassName="bg-gray-100 px-4 py-3 rounded-lg"
-          />
+            className="bg-gray-100 rounded-lg items-center justify-center"
+            style={{
+              width: 48,
+              height: 48,
+            }}
+            activeOpacity={0.95}
+          >
+            <Icon family="MaterialIcons" name="add" size={28} color="#E3001B" />
+          </TouchableOpacity>
         </View>
 
-        {/* Gün Filtreleme Tabları */}
-        <Tab
-          tabs={[
-            { id: "ALL", label: "Tümü" },
-            ...TARGET_DAY_OPTIONS.map((day) => ({ id: day.value, label: day.label })),
-          ]}
-          activeTab={selectedDay}
-          onTabChange={(tabId) => setSelectedDay(tabId)}
-          variant="pills"
-          size="sm"
-          className="mb-4"
-        />
+        {/* Gün Filtreleme Tabları - Sadece showFilters true ise göster */}
+        {showFilters && (
+          <Tab
+            tabs={[
+              { id: "ALL", label: "Tümü" },
+              ...TARGET_DAY_OPTIONS.map((day) => ({ id: day.value, label: day.label })),
+            ]}
+            activeTab={selectedDay}
+            onTabChange={(tabId) => setSelectedDay(tabId)}
+            variant="pills"
+            size="md"
+            className="mb-4"
+          />
+        )}
 
         {/* Rota Günlerine Göre Gruplandırılmış Aracılar */}
         {TARGET_DAY_OPTIONS.map((dayOption) => {
