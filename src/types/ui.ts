@@ -207,6 +207,7 @@ export interface SquareCardProps extends TouchableOpacityProps {
   amount?: string;
   onDelete?: () => void;
   showDeleteIcon?: boolean;
+  additionalInfo?: string;
 }
 
 export interface TabItem {

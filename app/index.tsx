@@ -1,23 +1,17 @@
 // app/index.tsx
-import React, { useState } from "react";
+import React from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { router } from "expo-router";
 
-import { Container, Typography, Card, SearchBar, Icon } from "@/src/components/ui";
+import { Container, Typography, Card, Icon } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
 import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
 import logger from "@/src/utils/logger";
 
 export default function HomePage() {
-  const [, setSearchText] = useState("");
   const { user, logout } = useAuthStore();
   const { toast, hideToast } = useToast();
-
-  const handleSearch = (text: string) => {
-    setSearchText(text);
-    // TODO: Mali - buraya arama işlevselliği eklenebilir
-  };
 
   const handleLogout = () => {
     Alert.alert("Çıkış Yap", "Hesabınızdan çıkış yapmak istediğinizden emin misiniz?", [
@@ -87,9 +81,6 @@ export default function HomePage() {
             />
           </View>
         </View>
-
-        {/* SearchBar */}
-        <SearchBar placeholder="Ara..." onSearch={handleSearch} className="mb-4" />
 
         {/* Ana Menü Kartları */}
         <View>

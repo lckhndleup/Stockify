@@ -358,6 +358,10 @@ export default function BrokersPage() {
           {filteredBrokers.map((broker) => {
             // Backend broker'ları için balance kullan
             const totalDebt = broker.balance || 0;
+            // Tahsilat günü bilgisini al
+            const targetDay = broker.targetDayOfWeek
+              ? getTargetDayLabel(broker.targetDayOfWeek)
+              : "";
 
             return (
               <SquareCard
@@ -365,6 +369,7 @@ export default function BrokersPage() {
                 title={`${broker.name} ${broker.surname}`}
                 subtitle="Mevcut Bakiye"
                 amount={`₺${totalDebt.toLocaleString()}`}
+                additionalInfo={targetDay ? `Rota günü: ${targetDay}` : undefined}
                 onPress={() =>
                   router.push({
                     pathname: "/broker/brokerDetail",

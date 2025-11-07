@@ -10,6 +10,7 @@ export default function SquareCard({
   amount,
   onDelete,
   showDeleteIcon = true,
+  additionalInfo,
   className = "",
   ...props
 }: SquareCardProps) {
@@ -66,12 +67,26 @@ export default function SquareCard({
 
       {/* Divider */}
       <View
-        className="w-full mb-3"
+        className="w-full mb-2"
         style={{
           height: 1,
           backgroundColor: "rgba(255, 254, 255, 0.3)", // Beyazın %30 şeffaflığı
         }}
       />
+
+      {/* Tahsilat/Rota günü bilgisi */}
+      {additionalInfo && (
+        <View className="mb-3">
+          <Typography
+            variant="caption"
+            className="text-stock-white text-center"
+            size="sm"
+            style={{ opacity: 0.9 }}
+          >
+            {additionalInfo}
+          </Typography>
+        </View>
+      )}
 
       {/* Alt kısım - Subtitle ve Miktar */}
       <View className="flex-1 justify-end items-center">
