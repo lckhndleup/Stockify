@@ -296,104 +296,107 @@ export default function StockPage() {
               <TouchableOpacity
                 key={`inventory-${item.inventoryId}`}
                 onPress={() => handleProductPress(item)}
-                activeOpacity={0.95}
+                activeOpacity={0.7}
                 className="mb-3"
               >
-                <Card
-                  variant="default"
-                  padding="md"
-                  className="border border-gray-200"
-                  radius="lg"
+                <View
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden"
                   style={{
                     shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 2,
-                    elevation: 1,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
+                    elevation: 3,
                   }}
                 >
-                  {/* Üst Kısım - Ürün Adı ve Durum Badge */}
-                  <View className="flex-row items-start justify-between mb-3">
+                  {/* Header - Ürün Adı ve Badge */}
+                  <View className="bg-gray-50 px-4 py-3 flex-row items-center justify-between border-b border-gray-100">
                     <View className="flex-1 mr-3">
-                      <Typography variant="body" weight="bold" className="text-gray-900" size="lg">
+                      <Typography variant="h3" weight="bold" className="text-gray-900 mb-1">
                         {item.productName}
                       </Typography>
-                      <Typography variant="caption" className="text-gray-500 mt-1">
+                      <Typography variant="caption" className="text-gray-500">
                         {item.categoryName} • {item.inventoryCode}
                       </Typography>
                     </View>
                     <View
                       className={`px-3 py-1.5 rounded-full ${
                         item.isOutOfStock
-                          ? "bg-red-100"
+                          ? "bg-red-500"
                           : item.isCritical
-                            ? "bg-yellow-100"
-                            : "bg-green-100"
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
                       }`}
                     >
-                      <Typography
-                        variant="caption"
-                        className={
-                          item.isOutOfStock
-                            ? "text-red-700"
-                            : item.isCritical
-                              ? "text-yellow-700"
-                              : "text-green-700"
-                        }
-                        weight="semibold"
-                      >
+                      <Typography variant="caption" className="text-white" weight="bold">
                         {item.statusText}
                       </Typography>
                     </View>
                   </View>
 
-                  {/* Orta Kısım - Stok ve Fiyat Bilgileri */}
-                  <View className="flex-row items-center justify-between py-3 px-3 bg-gray-50 rounded-lg mb-3">
-                    <View className="flex-1">
-                      <Typography variant="caption" className="text-gray-500 mb-1">
-                        Stok Miktarı
-                      </Typography>
-                      <Typography variant="body" weight="bold" className="text-gray-900">
-                        {item.productCount.toLocaleString("tr-TR")} adet
-                      </Typography>
-                    </View>
-                    <View className="flex-1 items-center">
-                      <Typography variant="caption" className="text-gray-500 mb-1">
-                        Birim Fiyat
-                      </Typography>
-                      <Typography variant="body" weight="bold" className="text-green-600">
-                        {item.price.toLocaleString("tr-TR", {
-                          minimumFractionDigits: 2,
-                        })}{" "}
-                        ₺
-                      </Typography>
-                    </View>
-                    <View className="flex-1 items-end">
-                      <Typography variant="caption" className="text-gray-500 mb-1">
-                        Toplam Değer
-                      </Typography>
-                      <Typography variant="body" weight="bold" className="text-stock-red">
-                        {item.totalPrice.toLocaleString("tr-TR", {
-                          minimumFractionDigits: 2,
-                        })}{" "}
-                        ₺
-                      </Typography>
+                  {/* Body - Bilgiler Grid */}
+                  <View className="px-4 py-4">
+                    <View className="flex-row items-center justify-between">
+                      {/* Stok Miktarı */}
+                      <View className="flex-1">
+                        <Typography variant="caption" className="text-gray-400 mb-1.5">
+                          Stok Miktarı
+                        </Typography>
+                        <Typography variant="h3" weight="bold" className="text-gray-900">
+                          {item.productCount.toLocaleString("tr-TR")}
+                        </Typography>
+                        <Typography variant="caption" className="text-gray-500">
+                          adet
+                        </Typography>
+                      </View>
+
+                      {/* Vertical Divider */}
+                      <View className="w-px h-12 bg-gray-200 mx-3" />
+
+                      {/* Birim Fiyat */}
+                      <View className="flex-1">
+                        <Typography variant="caption" className="text-gray-400 mb-1.5">
+                          Birim Fiyat
+                        </Typography>
+                        <Typography variant="h3" weight="bold" className="text-green-600">
+                          {item.price.toLocaleString("tr-TR", {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          ₺
+                        </Typography>
+                      </View>
+
+                      {/* Vertical Divider */}
+                      <View className="w-px h-12 bg-gray-200 mx-3" />
+
+                      {/* Toplam Değer */}
+                      <View className="flex-1">
+                        <Typography variant="caption" className="text-gray-400 mb-1.5">
+                          Toplam Değer
+                        </Typography>
+                        <Typography variant="h3" weight="bold" className="text-stock-red">
+                          {item.totalPrice.toLocaleString("tr-TR", {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          ₺
+                        </Typography>
+                      </View>
                     </View>
                   </View>
 
-                  {/* Alt Kısım - Detay İkonu */}
-                  <View className="flex-row items-center justify-end">
-                    <Typography variant="caption" className="text-gray-500 mr-2">
-                      Detayları Gör
+                  {/* Footer - Detay Button */}
+                  <View className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex-row items-center justify-between">
+                    <Typography variant="body" className="text-gray-600" weight="medium">
+                      Detayları Görüntüle
                     </Typography>
                     <Icon
                       family="MaterialIcons"
                       name="arrow-forward-ios"
-                      size={14}
-                      color="#73767A"
+                      size={16}
+                      color="#9CA3AF"
                     />
                   </View>
-                </Card>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
