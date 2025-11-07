@@ -48,7 +48,7 @@ const DEFAULT_TIMEOUT_MS = (() => {
   const extra = (Constants.expoConfig?.extra as any) || {};
   const confValue = extra.apiTimeoutMs;
   if (confValue && !Number.isNaN(Number(confValue))) return Number(confValue);
-  return 15000;
+  return 60000; // Increased from 15000 to 60000 for slow server responses
 })();
 
 class ApiService {

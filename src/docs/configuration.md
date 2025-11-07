@@ -22,6 +22,6 @@ Default network timeout is configurable and read in this order:
 
 1. `EXPO_PUBLIC_API_TIMEOUT_MS` (env)
 2. `app.json -> expo.extra.apiTimeoutMs`
-3. Fallback: `15000` ms
+3. Fallback: `60000` ms (60 seconds)
 
-Tip: For mobile networks, 15s is a reasonable default. Increase for slow links if needed.
+Tip: Increased from 15s to 60s to accommodate slower server responses. Adjust if needed.

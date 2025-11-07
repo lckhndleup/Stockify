@@ -27,7 +27,8 @@ const middleware = persist<AuthStore>(
         const credentials: LoginRequest = {
           username,
           password,
-          rememberMe, // 👈 YENİ: rememberMe field'i API'ye gönderiliyor
+          // rememberMe field'i backend tarafından desteklenmiyorsa kaldırılabilir
+          // rememberMe,
         };
 
         const response = await requestLogin(credentials);

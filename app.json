@@ -30,7 +30,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
@@ -42,7 +43,7 @@
     },
     "extra": {
       "apiUrl": "http://50.114.185.206:8080",
-      "apiTimeoutMs": 15000
+      "apiTimeoutMs": 60000
     }
   }
 }

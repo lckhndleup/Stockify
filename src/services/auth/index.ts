@@ -2,6 +2,7 @@
 
 import { getToken, request } from "../base";
 import { LoginRequest, LoginResponse, LogoutResponse } from "./type";
+import logger from "@/src/utils/logger";
 
 enum LoginEndpoint {
   LOGIN = "/auth/login",
@@ -9,9 +10,12 @@ enum LoginEndpoint {
 }
 
 const requestLogin = async (credentials: LoginRequest): Promise<LoginResponse> => {
+  const requestBody = JSON.stringify(credentials);
+  logger.debug("🔍 Login Request Body:", requestBody);
+  logger.debug("🔍 Login Request URL:", LoginEndpoint.LOGIN);
   return request(LoginEndpoint.LOGIN, {
     method: "POST",
-    body: JSON.stringify(credentials),
+    body: requestBody,
   });
 };
 
