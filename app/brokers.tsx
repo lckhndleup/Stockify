@@ -394,7 +394,7 @@ export default function BrokersPage() {
         {/* Search ve Add Butonu ve Filtre */}
         <View className="flex-row items-center mb-4">
           <SearchBar placeholder="Aracı ara..." onSearch={handleSearch} className="flex-1 mr-2" />
-          
+
           {/* Filter Button */}
           <TouchableOpacity
             onPress={() => setShowFilters(!showFilters)}
@@ -408,7 +408,7 @@ export default function BrokersPage() {
           >
             <Ionicons name="options" size={22} color="#FFFEFF" />
           </TouchableOpacity>
-          
+
           {/* Add Button */}
           <TouchableOpacity
             onPress={handleAddBroker}
@@ -467,7 +467,26 @@ export default function BrokersPage() {
           // Gün filtresi aktifse ve seçili gün değilse gösterme
           if (selectedDay !== "ALL" && selectedDay !== dayOption.value) return null;
 
-          if (!dayBrokers || dayBrokers.length === 0) return null;
+          if (!dayBrokers || dayBrokers.length === 0) {
+            // Sadece belirli bir gün seçiliyse ve aracı yoksa mesaj göster
+            if (selectedDay !== "ALL" && selectedDay === dayOption.value) {
+              return (
+                <View key={dayOption.value} className="items-center justify-center py-12">
+                  <Icon
+                    family="MaterialCommunityIcons"
+                    name="account-group-outline"
+                    size={64}
+                    color="#ECECEC"
+                    containerClassName="mb-4"
+                  />
+                  <Typography variant="body" className="text-stock-text text-center">
+                    {dayOption.label} günü için aracı bulunamadı.
+                  </Typography>
+                </View>
+              );
+            }
+            return null;
+          }
 
           return (
             <View key={dayOption.value} className="mb-6">
