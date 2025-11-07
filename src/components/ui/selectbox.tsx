@@ -100,7 +100,7 @@ export default function SelectBox({
         style={containerStyle}
         onPress={handlePress}
         disabled={disabled}
-        activeOpacity={0.8}
+        activeOpacity={0.95}
       >
         <Typography
           variant="body"
@@ -150,7 +150,7 @@ export default function SelectBox({
                       index !== options.length - 1 ? "border-b border-stock-border" : ""
                     } ${value === option.value ? "bg-stock-gray" : "bg-white"}`}
                     onPress={() => handleSelect(option.value)}
-                    activeOpacity={0.8}
+                    activeOpacity={0.95}
                   >
                     <Typography
                       variant="body"

@@ -107,7 +107,7 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
               shadowRadius: 5,
               elevation: 5,
             }}
-            activeOpacity={0.8}
+            activeOpacity={0.95}
           >
             <Icon family="MaterialIcons" name="add" size={28} color="#FFFEFF" />
           </TouchableOpacity>

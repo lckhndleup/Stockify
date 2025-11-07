@@ -263,7 +263,7 @@ export default function StatementSection() {
         onPress={() => handleDownload(url ?? "", item.createdDate)}
         className="flex-row items-center gap-1 px-3 py-1 rounded-lg"
         style={{ backgroundColor: "#F3F4F6", minHeight: 28 }}
-        activeOpacity={0.8}
+        activeOpacity={0.95}
       >
         <Typography
           variant="caption"
@@ -417,7 +417,7 @@ export default function StatementSection() {
               backgroundColor: activeTab === "bilgiler" ? "#222222" : "#FFFFFF",
               borderRadius: 12,
             }}
-            activeOpacity={0.8}
+            activeOpacity={1.0}
           >
             <Typography
               variant="body"
@@ -438,7 +438,7 @@ export default function StatementSection() {
               backgroundColor: activeTab === "hareketler" ? "#222222" : "#FFFFFF",
               borderRadius: 12,
             }}
-            activeOpacity={0.8}
+            activeOpacity={1.0}
           >
             <Typography
               variant="body"
@@ -459,7 +459,7 @@ export default function StatementSection() {
               backgroundColor: activeTab === "ozet" ? "#222222" : "#FFFFFF",
               borderRadius: 12,
             }}
-            activeOpacity={0.8}
+            activeOpacity={1.0}
           >
             <Typography
               variant="body"
@@ -639,7 +639,7 @@ export default function StatementSection() {
                       width: 48,
                       height: 48,
                     }}
-                    activeOpacity={0.8}
+                    activeOpacity={0.95}
                   >
                     <Ionicons name="options" size={22} color="#FFFEFF" />
                   </TouchableOpacity>
@@ -664,7 +664,7 @@ export default function StatementSection() {
                           style={{
                             backgroundColor: isSelected ? "#222222" : "#F4F7FB",
                           }}
-                          activeOpacity={0.8}
+                          activeOpacity={1.0}
                         >
                           <Typography
                             variant="body"

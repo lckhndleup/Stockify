@@ -140,9 +140,27 @@ export default function CategoriesPage() {
               } else {
                 throw new Error("Backend'den geçersiz yanıt alındı");
               }
-            } catch (error) {
+            } catch (error: any) {
               logger.error("❌ Category save error:", error);
-              showError("Kategori eklenirken bir hata oluştu!");
+
+              // Modal'ı AÇIK TUT - kullanıcı düzeltme yapabilsin
+              // API'den gelen hata mesajını parse et
+              const errorMessage =
+                error && typeof error === "object" && "message" in error
+                  ? String(error.message)
+                  : "Kategori eklenirken bir hata oluştu!";
+
+              // "Category Name Already Used!" kontrolü
+              if (
+                errorMessage.includes("Category Name Already Used") ||
+                errorMessage.includes("Already Used")
+              ) {
+                showError("Bu kategori adı zaten kullanılıyor!");
+                // Kategori adını seç ki kullanıcı değiştirebilsin
+                setCategoryName("");
+              } else {
+                showError(errorMessage);
+              }
             }
           },
         },
@@ -206,9 +224,27 @@ export default function CategoriesPage() {
 
               // Kategorileri yenile
               refetchCategories();
-            } catch (error) {
+            } catch (error: any) {
               logger.error("❌ Category update error:", error);
-              showError("Kategori güncellenirken bir hata oluştu!");
+
+              // Modal'ı AÇIK TUT - kullanıcı düzeltme yapabilsin
+              // API'den gelen hata mesajını parse et
+              const errorMessage =
+                error && typeof error === "object" && "message" in error
+                  ? String(error.message)
+                  : "Kategori güncellenirken bir hata oluştu!";
+
+              // "Category Name Already Used!" kontrolü
+              if (
+                errorMessage.includes("Category Name Already Used") ||
+                errorMessage.includes("Already Used")
+              ) {
+                showError("Bu kategori adı zaten kullanılıyor!");
+                // Kategori adını seç ki kullanıcı değiştirebilsin
+                setCategoryName("");
+              } else {
+                showError(errorMessage);
+              }
             }
           },
         },
@@ -281,229 +317,233 @@ export default function CategoriesPage() {
   }
 
   return (
-    <Container className="bg-white" padding="sm" safeTop={false}>
-      {/* Toast Notification */}
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
-
-      <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Search ve Add Butonu */}
-        <View className="flex-row items-center mb-3">
-          <SearchBar
-            placeholder="Kategori ara..."
-            onSearch={handleSearch}
-            className="flex-1 mr-3"
-          />
-          <Icon
-            family="MaterialIcons"
-            name="add"
-            size={28}
-            color="#E3001B"
-            pressable
-            onPress={handleAddCategory}
-            containerClassName="bg-gray-100 px-4 py-3 rounded-lg"
-          />
-        </View>
-
-        {/* Kategori Listesi */}
-        <View className="mt-3">
-          {filteredCategories.map((category) => (
-            <Card
-              key={category.id}
-              variant="default"
-              padding="sm"
-              className="border border-stock-border mb-2"
-              radius="md"
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    align="left"
-                    className="text-stock-dark"
-                  >
-                    {category.name}
-                  </Typography>
-                  <Typography variant="caption" size="sm" className="text-stock-text mt-1">
-                    KDV Oranı: %{category.taxRate}
-                  </Typography>
-                </View>
-
-                <View className="flex-row items-center">
-                  {/* Edit Icon */}
-                  <Icon
-                    family="MaterialIcons"
-                    name="edit"
-                    size={18}
-                    color="#67686A"
-                    pressable
-                    onPress={() => handleEditCategory(category)}
-                    containerClassName="mr-2"
-                  />
-
-                  {/* Delete Icon - YENİ EKLENEN */}
-                  <Icon
-                    family="MaterialIcons"
-                    name="delete"
-                    size={18}
-                    color="#E3001B" // stock-red color
-                    pressable
-                    onPress={() => handleDeleteCategory(category)}
-                  />
-                </View>
-              </View>
-            </Card>
-          ))}
-        </View>
-
-        {/* Empty State */}
-        {filteredCategories.length === 0 && (
-          <View className="items-center justify-center py-12">
+    <>
+      <Container className="bg-white" padding="sm" safeTop={false}>
+        <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
+          {/* Search ve Add Butonu */}
+          <View className="flex-row items-center mb-3">
+            <SearchBar
+              placeholder="Kategori ara..."
+              onSearch={handleSearch}
+              className="flex-1 mr-3"
+            />
             <Icon
               family="MaterialIcons"
-              name="category"
-              size={64}
-              color="#ECECEC"
-              containerClassName="mb-4"
+              name="add"
+              size={28}
+              color="#E3001B"
+              pressable
+              onPress={handleAddCategory}
+              containerClassName="bg-gray-100 px-4 py-3 rounded-lg"
             />
-            <Typography variant="body" className="text-stock-text text-center">
-              {searchText.trim()
-                ? "Arama kriterinize uygun kategori bulunamadı."
-                : "Henüz kategori eklenmemiş."}
-            </Typography>
           </View>
-        )}
 
-        {/* Yeni Kategori Ekle Butonu */}
-        <View className="mt-4 mb-6">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            className="bg-stock-red"
-            onPress={handleAddCategory}
-            loading={createCategoryMutation.isPending}
-            leftIcon={<Icon family="MaterialIcons" name="add" size={20} color="white" />}
-          >
-            Yeni Kategori Ekle
-          </Button>
-        </View>
-      </ScrollView>
+          {/* Kategori Listesi */}
+          <View className="mt-3">
+            {filteredCategories.map((category) => (
+              <Card
+                key={category.id}
+                variant="default"
+                padding="sm"
+                className="border border-stock-border mb-2"
+                radius="md"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Typography
+                      variant="body"
+                      weight="semibold"
+                      align="left"
+                      className="text-stock-dark"
+                    >
+                      {category.name}
+                    </Typography>
+                    <Typography variant="caption" size="sm" className="text-stock-text mt-1">
+                      KDV Oranı: %{category.taxRate}
+                    </Typography>
+                  </View>
 
-      {/* Kategori Ekleme Modal'ı */}
-      <Modal
-        visible={isCategoryModalVisible}
-        onClose={handleCategoryModalClose}
-        title="Yeni Kategori Ekle"
-        size="lg"
-        className="bg-white mx-6"
-      >
-        <View>
-          {/* Kategori Adı */}
-          <Input
-            label="Kategori Adı *"
-            value={categoryName}
-            onChangeText={setCategoryName}
-            placeholder="Kategori adını girin..."
-            variant="outlined"
-            error={validationErrors.name}
-            className="mb-4"
-          />
+                  <View className="flex-row items-center">
+                    {/* Edit Icon */}
+                    <Icon
+                      family="MaterialIcons"
+                      name="edit"
+                      size={18}
+                      color="#67686A"
+                      pressable
+                      onPress={() => handleEditCategory(category)}
+                      containerClassName="mr-2"
+                    />
 
-          {/* KDV Oranı */}
-          <Input
-            label="KDV Oranı (%) *"
-            value={categoryTaxRate}
-            onChangeText={setCategoryTaxRate}
-            placeholder="0-100 arası değer (örn: 18)"
-            variant="outlined"
-            keyboardType="numeric"
-            error={validationErrors.taxRate}
-            helperText="KDV oranını yüzde cinsinden girin"
-            className="mb-4"
-          />
+                    {/* Delete Icon - YENİ EKLENEN */}
+                    <Icon
+                      family="MaterialIcons"
+                      name="delete"
+                      size={18}
+                      color="#E3001B" // stock-red color
+                      pressable
+                      onPress={() => handleDeleteCategory(category)}
+                    />
+                  </View>
+                </View>
+              </Card>
+            ))}
+          </View>
 
-          {/* Butonlar */}
-          <View className="mt-6">
-            <Button
-              variant="primary"
-              fullWidth
-              className="bg-stock-red mb-3"
-              onPress={handleConfirmAddCategory}
-              loading={createCategoryMutation.isPending}
-              disabled={createCategoryMutation.isPending}
-            >
-              <Typography className="text-white">
-                {createCategoryMutation.isPending ? "Ekleniyor..." : "Ekle"}
+          {/* Empty State */}
+          {filteredCategories.length === 0 && (
+            <View className="items-center justify-center py-12">
+              <Icon
+                family="MaterialIcons"
+                name="category"
+                size={64}
+                color="#ECECEC"
+                containerClassName="mb-4"
+              />
+              <Typography variant="body" className="text-stock-text text-center">
+                {searchText.trim()
+                  ? "Arama kriterinize uygun kategori bulunamadı."
+                  : "Henüz kategori eklenmemiş."}
               </Typography>
-            </Button>
-            <Button
-              variant="outline"
-              fullWidth
-              className="border-stock-border"
-              onPress={handleCategoryModalClose}
-            >
-              <Typography className="text-stock-dark">İptal</Typography>
-            </Button>
-          </View>
-        </View>
-      </Modal>
+            </View>
+          )}
 
-      {/* Kategori Düzenleme Modal'ı */}
-      <Modal
-        visible={isEditCategoryModalVisible}
-        onClose={handleEditCategoryModalClose}
-        title="Kategori Düzenle"
-        size="lg"
-        className="bg-white mx-6"
-      >
-        <View>
-          {/* Kategori Adı */}
-          <Input
-            label="Kategori Adı *"
-            value={categoryName}
-            onChangeText={setCategoryName}
-            placeholder="Kategori adını girin..."
-            variant="outlined"
-            error={validationErrors.name}
-            className="mb-4"
-          />
-
-          {/* KDV Oranı */}
-          <Input
-            label="KDV Oranı (%) *"
-            value={categoryTaxRate}
-            onChangeText={setCategoryTaxRate}
-            placeholder="0-100 arası değer (örn: 18)"
-            variant="outlined"
-            keyboardType="numeric"
-            error={validationErrors.taxRate}
-            helperText="KDV oranını yüzde cinsinden girin"
-            className="mb-4"
-          />
-
-          {/* Butonlar */}
-          <View className="mt-6">
+          {/* Yeni Kategori Ekle Butonu */}
+          <View className="mt-4 mb-6">
             <Button
               variant="primary"
+              size="lg"
               fullWidth
-              className="bg-stock-red mb-3"
-              onPress={handleUpdateCategory}
-              loading={updateCategoryMutation.isPending}
+              className="bg-stock-red"
+              onPress={handleAddCategory}
+              loading={createCategoryMutation.isPending}
+              leftIcon={<Icon family="MaterialIcons" name="add" size={20} color="white" />}
             >
-              <Typography className="text-white">Güncelle</Typography>
-            </Button>
-            <Button
-              variant="outline"
-              fullWidth
-              className="border-stock-border"
-              onPress={handleEditCategoryModalClose}
-            >
-              <Typography className="text-stock-dark">İptal</Typography>
+              Yeni Kategori Ekle
             </Button>
           </View>
-        </View>
-      </Modal>
-    </Container>
+        </ScrollView>
+
+        {/* Kategori Ekleme Modal'ı */}
+        <Modal
+          visible={isCategoryModalVisible}
+          onClose={handleCategoryModalClose}
+          title="Yeni Kategori Ekle"
+          size="lg"
+          className="bg-white mx-6"
+          coverScreen={false}
+        >
+          <View>
+            {/* Kategori Adı */}
+            <Input
+              label="Kategori Adı *"
+              value={categoryName}
+              onChangeText={setCategoryName}
+              placeholder="Kategori adını girin..."
+              variant="outlined"
+              error={validationErrors.name}
+              className="mb-4"
+            />
+
+            {/* KDV Oranı */}
+            <Input
+              label="KDV Oranı (%) *"
+              value={categoryTaxRate}
+              onChangeText={setCategoryTaxRate}
+              placeholder="0-100 arası değer (örn: 18)"
+              variant="outlined"
+              keyboardType="numeric"
+              error={validationErrors.taxRate}
+              helperText="KDV oranını yüzde cinsinden girin"
+              className="mb-4"
+            />
+
+            {/* Butonlar */}
+            <View className="mt-6">
+              <Button
+                variant="primary"
+                fullWidth
+                className="bg-stock-red mb-3"
+                onPress={handleConfirmAddCategory}
+                loading={createCategoryMutation.isPending}
+                disabled={createCategoryMutation.isPending}
+              >
+                <Typography className="text-white">
+                  {createCategoryMutation.isPending ? "Ekleniyor..." : "Ekle"}
+                </Typography>
+              </Button>
+              <Button
+                variant="outline"
+                fullWidth
+                className="border-stock-border"
+                onPress={handleCategoryModalClose}
+              >
+                <Typography className="text-stock-dark">İptal</Typography>
+              </Button>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Kategori Düzenleme Modal'ı */}
+        <Modal
+          visible={isEditCategoryModalVisible}
+          onClose={handleEditCategoryModalClose}
+          title="Kategori Düzenle"
+          size="lg"
+          className="bg-white mx-6"
+          coverScreen={false}
+        >
+          <View>
+            {/* Kategori Adı */}
+            <Input
+              label="Kategori Adı *"
+              value={categoryName}
+              onChangeText={setCategoryName}
+              placeholder="Kategori adını girin..."
+              variant="outlined"
+              error={validationErrors.name}
+              className="mb-4"
+            />
+
+            {/* KDV Oranı */}
+            <Input
+              label="KDV Oranı (%) *"
+              value={categoryTaxRate}
+              onChangeText={setCategoryTaxRate}
+              placeholder="0-100 arası değer (örn: 18)"
+              variant="outlined"
+              keyboardType="numeric"
+              error={validationErrors.taxRate}
+              helperText="KDV oranını yüzde cinsinden girin"
+              className="mb-4"
+            />
+
+            {/* Butonlar */}
+            <View className="mt-6">
+              <Button
+                variant="primary"
+                fullWidth
+                className="bg-stock-red mb-3"
+                onPress={handleUpdateCategory}
+                loading={updateCategoryMutation.isPending}
+              >
+                <Typography className="text-white">Güncelle</Typography>
+              </Button>
+              <Button
+                variant="outline"
+                fullWidth
+                className="border-stock-border"
+                onPress={handleEditCategoryModalClose}
+              >
+                <Typography className="text-stock-dark">İptal</Typography>
+              </Button>
+            </View>
+          </View>
+        </Modal>
+      </Container>
+
+      {/* Toast Notification - Modal'ın üstünde görünsün diye Container dışında */}
+      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
+    </>
   );
 }

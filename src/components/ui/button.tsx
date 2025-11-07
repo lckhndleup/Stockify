@@ -42,11 +42,11 @@ export default function Button({
   };
 
   const disabledVariantClasses = {
-    primary: "bg-stock-gray border border-stock-border",
-    secondary: "bg-stock-gray border border-stock-border",
-    success: "bg-stock-gray border border-stock-border",
-    danger: "bg-stock-gray border border-stock-border",
-    warning: "bg-stock-gray border border-stock-border",
+    primary: "bg-red-200 border border-red-300",
+    secondary: "bg-gray-300 border border-stock-border",
+    success: "bg-green-200 border border-green-300",
+    danger: "bg-red-200 border border-red-300",
+    warning: "bg-yellow-200 border border-yellow-300",
     outline: "border-2 border-stock-border bg-transparent",
     ghost: "bg-transparent border border-stock-border",
   } as const;
@@ -62,11 +62,11 @@ export default function Button({
   };
 
   const disabledTextColors = {
-    primary: "text-stock-dark",
+    primary: "text-red-600",
     secondary: "text-stock-dark",
-    success: "text-stock-dark",
-    danger: "text-stock-dark",
-    warning: "text-stock-dark",
+    success: "text-green-700",
+    danger: "text-red-600",
+    warning: "text-yellow-700",
     outline: "text-stock-dark",
     ghost: "text-stock-dark",
   } as const;
@@ -98,7 +98,7 @@ export default function Button({
     sizeClasses[size],
     variantClasses[variant],
     fullWidth && "w-full",
-    isDisabled && "opacity-50",
+    // opacity-50 kaldırıldı, disabled renk değişikliği yeterli
     className,
     isDisabled && disabledVariantClasses[variant],
   ]
@@ -110,7 +110,7 @@ export default function Button({
       className={baseClasses}
       disabled={isDisabled}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.95}
       style={[{ height: 52 }, props.style]} // Standart 52px yükseklik eklendi
       {...props}
     >

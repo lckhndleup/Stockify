@@ -501,7 +501,7 @@ export default function SalesSection() {
 
         {/* İskonto & Fatura */}
         <View className="flex-row gap-3 mb-4">
-          <TouchableOpacity className="flex-1" onPress={handleDiscountPress} activeOpacity={0.8}>
+          <TouchableOpacity className="flex-1" onPress={handleDiscountPress} activeOpacity={0.95}>
             <Card
               variant="default"
               padding="sm"

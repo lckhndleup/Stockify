@@ -13,6 +13,7 @@ export default function Modal({
   showCloseButton = true,
   overlayClosable = true,
   className = "",
+  coverScreen = true,
   ...props
 }: ModalProps) {
   const sizeClasses = {
@@ -30,7 +31,14 @@ export default function Modal({
   };
 
   return (
-    <RNModal visible={visible} transparent animationType="fade" statusBarTranslucent {...props}>
+    <RNModal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      presentationStyle={coverScreen ? "overFullScreen" : "pageSheet"}
+      {...props}
+    >
       <TouchableOpacity
         className="flex-1 bg-black/50 items-center justify-center px-6 py-8"
         activeOpacity={1}

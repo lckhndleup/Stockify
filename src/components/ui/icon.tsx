@@ -35,7 +35,7 @@ export default function Icon({
     return (
       <TouchableOpacity
         onPress={onPress}
-        activeOpacity={0.7}
+        activeOpacity={0.95}
         className={`items-center justify-center ${containerClassName}`}
       >
         {iconElement}

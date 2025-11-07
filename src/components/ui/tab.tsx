@@ -88,7 +88,7 @@ export default function Tab({
                   ${roundedClass}
                   ${isDisabled ? "opacity-50" : ""}
                 `}
-                activeOpacity={0.8}
+                activeOpacity={1.0}
               >
                 <Typography
                   variant="body"

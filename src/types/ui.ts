@@ -111,6 +111,7 @@ export interface ModalProps extends RNModalProps {
   title?: string;
   overlayClosable?: boolean;
   className?: string;
+  coverScreen?: boolean;
 }
 
 export interface BottomSheetProps extends RNModalProps {

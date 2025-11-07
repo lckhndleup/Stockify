@@ -25,7 +25,7 @@ export default function SquareCard({
         shadowRadius: 4,
         elevation: 3,
       }}
-      activeOpacity={0.9}
+      activeOpacity={0.95}
       {...props}
     >
       {/* Üst kısım - Başlık ve Sil ikonu */}
@@ -57,7 +57,7 @@ export default function SquareCard({
               onDelete();
             }}
             className="p-1"
-            activeOpacity={0.7}
+            activeOpacity={0.95}
           >
             <Icon family="MaterialIcons" name="delete" size={20} color="#FFFEFF" />
           </TouchableOpacity>

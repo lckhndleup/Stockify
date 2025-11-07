@@ -50,7 +50,7 @@ export default function Card({
       <TouchableOpacity
         className={baseClasses}
         onPress={onPress}
-        activeOpacity={0.8}
+        activeOpacity={0.95}
         {...(props as TouchableOpacityProps)}
       >
         {children}

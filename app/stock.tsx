@@ -263,7 +263,7 @@ export default function StockPage() {
               <TouchableOpacity
                 key={`inventory-${item.inventoryId}`}
                 onPress={() => handleProductPress(item)}
-                activeOpacity={0.7}
+                activeOpacity={0.95}
               >
                 <Card
                   variant="default"
@@ -368,23 +368,67 @@ export default function StockPage() {
           </View>
         ) : (
           <Card variant="default" padding="lg" className="border border-stock-border" radius="md">
-            <View className="items-center">
-              <Icon
-                family="MaterialCommunityIcons"
-                name="package-variant-closed"
-                size={48}
-                color="#73767A"
-              />
-              <Typography variant="body" className="text-stock-text text-center mt-3">
-                {searchText
-                  ? "Arama kriterlerine uygun ürün bulunamadı."
-                  : activeTab === "critical"
-                    ? "Kritik seviyede ürün bulunamadı."
-                    : activeTab === "outofstock"
-                      ? "Tükenen ürün bulunamadı."
-                      : "Ürün bulunamadı."}
-              </Typography>
-            </View>
+            {/* Hiç ürün yoksa (inventory boş) */}
+            {allInventory.length === 0 && !searchText ? (
+              <View className="items-center p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <Icon
+                  family="MaterialCommunityIcons"
+                  name="package-variant-closed"
+                  size={48}
+                  color="#EAB308"
+                  containerClassName="mb-3"
+                />
+                <Typography
+                  variant="body"
+                  className="text-yellow-800 text-center mb-2"
+                  weight="semibold"
+                >
+                  Stokta Ürün Bulunamadı
+                </Typography>
+                <Typography variant="caption" className="text-yellow-700 text-center mb-4">
+                  Stok takip yapabilmek için önce ürünler sayfasından ürün eklemeniz gerekmektedir.
+                </Typography>
+                <Button
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  className="bg-stock-red"
+                  onPress={() => router.push("/products")}
+                >
+                  <View className="flex-row items-center justify-center">
+                    <Icon
+                      family="MaterialIcons"
+                      name="shopping-cart"
+                      size={20}
+                      color="#FFFFFF"
+                      containerClassName="mr-2"
+                    />
+                    <Typography className="text-white" weight="semibold">
+                      Ürünler Sayfasına Git
+                    </Typography>
+                  </View>
+                </Button>
+              </View>
+            ) : (
+              /* Normal boş durum mesajları */
+              <View className="items-center">
+                <Icon
+                  family="MaterialCommunityIcons"
+                  name="package-variant-closed"
+                  size={48}
+                  color="#73767A"
+                />
+                <Typography variant="body" className="text-stock-text text-center mt-3">
+                  {searchText
+                    ? "Arama kriterlerine uygun ürün bulunamadı."
+                    : activeTab === "critical"
+                      ? "Kritik seviyede ürün bulunamadı."
+                      : activeTab === "outofstock"
+                        ? "Tükenen ürün bulunamadı."
+                        : "Ürün bulunamadı."}
+                </Typography>
+              </View>
+            )}
           </Card>
         )}
       </ScrollView>

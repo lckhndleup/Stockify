@@ -1,7 +1,8 @@
 // app/broker/sections/resultSales.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, BackHandler, ScrollView, View } from "react-native";
+import { Alert, BackHandler, ScrollView, View, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   Container,
   Typography,
@@ -277,38 +278,46 @@ export default function ResultSales() {
 
         {/* PDF / BELGE GÖRÜNTÜLE */}
         {isSuccess && (receiptUrl || invoiceUrl) && (
-          <View className="mb-8 space-y-3">
-            {receiptUrl ? (
-              <Button
-                variant="secondary"
-                size="md"
-                fullWidth
-                className="bg-white border border-stock-border"
-                onPress={() => downloadAndOpenDocument(receiptUrl, "receipt")}
-                leftIcon={<Icon family="MaterialIcons" name="receipt" size={20} color="#16A34A" />}
-              >
-                <Typography className="text-stock-dark" weight="bold">
-                  Satış Fişini Görüntüle
-                </Typography>
-              </Button>
-            ) : null}
+          <View className="mb-8">
+            <View className="flex-row items-center justify-between gap-3">
+              {receiptUrl && (
+                <TouchableOpacity
+                  onPress={() => downloadAndOpenDocument(receiptUrl, "receipt")}
+                  className="flex-1 flex-row items-center justify-center gap-1 px-4 py-2 rounded-lg"
+                  style={{ backgroundColor: "#F3F4F6", minHeight: 36 }}
+                  activeOpacity={0.95}
+                >
+                  <Typography
+                    variant="body"
+                    weight="medium"
+                    className="text-gray-700"
+                    style={{ fontSize: 13 }}
+                  >
+                    Satış Fişi
+                  </Typography>
+                  <Ionicons name="receipt-outline" size={16} color="#E3001B" />
+                </TouchableOpacity>
+              )}
 
-            {invoiceUrl ? (
-              <Button
-                variant="secondary"
-                size="md"
-                fullWidth
-                className="bg-white border border-stock-border"
-                onPress={() => downloadAndOpenDocument(invoiceUrl, "invoice")}
-                leftIcon={
-                  <Icon family="MaterialIcons" name="picture-as-pdf" size={20} color="#2563EB" />
-                }
-              >
-                <Typography className="text-stock-dark" weight="bold">
-                  Faturayı Görüntüle
-                </Typography>
-              </Button>
-            ) : null}
+              {invoiceUrl && (
+                <TouchableOpacity
+                  onPress={() => downloadAndOpenDocument(invoiceUrl, "invoice")}
+                  className="flex-1 flex-row items-center justify-center gap-1 px-4 py-2 rounded-lg"
+                  style={{ backgroundColor: "#F3F4F6", minHeight: 36 }}
+                  activeOpacity={0.95}
+                >
+                  <Typography
+                    variant="body"
+                    weight="medium"
+                    className="text-gray-700"
+                    style={{ fontSize: 13 }}
+                  >
+                    Fatura
+                  </Typography>
+                  <Ionicons name="document-text-outline" size={16} color="#1F2937" />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 

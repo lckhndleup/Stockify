@@ -8,11 +8,30 @@ export default function Toast({
   visible,
   message,
   type = "error",
-  duration = 3000, // Süreyi 3 saniyeye çıkardık
+  duration, // Duration artık opsiyonel, type'a göre ayarlanacak
   onHide,
 }: ToastProps) {
   // Sadece opacity animasyonu kullan, translateY kaldırıldı
   const opacity = useRef(new Animated.Value(0)).current;
+
+  // Type'a göre default duration belirle
+  const getDefaultDuration = () => {
+    if (duration) return duration; // Manuel duration verilmişse onu kullan
+
+    switch (type) {
+      case "error":
+        return 4000; // Error mesajları 4 saniye
+      case "warning":
+        return 3500; // Warning mesajları 3.5 saniye
+      case "success":
+        return 3000; // Success mesajları 3 saniye
+      case "info":
+      default:
+        return 3000; // Info mesajları 3 saniye
+    }
+  };
+
+  const toastDuration = getDefaultDuration();
 
   const hideToast = useCallback(() => {
     // Sadece opacity animasyonu
@@ -42,20 +61,20 @@ export default function Toast({
       // Belirtilen süre sonra gizle
       timer = setTimeout(() => {
         hideToast();
-      }, duration);
+      }, toastDuration);
     }
 
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [visible, duration, hideToast, opacity]);
+  }, [visible, toastDuration, hideToast, opacity]);
 
   const getToastStyle = () => {
     switch (type) {
       case "success":
         return {
-          backgroundColor: "#10b981",
-          borderColor: "#059669",
+          backgroundColor: "#059669", // Daha koyu yeşil (tailwind green-600)
+          borderColor: "#047857", // Daha da koyu border (tailwind green-700)
           iconName: "check-circle",
           iconColor: "white",
         };
@@ -76,8 +95,8 @@ export default function Toast({
       case "error":
       default:
         return {
-          backgroundColor: "#ef4444",
-          borderColor: "#dc2626",
+          backgroundColor: "#E3001B", // stock-red - Ana kırmızı renk
+          borderColor: "#CC0018", // Daha koyu kırmızı border
           iconName: "error",
           iconColor: "white",
         };

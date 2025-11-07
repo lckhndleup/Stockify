@@ -36,7 +36,7 @@ const CustomHeaderLeft = ({
   }, [targetRoute, routeParams, onPress]);
 
   return (
-    <TouchableOpacity onPress={handlePress} style={{ marginLeft: -5 }} activeOpacity={0.7}>
+    <TouchableOpacity onPress={handlePress} style={{ marginLeft: -5 }} activeOpacity={0.95}>
       <Icon family="MaterialIcons" name={iconName as any} size={24} color={iconColor} />
     </TouchableOpacity>
   );

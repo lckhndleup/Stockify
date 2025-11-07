@@ -34,7 +34,7 @@ export default function Checkbox({
       onPress={handleToggle}
       disabled={disabled}
       className={`flex-row items-center ${className}`}
-      activeOpacity={0.7}
+      activeOpacity={0.95}
     >
       <View
         className={`border-2 rounded flex items-center justify-center ${

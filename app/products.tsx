@@ -103,7 +103,7 @@ function Dropdown({
               setIsOpen(!isOpen);
             }
           }}
-          activeOpacity={0.8}
+          activeOpacity={0.95}
         >
           <Typography
             variant="body"
@@ -140,7 +140,7 @@ function Dropdown({
                       setIsOpen(false);
                       onAddCategory();
                     }}
-                    activeOpacity={0.8}
+                    activeOpacity={0.95}
                   >
                     <View className="flex-row items-center">
                       <Icon
@@ -167,7 +167,7 @@ function Dropdown({
                     onSelect(option.value);
                     setIsOpen(false);
                   }}
-                  activeOpacity={0.8}
+                  activeOpacity={0.95}
                 >
                   <Typography
                     variant="body"
@@ -646,7 +646,7 @@ export default function ProductsPage() {
       headerRight: () => (
         <TouchableOpacity
           onPress={handleCategoryManagement}
-          activeOpacity={0.8}
+          activeOpacity={0.95}
           style={{
             width: 28,
             height: 28,
