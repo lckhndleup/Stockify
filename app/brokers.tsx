@@ -16,7 +16,6 @@ import {
   Input,
   Loading,
   SelectBox,
-  Tab,
   type SelectBoxOption,
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
@@ -44,6 +43,29 @@ const TARGET_DAY_OPTIONS: SelectBoxOption[] = [
   { label: "Cumartesi", value: "SATURDAY" },
   { label: "Pazar", value: "SUNDAY" },
 ];
+
+// Gün filtreleme seçenekleri
+const DAY_FILTER_OPTIONS = {
+  ALL: "ALL",
+  MONDAY: "MONDAY",
+  TUESDAY: "TUESDAY",
+  WEDNESDAY: "WEDNESDAY",
+  THURSDAY: "THURSDAY",
+  FRIDAY: "FRIDAY",
+  SATURDAY: "SATURDAY",
+  SUNDAY: "SUNDAY",
+} as const;
+
+const DAY_FILTER_LABELS = {
+  [DAY_FILTER_OPTIONS.ALL]: "Tümü",
+  [DAY_FILTER_OPTIONS.MONDAY]: "Pazartesi",
+  [DAY_FILTER_OPTIONS.TUESDAY]: "Salı",
+  [DAY_FILTER_OPTIONS.WEDNESDAY]: "Çarşamba",
+  [DAY_FILTER_OPTIONS.THURSDAY]: "Perşembe",
+  [DAY_FILTER_OPTIONS.FRIDAY]: "Cuma",
+  [DAY_FILTER_OPTIONS.SATURDAY]: "Cumartesi",
+  [DAY_FILTER_OPTIONS.SUNDAY]: "Pazar",
+} as const;
 
 function getTargetDayLabel(value: BrokerTargetDay | "") {
   return TARGET_DAY_OPTIONS.find((option) => option.value === value)?.label ?? value;
@@ -401,19 +423,41 @@ export default function BrokersPage() {
           </TouchableOpacity>
         </View>
 
-        {/* Gün Filtreleme Tabları - Sadece showFilters true ise göster */}
+        {/* Gün Filtreleme - Horizontal Scroll (Ekstre sayfası gibi) */}
         {showFilters && (
-          <Tab
-            tabs={[
-              { id: "ALL", label: "Tümü" },
-              ...TARGET_DAY_OPTIONS.map((day) => ({ id: day.value, label: day.label })),
-            ]}
-            activeTab={selectedDay}
-            onTabChange={(tabId) => setSelectedDay(tabId)}
-            variant="pills"
-            size="md"
-            className="mb-4"
-          />
+          <View className="bg-white pb-2">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, paddingHorizontal: 0 }}
+            >
+              {Object.entries(DAY_FILTER_LABELS).map(([key, label]) => {
+                const isSelected = selectedDay === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setSelectedDay(key)}
+                    className="px-5 py-2.5 rounded-lg"
+                    style={{
+                      backgroundColor: isSelected ? "#222222" : "#F4F7FB",
+                    }}
+                    activeOpacity={1.0}
+                  >
+                    <Typography
+                      variant="body"
+                      weight={isSelected ? "semibold" : "medium"}
+                      style={{
+                        color: isSelected ? "#FFFEFF" : "#73767A",
+                        fontSize: 13,
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
         )}
 
         {/* Rota Günlerine Göre Gruplandırılmış Aracılar */}
