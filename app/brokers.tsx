@@ -15,6 +15,7 @@ import {
   Input,
   Loading,
   SelectBox,
+  Tab,
   type SelectBoxOption,
 } from "@/src/components/ui";
 import Toast from "@/src/components/ui/toast";
@@ -49,6 +50,7 @@ function getTargetDayLabel(value: BrokerTargetDay | "") {
 
 export default function BrokersPage() {
   const [searchText, setSearchText] = useState("");
+  const [selectedDay, setSelectedDay] = useState<string>("ALL"); // Gün filtresi için state
 
   // Modal states
   const [isBrokerModalVisible, setIsBrokerModalVisible] = useState(false);
@@ -294,6 +296,32 @@ export default function BrokersPage() {
     `${broker.name} ${broker.surname}`.toLowerCase().includes(searchText.toLowerCase()),
   );
 
+  // Rota günlerine göre gruplandırma
+  const groupBrokersByTargetDay = () => {
+    const grouped: Record<string, BrokerDisplayItem[]> = {
+      MONDAY: [],
+      TUESDAY: [],
+      WEDNESDAY: [],
+      THURSDAY: [],
+      FRIDAY: [],
+      SATURDAY: [],
+      SUNDAY: [],
+      UNASSIGNED: [], // Rota günü olmayan aracılar
+    };
+
+    filteredBrokers.forEach((broker) => {
+      if (broker.targetDayOfWeek) {
+        grouped[broker.targetDayOfWeek].push(broker);
+      } else {
+        grouped.UNASSIGNED.push(broker);
+      }
+    });
+
+    return grouped;
+  };
+
+  const groupedBrokers = groupBrokersByTargetDay();
+
   // Loading state
   if (brokersLoading && !brokersError) {
     return (
@@ -353,35 +381,107 @@ export default function BrokersPage() {
           />
         </View>
 
-        {/* Aracı Grid Listesi */}
-        <View className="flex-row flex-wrap justify-between mb-10" style={{ gap: 10 }}>
-          {filteredBrokers.map((broker) => {
-            // Backend broker'ları için balance kullan
-            const totalDebt = broker.balance || 0;
-            // Tahsilat günü bilgisini al
-            const targetDay = broker.targetDayOfWeek
-              ? getTargetDayLabel(broker.targetDayOfWeek)
-              : "";
+        {/* Gün Filtreleme Tabları */}
+        <Tab
+          tabs={[
+            { id: "ALL", label: "Tümü" },
+            ...TARGET_DAY_OPTIONS.map((day) => ({ id: day.value, label: day.label })),
+          ]}
+          activeTab={selectedDay}
+          onTabChange={(tabId) => setSelectedDay(tabId)}
+          variant="pills"
+          size="sm"
+          className="mb-4"
+        />
 
-            return (
-              <SquareCard
-                key={broker.id}
-                title={`${broker.name} ${broker.surname}`}
-                subtitle="Mevcut Bakiye"
-                amount={`₺${totalDebt.toLocaleString()}`}
-                additionalInfo={targetDay ? `Rota günü: ${targetDay}` : undefined}
-                onPress={() =>
-                  router.push({
-                    pathname: "/broker/brokerDetail",
-                    params: { brokerId: broker.id },
-                  })
-                }
-                showDeleteIcon={false}
-                className="mb-2"
-              />
-            );
-          })}
-        </View>
+        {/* Rota Günlerine Göre Gruplandırılmış Aracılar */}
+        {TARGET_DAY_OPTIONS.map((dayOption) => {
+          const dayBrokers = groupedBrokers[dayOption.value as BrokerTargetDay];
+
+          // Gün filtresi aktifse ve seçili gün değilse gösterme
+          if (selectedDay !== "ALL" && selectedDay !== dayOption.value) return null;
+
+          if (!dayBrokers || dayBrokers.length === 0) return null;
+
+          return (
+            <View key={dayOption.value} className="mb-6">
+              {/* Gün Başlığı */}
+              <View className="flex-row items-center mb-3">
+                <View className="flex-1 h-[1px] bg-gray-200" />
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  className="text-stock-red mx-3"
+                  size="lg"
+                >
+                  {dayOption.label}
+                </Typography>
+                <View className="flex-1 h-[1px] bg-gray-200" />
+              </View>
+
+              {/* Aracı Grid Listesi */}
+              <View className="flex-row flex-wrap justify-between" style={{ gap: 10 }}>
+                {dayBrokers.map((broker) => {
+                  const totalDebt = broker.balance || 0;
+
+                  return (
+                    <SquareCard
+                      key={broker.id}
+                      title={`${broker.name} ${broker.surname}`}
+                      subtitle="Mevcut Bakiye"
+                      amount={`₺${totalDebt.toLocaleString()}`}
+                      additionalInfo={`Rota günü: ${dayOption.label}`}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/broker/brokerDetail",
+                          params: { brokerId: broker.id },
+                        })
+                      }
+                      showDeleteIcon={false}
+                      className="mb-2"
+                    />
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })}
+
+        {/* Rota Günü Atanmamış Aracılar */}
+        {selectedDay === "ALL" && groupedBrokers.UNASSIGNED.length > 0 && (
+          <View className="mb-6">
+            <View className="flex-row items-center mb-3">
+              <View className="flex-1 h-[1px] bg-gray-200" />
+              <Typography variant="body" weight="semibold" className="text-gray-500 mx-3" size="lg">
+                Rota Günü Belirlenmemiş
+              </Typography>
+              <View className="flex-1 h-[1px] bg-gray-200" />
+            </View>
+
+            <View className="flex-row flex-wrap justify-between" style={{ gap: 10 }}>
+              {groupedBrokers.UNASSIGNED.map((broker) => {
+                const totalDebt = broker.balance || 0;
+
+                return (
+                  <SquareCard
+                    key={broker.id}
+                    title={`${broker.name} ${broker.surname}`}
+                    subtitle="Mevcut Bakiye"
+                    amount={`₺${totalDebt.toLocaleString()}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/broker/brokerDetail",
+                        params: { brokerId: broker.id },
+                      })
+                    }
+                    showDeleteIcon={false}
+                    className="mb-2"
+                  />
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Boş durum */}
         {filteredBrokers.length === 0 && (
@@ -400,6 +500,9 @@ export default function BrokersPage() {
             </Typography>
           </View>
         )}
+
+        {/* Alt boşluk - Bottom Navigation için */}
+        <View className="h-24" />
       </ScrollView>
 
       {/* Aracı Ekleme Modal'ı */}
