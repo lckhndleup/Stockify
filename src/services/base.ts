@@ -109,7 +109,12 @@ axiosInstance.interceptors.response.use(
 
       // 401 Unauthorized - Force logout
       const endpoint = error.config?.url || "";
-      if (apiError.status === 401 && !endpoint.startsWith("/auth/logout") && !forcingLogout) {
+      if (
+        apiError.status === 401 &&
+        !endpoint.startsWith("/auth/logout") &&
+        !endpoint.startsWith("/auth/login") &&
+        !forcingLogout
+      ) {
         try {
           forcingLogout = true;
           await forceLogoutAndRedirect();

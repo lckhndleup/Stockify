@@ -9,6 +9,8 @@ export default function Toast({
   message,
   type = "error",
   duration, // Duration artık opsiyonel, type'a göre ayarlanacak
+  position = "top",
+  offset,
   onHide,
 }: ToastProps) {
   // Sadece opacity animasyonu kullan, translateY kaldırıldı
@@ -107,16 +109,27 @@ export default function Toast({
 
   if (!visible) return null;
 
+  const computedOffset = typeof offset === "number" ? offset : 10;
+
+  const containerStyle: Record<string, any> = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 10000,
+    elevation: 10000,
+  };
+
+  if (position === "bottom") {
+    containerStyle.bottom = computedOffset;
+  } else if (position === "center") {
+    containerStyle.top = "50%";
+    containerStyle.marginTop = -40; // Toast yüksekliğinin yarısı kadar yukarı kaydır
+  } else {
+    containerStyle.top = computedOffset;
+  }
+
   return (
-    <View
-      className="absolute top-0 left-0 right-0"
-      style={{
-        paddingTop: 10, // En üste yakın olsun
-        zIndex: 10000, // Z-index'i arttır
-        elevation: 10000, // Android için elevation değerini arttır
-        position: "absolute", // Pozisyonu sabit tut
-      }}
-    >
+    <View className="absolute left-0 right-0" style={containerStyle}>
       <Animated.View
         style={[
           {

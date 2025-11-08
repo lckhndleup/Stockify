@@ -1,63 +1,80 @@
 // app/login.tsx
-import React, { useState, useEffect } from "react";
-import { View, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import React, { useState } from "react";
+import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { router } from "expo-router";
 import BackgroundSvg from "@/src/components/svg/backgorundsvg";
 
 import { Container, Typography, Input, Button, Icon, Checkbox } from "@/src/components/ui";
-import Toast from "@/src/components/ui/toast";
-import { useToast } from "@/src/hooks/useToast";
 import { useAuthStore } from "@/src/stores/authStore";
+import { useAppStore } from "@/src/stores/appStore";
+import { loginFormSchema } from "@/src/validations/authValidation";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
 
-  const { login, isLoading, error, clearError } = useAuthStore();
-  const { toast, showError, hideToast } = useToast();
+  const { login, isLoading, clearError } = useAuthStore();
+  const { showGlobalToast, hideGlobalToast } = useAppStore();
 
-  // Error'ı toast olarak göster
-  useEffect(() => {
-    if (error) {
-      showError(error);
-      // Error'ı temizle
-      const timer = setTimeout(() => {
-        clearError();
-      }, 100);
-      return () => clearTimeout(timer);
+  const handleUsernameChange = (value: string) => {
+    if (errors.username) {
+      setErrors((prev) => ({ ...prev, username: undefined }));
     }
-  }, [error, showError, clearError]);
+    setUsername(value);
+  };
+
+  const handlePasswordChange = (value: string) => {
+    if (errors.password) {
+      setErrors((prev) => ({ ...prev, password: undefined }));
+    }
+    setPassword(value);
+  };
 
   const handleLogin = async () => {
-    // Error'ı temizle
     clearError();
+    hideGlobalToast();
 
-    // Validation
-    if (!username.trim()) {
-      Alert.alert("Hata", "Lütfen kullanıcı adınızı girin.");
+    const validation = loginFormSchema.safeParse({ username, password, rememberMe });
+
+    if (!validation.success) {
+      const { fieldErrors } = validation.error.flatten();
+      const firstMessage =
+        fieldErrors.username?.[0] || fieldErrors.password?.[0] || "Lütfen formu kontrol edin.";
+
+      setErrors({
+        username: fieldErrors.username?.[0],
+        password: fieldErrors.password?.[0],
+      });
+
+      showGlobalToast(firstMessage, "error");
       return;
     }
 
-    if (!password.trim()) {
-      Alert.alert("Hata", "Lütfen şifrenizi girin.");
-      return;
-    }
+    setErrors({});
 
-    if (password.length < 6) {
-      Alert.alert("Hata", "Şifre en az 6 karakter olmalıdır.");
-      return;
-    }
+    const {
+      username: validUsername,
+      password: validPassword,
+      rememberMe: rememberFlag,
+    } = validation.data;
 
-    // Login attempt
-    const success = await login(username, password, rememberMe);
+    setUsername(validUsername);
+
+    const success = await login(validUsername, validPassword, rememberFlag ?? rememberMe);
 
     if (success) {
-      // Direkt ana sayfaya yönlendir
+      hideGlobalToast();
       router.replace("/");
+      return;
     }
-    // Error handling artık store'da yapılıyor
+
+    const { error: authError } = useAuthStore.getState();
+    const errorMessage = authError || "Giriş başarısız.";
+    showGlobalToast(errorMessage, "error");
+    clearError();
   };
 
   return (
@@ -66,13 +83,7 @@ export default function LoginPage() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <Container className="bg-white" padding="none" safeTop={false}>
-        {/* Toast Notification */}
-        <Toast
-          visible={toast.visible}
-          message={toast.message}
-          type={toast.type}
-          onHide={hideToast}
-        />
+        {/* Toast Notification handled globally */}
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           {/* Background with Real SVG - Üst Kısım */}
@@ -114,11 +125,12 @@ export default function LoginPage() {
               <Input
                 label="Kullanıcı Adı"
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={handleUsernameChange}
                 placeholder="Kullanıcı adınızı girin"
                 variant="outlined"
                 autoCapitalize="none"
                 autoCorrect={false}
+                error={errors.username}
                 leftIcon={<Icon family="MaterialIcons" name="person" size={20} color="#6D706F" />}
                 className="mb-4"
               />
@@ -127,12 +139,13 @@ export default function LoginPage() {
               <Input
                 label="Şifre"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={handlePasswordChange}
                 placeholder="Şifrenizi girin"
                 variant="outlined"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
+                error={errors.password}
                 leftIcon={<Icon family="MaterialIcons" name="lock" size={20} color="#6D706F" />}
                 rightIcon={
                   <Icon

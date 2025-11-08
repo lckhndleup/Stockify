@@ -133,6 +133,7 @@ export interface ToastProps {
   onHide?: () => void;
   duration?: number;
   position?: "top" | "bottom" | "center";
+  offset?: number;
 }
 
 export interface LoadingProps {

@@ -10,12 +10,14 @@ enum LoginEndpoint {
 }
 
 const requestLogin = async (credentials: LoginRequest): Promise<LoginResponse> => {
-  const requestBody = JSON.stringify(credentials);
-  logger.debug("🔍 Login Request Body:", requestBody);
-  logger.debug("🔍 Login Request URL:", LoginEndpoint.LOGIN);
+  logger.debug("🔍 Login Request", {
+    url: LoginEndpoint.LOGIN,
+    username: credentials.username,
+    rememberMe: credentials.rememberMe ?? false,
+  });
   return request(LoginEndpoint.LOGIN, {
     method: "POST",
-    body: requestBody,
+    body: JSON.stringify(credentials),
   });
 };
 

@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { View, TouchableOpacity } from "react-native";
 import { router, usePathname } from "expo-router";
 import Providers from "@/src/components/common/Providers";
+import GlobalToast from "@/src/components/common/GlobalToast";
 import { setAuthStoreRef } from "@/src/services/authBridge";
 // Initialize i18n translations globally
 import "@/src/utils/i18n";
@@ -149,6 +150,7 @@ export default function RootLayout() {
   return (
     <Providers>
       <StatusBar style="auto" hidden={true} />
+      <GlobalToast />
       <View style={{ flex: 1 }}>
         <Stack
           screenOptions={{
