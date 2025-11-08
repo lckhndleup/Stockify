@@ -185,6 +185,7 @@ class ApiService {
         if (
           errorInfo.status === 401 &&
           !endpoint.startsWith("/auth/logout") &&
+          !endpoint.startsWith("/auth/login") &&
           !this.forcingLogout
         ) {
           try {

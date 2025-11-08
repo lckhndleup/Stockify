@@ -74,24 +74,24 @@ const middleware = persist<AuthStore>(
           return false;
         }
       } catch (error) {
-        logger.error("❌ Login error (handled quietly):", error);
+        logger.warn("❌ Login error (handled quietly):", error);
 
         const apiError = error as ApiError;
-        let errorMessage = "Giriş başarısız.";
+        let errorMessage = apiError.message || "Giriş başarısız.";
 
-        if (apiError.status === 401 || apiError.status === 500) {
+        if (apiError.status === 401) {
           if (
             apiError.message?.toLowerCase().includes("bad credentials") ||
             apiError.message?.toLowerCase().includes("unauthorized")
           ) {
             errorMessage = "Kullanıcı adı veya şifre hatalı.";
           } else {
-            errorMessage = "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.";
+            errorMessage = apiError.message || "Kimlik doğrulama sağlanamadı.";
           }
+        } else if (apiError.status === 500) {
+          errorMessage = apiError.message || "Sunucuda bir sorun oluştu.";
         } else if (apiError.status === 0) {
           errorMessage = "Sunucuya bağlanılamıyor. Lütfen Docker'ın çalıştığından emin olun.";
-        } else if (apiError.message) {
-          errorMessage = apiError.message;
         }
 
         logger.warn("💔 Login failed - showing user friendly message:", errorMessage);
