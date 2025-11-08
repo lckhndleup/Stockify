@@ -317,6 +317,17 @@ export default function RootLayout() {
               headerLeft: () => null,
             }}
           />
+
+          <Stack.Screen
+            name="broker/sections/collectionResult"
+            options={{
+              title: "Tahsilat Tamamlandı",
+              headerShown: true,
+              headerBackVisible: false,
+              gestureEnabled: false,
+              headerLeft: () => null,
+            }}
+          />
         </Stack>
 
         {/* ✅ Bottom Navigation */}

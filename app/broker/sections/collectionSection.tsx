@@ -1,7 +1,7 @@
-// app/broker/sections/confirmSales.tsx
+// app/broker/sections/collectionSection.tsx
 import React, { useState } from "react";
 import { View, ScrollView, Alert } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import {
   Container,
   Typography,
@@ -20,11 +20,17 @@ import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useCreatePayment } from "@/src/hooks/api/usePayments";
 
 // Payment types
-import { PaymentFormData, PAYMENT_TYPE_OPTIONS, PAYMENT_TYPE_LABELS } from "@/src/types/payment";
+import {
+  PaymentFormData,
+  PAYMENT_TYPE_OPTIONS,
+  PAYMENT_TYPE_LABELS,
+  type PaymentResponse,
+} from "@/src/types/payment";
 
 export default function CollectionSection() {
   // Hooks
   const { brokerId } = useLocalSearchParams();
+  const brokerIdParam = Array.isArray(brokerId) ? brokerId[0] : brokerId;
   const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Backend hooks
@@ -38,7 +44,7 @@ export default function CollectionSection() {
   const [amountError, setAmountError] = useState<string>("");
 
   // Broker bilgilerini al
-  const broker = brokers.find((b) => b.id === brokerId);
+  const broker = brokers.find((b) => String(b.id) === String(brokerIdParam));
 
   // Balance hesaplama - Backend'den gelen balance kullan
   const brokerBalance = broker ? broker.balance : 0;
@@ -110,18 +116,37 @@ export default function CollectionSection() {
               };
 
               logger.debug("🎯 Creating payment with backend:", {
-                brokerId,
+                brokerId: brokerIdParam,
                 paymentData,
               });
 
-              const result = await createPaymentMutation.mutateAsync({
-                brokerId: brokerId as string,
+              const result = (await createPaymentMutation.mutateAsync({
+                brokerId: String(brokerIdParam ?? ""),
                 paymentData,
-              });
+              })) as PaymentResponse;
 
               logger.debug("✅ Payment created successfully via backend:", result);
 
               showSuccess(`₺${amountValue.toLocaleString()} tutarında tahsilat başarıyla alındı!`);
+
+              const receiptUrl = result?.downloadUrl ?? "";
+              const previousBalance = brokerBalance;
+              const newBalance = Number((previousBalance - amountValue).toFixed(2));
+
+              router.replace({
+                pathname: "/broker/sections/collectionResult",
+                params: {
+                  brokerId: String(brokerIdParam ?? ""),
+                  amount: String(amountValue),
+                  paymentType,
+                  paymentTypeLabel,
+                  downloadUrl: receiptUrl,
+                  previousBalance: String(previousBalance),
+                  newBalance: String(newBalance),
+                  firstName: result?.firstName ?? broker?.name ?? "",
+                  lastName: result?.lastName ?? broker?.surname ?? "",
+                },
+              });
 
               // Formu sıfırla
               setPaymentType("");

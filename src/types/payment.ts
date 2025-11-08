@@ -5,7 +5,7 @@ export interface PaymentResponse {
   firstName: string;
   lastName: string;
   paymentPrice: number;
-  downloadURL: string;
+  downloadUrl: string;
 }
 
 // Payment save request body (swagger'a göre)

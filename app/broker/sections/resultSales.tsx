@@ -180,8 +180,8 @@ export default function ResultSales() {
   return (
     <Container className="bg-white" padding="sm" safeTop={false}>
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* ÜST BİLGİLER: ARACI ADI + YENİ BAKİYE */}
-        <View className="items-center mb-2">
+        {/* ÜST BİLGİLER: ARACI ADI */}
+        <View className="items-center mb-3">
           <Typography
             variant="h1"
             size="3xl"
@@ -192,35 +192,48 @@ export default function ResultSales() {
           </Typography>
         </View>
 
-        {/* BAŞARI/BAŞARISIZ GÖRSEL + BAŞLIK */}
-        <View className="items-center mt-3 mb-2">
-          {isSuccess ? (
-            <SuccessAnimation
-              ref={successAnimationRef}
-              size={80}
-              autoPlay
-              loop={true}
-              speed={1.2}
-            />
-          ) : (
+        {isSuccess ? (
+          <Card
+            variant="default"
+            padding="md"
+            radius="lg"
+            className="items-center border border-stock-border/60 bg-white shadow-sm mb-5"
+          >
+            <SuccessAnimation ref={successAnimationRef} size={90} autoPlay loop speed={1.1} />
+            <Typography
+              variant="h2"
+              weight="bold"
+              size="2xl"
+              className="text-green-600 text-center mt-2"
+            >
+              Satış Tamamlandı!
+            </Typography>
+            <Typography variant="caption" className="text-gray-600 text-center mt-2">
+              Satışınız başarıyla kaydedildi.
+            </Typography>
+          </Card>
+        ) : (
+          <Card
+            variant="default"
+            padding="md"
+            radius="lg"
+            className="items-center border border-red-200 bg-red-50 mb-5"
+          >
             <Icon
               family="MaterialIcons"
               name="error"
               size={64}
               color="#EF4444"
-              containerClassName="items-center"
+              containerClassName="mb-3"
             />
-          )}
-        </View>
-
-        <Typography
-          variant="h2"
-          weight="bold"
-          size="2xl"
-          className={`${isSuccess ? "text-green-600" : "text-red-600"} text-center mb-6`}
-        >
-          {isSuccess ? "SATIŞ TAMAMLANDI!" : "SATIŞ BAŞARISIZ!"}
-        </Typography>
+            <Typography variant="h2" weight="bold" size="2xl" className="text-red-600 text-center">
+              Satış Başarısız!
+            </Typography>
+            <Typography variant="caption" className="text-red-700 text-center mt-2">
+              Satış işlemi tamamlanamadı. Lütfen tekrar deneyin.
+            </Typography>
+          </Card>
+        )}
 
         {/* === TOPLAM KARTI (confirmSales ile birebir) === */}
         {isSuccess && (
@@ -278,44 +291,34 @@ export default function ResultSales() {
 
         {/* PDF / BELGE GÖRÜNTÜLE */}
         {isSuccess && (receiptUrl || invoiceUrl) && (
-          <View className="mb-8">
-            <View className="flex-row items-center justify-between gap-3">
+          <View className="mb-6">
+            <View className="flex-row gap-3">
               {receiptUrl && (
-                <TouchableOpacity
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="flex-1 bg-[#F3F4F6] border-none"
                   onPress={() => downloadAndOpenDocument(receiptUrl, "receipt")}
-                  className="flex-1 flex-row items-center justify-center gap-1 px-4 py-2 rounded-lg"
-                  style={{ backgroundColor: "#F3F4F6", minHeight: 36 }}
-                  activeOpacity={0.95}
+                  leftIcon={<Ionicons name="receipt-outline" size={18} color="#E3001B" />}
                 >
-                  <Typography
-                    variant="body"
-                    weight="medium"
-                    className="text-gray-700"
-                    style={{ fontSize: 13 }}
-                  >
+                  <Typography variant="body" className="text-gray-700" weight="medium">
                     Satış Fişi
                   </Typography>
-                  <Ionicons name="receipt-outline" size={16} color="#E3001B" />
-                </TouchableOpacity>
+                </Button>
               )}
 
               {invoiceUrl && (
-                <TouchableOpacity
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="flex-1 bg-[#F3F4F6] border-none"
                   onPress={() => downloadAndOpenDocument(invoiceUrl, "invoice")}
-                  className="flex-1 flex-row items-center justify-center gap-1 px-4 py-2 rounded-lg"
-                  style={{ backgroundColor: "#F3F4F6", minHeight: 36 }}
-                  activeOpacity={0.95}
+                  leftIcon={<Ionicons name="document-text-outline" size={18} color="#1F2937" />}
                 >
-                  <Typography
-                    variant="body"
-                    weight="medium"
-                    className="text-gray-700"
-                    style={{ fontSize: 13 }}
-                  >
+                  <Typography variant="body" className="text-gray-700" weight="medium">
                     Fatura
                   </Typography>
-                  <Ionicons name="document-text-outline" size={16} color="#1F2937" />
-                </TouchableOpacity>
+                </Button>
               )}
             </View>
           </View>
@@ -323,7 +326,7 @@ export default function ResultSales() {
 
         {/* FATURA OLUŞTURULDU bilgilendirme */}
         {isSuccess && willCreateInvoice && (
-          <View className="flex-row items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mb-8">
+          <View className="flex-row items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mb-6">
             <Icon
               family="MaterialIcons"
               name="info"
@@ -341,12 +344,11 @@ export default function ResultSales() {
         <View className="mb-10">
           {isSuccess ? (
             <>
-              {/* Ana Aksiyonlar - Yan Yana */}
-              <View className="flex-row gap-3 mb-3">
+              <View className="flex-row gap-3">
                 <TouchableOpacity
                   onPress={handleNewSale}
-                  className="flex-1 bg-stock-red rounded-xl px-4 py-4"
-                  style={{ minHeight: 72 }}
+                  className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-4"
+                  style={{ minHeight: 66 }}
                   activeOpacity={0.95}
                 >
                   <View className="items-center">
@@ -354,10 +356,10 @@ export default function ResultSales() {
                       family="MaterialIcons"
                       name="add-shopping-cart"
                       size={24}
-                      color="white"
+                      color="#1F2937"
                       containerClassName="mb-1"
                     />
-                    <Typography variant="body" className="text-white text-center" weight="semibold">
+                    <Typography variant="body" className="text-gray-900" weight="semibold">
                       Yeni Satış Yap
                     </Typography>
                   </View>
@@ -365,8 +367,8 @@ export default function ResultSales() {
 
                 <TouchableOpacity
                   onPress={handleGoToBrokerDetail}
-                  className="flex-1 bg-gray-800 rounded-xl px-4 py-4"
-                  style={{ minHeight: 72 }}
+                  className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-4"
+                  style={{ minHeight: 66 }}
                   activeOpacity={0.95}
                 >
                   <View className="items-center">
@@ -374,35 +376,26 @@ export default function ResultSales() {
                       family="MaterialIcons"
                       name="person"
                       size={24}
-                      color="white"
+                      color="#1F2937"
                       containerClassName="mb-1"
                     />
-                    <Typography variant="body" className="text-white text-center" weight="semibold">
-                      Aracı Detayı
+                    <Typography variant="body" className="text-gray-900" weight="semibold">
+                      Aracı Detayına Git
                     </Typography>
                   </View>
                 </TouchableOpacity>
               </View>
 
-              {/* İkincil Aksiyon - Tek Buton */}
-              <TouchableOpacity
+              <Button
+                variant="primary"
+                size="md"
+                fullWidth
+                className="mt-3 bg-stock-red"
                 onPress={handleGoToHome}
-                className="bg-white border-2 border-stock-red rounded-xl px-4 py-3"
-                activeOpacity={0.95}
+                leftIcon={<Icon family="MaterialIcons" name="home" size={20} color="white" />}
               >
-                <View className="flex-row items-center justify-center">
-                  <Icon
-                    family="MaterialIcons"
-                    name="home"
-                    size={20}
-                    color="#E3001B"
-                    containerClassName="mr-2"
-                  />
-                  <Typography variant="body" className="text-stock-red" weight="semibold">
-                    Ana Sayfaya Git
-                  </Typography>
-                </View>
-              </TouchableOpacity>
+                Ana Sayfaya Git
+              </Button>
             </>
           ) : (
             <Button
