@@ -200,7 +200,7 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
-            name="stock"
+            name="stock/index"
             options={{
               title: "Stok Takip",
               headerShown: true,

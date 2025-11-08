@@ -1,7 +1,7 @@
 // app/broker/brokerDetail.tsx
 
 import React, { useState, useEffect } from "react";
-import { ScrollView, View, Alert } from "react-native";
+import { ScrollView, View, Alert, Dimensions } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import logger from "@/src/utils/logger";
 
@@ -545,87 +545,87 @@ export default function BrokerDetailPage() {
         size="lg"
         className="bg-white mx-6"
       >
-        <View>
-          <Input
-            label="Ad"
-            value={brokerName}
-            onChangeText={setBrokerName}
-            placeholder="Aracının adını girin..."
-            variant="outlined"
-            className="mb-4"
-            error={validationErrors.firstName}
-          />
+        <View className="fle-1 " style={{ maxHeight: Dimensions.get("window").height * 0.8 }}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Input
+              label="Ad"
+              value={brokerName}
+              onChangeText={setBrokerName}
+              placeholder="Aracının adını girin..."
+              variant="outlined"
+              className="mb-4"
+              error={validationErrors.firstName}
+            />
 
-          <Input
-            label="Soyad"
-            value={brokerSurname}
-            onChangeText={setBrokerSurname}
-            placeholder="Aracının soyadını girin..."
-            variant="outlined"
-            className="mb-4"
-            error={validationErrors.lastName}
-          />
+            <Input
+              label="Soyad"
+              value={brokerSurname}
+              onChangeText={setBrokerSurname}
+              placeholder="Aracının soyadını girin..."
+              variant="outlined"
+              className="mb-4"
+              error={validationErrors.lastName}
+            />
 
-          <Input
-            label="İskonto Oranı (%)"
-            value={brokerDiscount}
-            onChangeText={setBrokerDiscount}
-            placeholder="0-100 arası değer"
-            variant="outlined"
-            numericOnly={true}
-            className="mb-4"
-            error={validationErrors.discountRate}
-            helperText="İskonto oranını % cinsinden girin (örn: 20)"
-          />
+            <Input
+              label="İskonto Oranı (%)"
+              value={brokerDiscount}
+              onChangeText={setBrokerDiscount}
+              placeholder="0-100 arası değer"
+              variant="outlined"
+              numericOnly={true}
+              className="mb-4"
+              error={validationErrors.discountRate}
+              // helperText="İskonto oranını % cinsinden girin (örn: 20)"
+            />
 
-          <Input
-            label="E-posta"
-            value={brokerEmail}
-            onChangeText={setBrokerEmail}
-            placeholder="ornek@domain.com"
-            variant="outlined"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            className="mb-4"
-            error={validationErrors.email}
-          />
+            <Input
+              label="E-posta"
+              value={brokerEmail}
+              onChangeText={setBrokerEmail}
+              placeholder="ornek@domain.com"
+              variant="outlined"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              className="mb-4"
+              error={validationErrors.email}
+            />
 
-          <Input
-            label="VKN"
-            value={brokerVkn}
-            onChangeText={setBrokerVkn}
-            placeholder="10-11 haneli vergi kimlik no"
-            variant="outlined"
-            numericOnly={true}
-            className="mb-4"
-            error={validationErrors.vkn}
-          />
+            <Input
+              label="VKN"
+              value={brokerVkn}
+              onChangeText={setBrokerVkn}
+              placeholder="10-11 haneli vergi kimlik no"
+              variant="outlined"
+              numericOnly={true}
+              className="mb-4"
+              error={validationErrors.vkn}
+            />
 
-          <Input
-            label="TKN"
-            value={brokerTkn}
-            onChangeText={setBrokerTkn}
-            placeholder="Aracının TKN bilgisini girin..."
-            variant="outlined"
-            className="mb-4"
-            error={validationErrors.tkn}
-          />
+            <Input
+              label="TKN"
+              value={brokerTkn}
+              onChangeText={setBrokerTkn}
+              placeholder="Aracının TKN bilgisini girin..."
+              variant="outlined"
+              className="mb-4"
+              error={validationErrors.tkn}
+            />
 
-          <SelectBox
-            label="Tahsilat Günü"
-            value={brokerTargetDay || ""}
-            onSelect={(value) => setBrokerTargetDay(value as BrokerTargetDay)}
-            options={TARGET_DAY_OPTIONS}
-            placeholder="Tahsilat günü seçiniz"
-            className="mb-4"
-            error={validationErrors.targetDayOfWeek}
-          />
-
-          <View className="mt-6">
+            <SelectBox
+              label="Tahsilat Günü"
+              value={brokerTargetDay || ""}
+              onSelect={(value) => setBrokerTargetDay(value as BrokerTargetDay)}
+              options={TARGET_DAY_OPTIONS}
+              placeholder="Tahsilat günü seçiniz"
+              className="mb-4"
+              error={validationErrors.targetDayOfWeek}
+            />
+          </ScrollView>
+          <View className="mt-6 flex-row" style={{ gap: 12 }}>
             <Button
               variant="primary"
-              fullWidth
-              className="bg-stock-red mb-3"
+              className="bg-stock-red flex-1"
               onPress={handleUpdateBroker}
               loading={updateBrokerMutation.isPending || updateDiscountRateMutation.isPending}
               disabled={updateBrokerMutation.isPending || updateDiscountRateMutation.isPending}
@@ -638,8 +638,7 @@ export default function BrokerDetailPage() {
             </Button>
             <Button
               variant="outline"
-              fullWidth
-              className="border-stock-border"
+              className="border-stock-border flex-1"
               onPress={handleCloseEditBrokerModal}
               disabled={updateBrokerMutation.isPending || updateDiscountRateMutation.isPending}
             >
