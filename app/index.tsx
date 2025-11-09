@@ -2,7 +2,6 @@
 import React, { useEffect } from "react";
 import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-
 import { Container, Typography } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
 
