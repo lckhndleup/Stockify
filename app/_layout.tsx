@@ -21,6 +21,7 @@ const CustomHeaderLeft = ({
   routeParams = {},
   iconName = "arrow-back",
   iconColor = "#000",
+  isGoBack = false,
   onPress,
 }: CustomHeaderLeftProps) => {
   const handlePress = useCallback(() => {
@@ -29,7 +30,10 @@ const CustomHeaderLeft = ({
       return;
     }
 
-    if (Object.keys(routeParams).length > 0) {
+    if (isGoBack && router.canGoBack()) {
+      router.back();
+      return;
+    } else if (Object.keys(routeParams).length > 0) {
       router.push({ pathname: targetRoute as any, params: routeParams });
     } else {
       router.push(targetRoute as any);
@@ -99,32 +103,13 @@ export default function RootLayout() {
     }
   }, [isNavigationReady, initializeAuth]);
 
-  // ✅ Auth kontrolü - Route değişikliklerinde
-  useEffect(() => {
-    if (!isNavigationReady) return;
-
-    const isDevMode = process.env.NODE_ENV === "development";
-    if (isDevMode) {
-      logger.debug("🔍 Auth check:", {
-        pathname,
-        isAuthenticated,
-        shouldRedirect: pathname !== "/login" && !isAuthenticated,
-      });
-    }
-
-    // Login sayfasındaysa hiçbir şey yapma
-    if (pathname === "/login") return;
-
-    // Eğer giriş yapmamışsa login sayfasına yönlendir
-    if (!isAuthenticated) {
-      if (isDevMode) logger.debug("🔄 Redirecting to login...");
-      router.replace("/login");
-    }
-  }, [isAuthenticated, pathname, isNavigationReady]);
-
   // ✅ Bottom navigation visibility logic
   const shouldShowBottomNav = useMemo(
-    () => isAuthenticated && pathname !== "/login" && !pathname.includes("/broker/sections/"),
+    () =>
+      isAuthenticated &&
+      pathname !== "/login" &&
+      pathname !== "/" &&
+      !pathname.includes("/broker/sections/"),
     [isAuthenticated, pathname],
   );
 
@@ -141,7 +126,10 @@ export default function RootLayout() {
   // ✅ Memoized header components - Performance optimization
   const brokerDetailHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/brokers" />, []);
 
-  const homeHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/" />, []);
+  const homeHeaderLeft = useCallback(
+    () => <CustomHeaderLeft targetRoute="/dashboard" isGoBack />,
+    [],
+  );
 
   const productsHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/products" />, []);
 
@@ -163,6 +151,14 @@ export default function RootLayout() {
             },
           }}
         >
+          {/* Splash Screens */}
+          <Stack.Screen
+            name="index"
+            options={{
+              headerShown: false,
+            }}
+          />
+
           {/* Auth Screens */}
           <Stack.Screen
             name="login"
@@ -174,7 +170,7 @@ export default function RootLayout() {
 
           {/* Main Screens */}
           <Stack.Screen
-            name="index"
+            name="dashboard"
             options={{
               title: "Envantra",
               headerShown: false,

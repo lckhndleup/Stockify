@@ -10,10 +10,11 @@ export interface CustomHeaderLeftProps {
   routeParams?: RouteParams;
   iconName?: string;
   iconColor?: string;
+  isGoBack?: boolean;
   onPress?: () => void;
 }
 
-export type AppRoute = "/" | "/stock" | "/brokers" | "/products";
+export type AppRoute = "/dashboard" | "/stock" | "/brokers" | "/products";
 
 export interface NavigationItem {
   icon: {

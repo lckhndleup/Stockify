@@ -143,7 +143,9 @@ export default function ResultSales() {
   // Aksiyonlar
   const handleGoToBrokerDetail = () =>
     router.replace({ pathname: "/broker/brokerDetail", params: { brokerId } });
-  const handleGoToHome = () => router.replace("/");
+  const handleGoToHome = () => {
+    router.replace("/dashboard");
+  };
   const handleNewSale = () =>
     router.replace({
       pathname: "/broker/sections/salesSection",

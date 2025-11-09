@@ -114,7 +114,9 @@ export default function CollectionResult() {
     });
   };
 
-  const handleGoHome = () => router.replace("/");
+  const handleGoHome = () => {
+    router.replace("/dashboard");
+  };
 
   logger.debug("🧾 CollectionResult params:", {
     brokerIdParam,

@@ -67,7 +67,7 @@ export default function LoginPage() {
 
     if (success) {
       hideGlobalToast();
-      router.replace("/");
+      router.replace("/dashboard");
       return;
     }
 

@@ -11,7 +11,7 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
     {
       icon: { family: "MaterialCommunityIcons", name: "home" },
       label: "Ana Sayfa",
-      path: "/",
+      path: "/dashboard",
     },
     {
       icon: { family: "MaterialCommunityIcons", name: "chart-line" },

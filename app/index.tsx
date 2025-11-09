@@ -1,201 +1,32 @@
 // app/index.tsx
-import React from "react";
-import { ScrollView, View, Alert } from "react-native";
+import React, { useEffect } from "react";
+import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 
-import { Container, Typography, Card, Icon } from "@/src/components/ui";
-import Toast from "@/src/components/ui/toast";
-import { useToast } from "@/src/hooks/useToast";
+import { Container, Typography } from "@/src/components/ui";
 import { useAuthStore } from "@/src/stores/authStore";
-import logger from "@/src/utils/logger";
 
 export default function HomePage() {
-  const { user, logout } = useAuthStore();
-  const { toast, hideToast } = useToast();
+  const authStore = useAuthStore();
+  const { isAuthenticated } = authStore;
 
-  const handleLogout = () => {
-    Alert.alert("Çıkış Yap", "Hesabınızdan çıkış yapmak istediğinizden emin misiniz?", [
-      { text: "İptal", style: "cancel" },
-      {
-        text: "Çıkış Yap",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            logger.debug("🔄 Starting logout process...");
-            await logout();
-            router.replace("/login");
-          } catch (error) {
-            logger.error("❌ Logout error:", error);
-            router.replace("/login");
-            Alert.alert(
-              "Uyarı",
-              "Çıkış yaparken bir sorun oluştu, ancak oturumunuz sonlandırıldı.",
-            );
-          }
-        },
-      },
-    ]);
-  };
-
-  const handleProducts = () => {
-    router.push("/products");
-  };
-
-  const handleBrokers = () => {
-    router.push("/brokers");
-  };
-
-  const handleStock = () => {
-    router.push("/stock");
-  };
+  // ✅ Auth kontrolü - Route değişikliklerinde
+  useEffect(() => {
+    setTimeout(() => {
+      if (!isAuthenticated) {
+        router.replace("/login");
+      } else {
+        router.replace("/dashboard");
+      }
+    }, 1000);
+  }, []);
 
   return (
-    <Container className="bg-white" padding="sm">
-      {/* Toast Notification */}
-      <Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={hideToast} />
-
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header with User Info and Logout */}
-        <View className="flex-row items-start justify-between mb-4 mt-1">
-          <View className="flex-1">
-            <Typography variant="h1" weight="bold" size="xl" className="text-stock-red">
-              Envantra
-            </Typography>
-            {user && (
-              <Typography variant="caption" className="text-stock-text mt-1">
-                Hoş geldin, {user.username}!
-              </Typography>
-            )}
-          </View>
-
-          {/* Logout Button */}
-          <View className="flex-row items-center">
-            <Icon
-              family="MaterialIcons"
-              name="logout"
-              size={20}
-              color="#E3001B"
-              pressable
-              onPress={handleLogout}
-              containerClassName="p-1 mt-1"
-            />
-          </View>
-        </View>
-
-        {/* Ana Menü Kartları */}
-        <View>
-          {/* ÜRÜN Kartı */}
-          <Card
-            variant="default"
-            padding="none"
-            pressable
-            onPress={handleProducts}
-            className="bg-stock-red border-0 px-4 py-4 mb-3"
-            radius="md"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1">
-                <View className="mr-4">
-                  <Icon
-                    family="MaterialCommunityIcons"
-                    name="package-variant"
-                    size={22}
-                    color="#FFFEFF"
-                  />
-                </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    ÜRÜN
-                  </Typography>
-                  <Typography variant="caption" size="sm" className="text-stock-white/80">
-                    Kuruyemiş ürünlerinizi yönetin
-                  </Typography>
-                </View>
-              </View>
-              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
-            </View>
-          </Card>
-
-          {/* ARACILAR Kartı */}
-          <Card
-            variant="default"
-            padding="none"
-            pressable
-            onPress={handleBrokers}
-            className="bg-stock-red border-0 px-4 py-4 mb-3"
-            radius="md"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1">
-                <View className="mr-4">
-                  <Icon
-                    family="MaterialCommunityIcons"
-                    name="account-group"
-                    size={22}
-                    color="#FFFEFF"
-                  />
-                </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    ARACILAR
-                  </Typography>
-                  <Typography variant="caption" size="sm" className="text-stock-white/80">
-                    Aracı ve tedarikçi bilgileri
-                  </Typography>
-                </View>
-              </View>
-              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
-            </View>
-          </Card>
-
-          {/* STOK TAKİP Kartı */}
-          <Card
-            variant="default"
-            padding="none"
-            pressable
-            onPress={handleStock}
-            className="bg-stock-red border-0 px-4 py-4"
-            radius="md"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1">
-                <View className="mr-4">
-                  <Icon
-                    family="MaterialCommunityIcons"
-                    name="chart-line"
-                    size={22}
-                    color="#FFFEFF"
-                  />
-                </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="body"
-                    weight="semibold"
-                    size="lg"
-                    className="text-stock-white mb-1"
-                  >
-                    STOK TAKİP
-                  </Typography>
-                  <Typography variant="caption" size="sm" className="text-stock-white/80">
-                    Stok durumu ve raporlar
-                  </Typography>
-                </View>
-              </View>
-              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
-            </View>
-          </Card>
-        </View>
-      </ScrollView>
+    <Container className="bg-stock-red justify-center items-center" padding="sm">
+      <Typography variant="h1" weight="bold" size="xl" className="text-stock-white">
+        Envantra
+      </Typography>
+      <ActivityIndicator size="large" color="#FFFFFF" className="my-4" />
     </Container>
   );
 }
