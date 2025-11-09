@@ -8,6 +8,7 @@ import {
   Platform,
   UIManager,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 
@@ -600,7 +601,24 @@ export default function StockPage() {
                 <SearchBar placeholder="Ürün ara..." onSearch={handleSearch} />
               </View>
               <TouchableOpacity
-                onPress={() => setIsAddProductModalOpen(true)}
+                onPress={() => {
+                  if (categories.length === 0) {
+                    Alert.alert(
+                      "Kategori Gerekli",
+                      "Ürün eklemek için önce kategori eklemelisiniz. Kategori ekleme sayfasına gitmek ister misiniz?",
+                      [
+                        { text: "İptal", style: "cancel" },
+                        {
+                          text: "Kategori Yönetimi",
+                          onPress: () => router.push("/categories"),
+                        },
+                      ],
+                    );
+                    return;
+                  } else {
+                    setIsAddProductModalOpen(true);
+                  }
+                }}
                 style={{
                   backgroundColor: "#DC2626",
                   borderRadius: 12,
@@ -759,20 +777,6 @@ export default function StockPage() {
         title="Yeni Ürün Ekle"
       >
         <View style={{ gap: 16 }}>
-          {/* Ürün Adı */}
-          <View>
-            <Typography variant="body" weight="medium" className="mb-2">
-              Ürün Adı *
-            </Typography>
-            <Input
-              value={newProductName}
-              onChangeText={setNewProductName}
-              placeholder="Ürün adını giriniz"
-              variant="outlined"
-              fullWidth
-            />
-          </View>
-
           {/* Kategori Seçimi */}
           <View>
             <Typography variant="body" weight="medium" className="mb-2">
@@ -786,6 +790,46 @@ export default function StockPage() {
               value={selectedCategoryId}
               onSelect={setSelectedCategoryId}
               placeholder="Kategori seçiniz"
+            />
+
+            {/* Yeni Kategori Ekle */}
+            <TouchableOpacity
+              onPress={() => {
+                router.push("/categories");
+                setIsAddProductModalOpen(false);
+              }}
+              style={{
+                marginTop: 12,
+                padding: 12,
+                backgroundColor: "#F3F4F6",
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderStyle: "dashed",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <Icon family="Feather" name="plus-circle" size={18} color="#6B7280" />
+              <Typography variant="body" weight="medium" style={{ color: "#6B7280" }}>
+                Yeni Kategori Ekle
+              </Typography>
+            </TouchableOpacity>
+          </View>
+
+          {/* Ürün Adı */}
+          <View>
+            <Typography variant="body" weight="medium" className="mb-2">
+              Ürün Adı *
+            </Typography>
+            <Input
+              value={newProductName}
+              onChangeText={setNewProductName}
+              placeholder="Ürün adını giriniz"
+              variant="outlined"
+              fullWidth
             />
           </View>
 

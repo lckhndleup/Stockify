@@ -131,7 +131,10 @@ export default function RootLayout() {
     [],
   );
 
-  const productsHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/products" />, []);
+  const productsHeaderLeft = useCallback(
+    () => <CustomHeaderLeft targetRoute="/products" isGoBack />,
+    [],
+  );
 
   const stockHeaderLeft = useCallback(() => <CustomHeaderLeft targetRoute="/stock" />, []);
 
