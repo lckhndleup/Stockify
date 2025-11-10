@@ -383,9 +383,9 @@ export default function BrokersPage() {
 
       {/* Backend Error Bilgilendirme */}
       {brokersError && (
-        <View className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md">
-          <Typography variant="body" className="text-yellow-800 text-center">
-            ⚠️ Backend bağlantı hatası - Veriler yüklenemedi
+        <View className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <Typography variant="body" className="text-red-700 text-center">
+            ⚠️ Veriler yüklenemedi
           </Typography>
         </View>
       )}
@@ -398,34 +398,42 @@ export default function BrokersPage() {
           {/* Filter Button */}
           <TouchableOpacity
             onPress={() => setShowFilters(!showFilters)}
-            className="rounded-lg items-center justify-center mr-2"
             style={{
-              backgroundColor: showFilters ? "#E3001B" : "#222222",
+              backgroundColor: showFilters ? "#DC2626" : "#F9FAFB",
               width: 48,
               height: 48,
+              borderRadius: 8,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 8,
+              borderWidth: 1,
+              borderColor: showFilters ? "#DC2626" : "#E5E7EB",
             }}
-            activeOpacity={0.95}
+            activeOpacity={0.7}
           >
-            <Ionicons name="options" size={22} color="#FFFEFF" />
+            <Ionicons name="options" size={20} color={showFilters ? "#FFFFFF" : "#6B7280"} />
           </TouchableOpacity>
 
           {/* Add Button */}
           <TouchableOpacity
             onPress={handleAddBroker}
-            className="bg-gray-100 rounded-lg items-center justify-center"
             style={{
+              backgroundColor: "#DC2626",
               width: 48,
               height: 48,
+              borderRadius: 8,
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            activeOpacity={0.95}
+            activeOpacity={0.7}
           >
-            <Icon family="MaterialIcons" name="add" size={28} color="#E3001B" />
+            <Icon family="MaterialIcons" name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
-        {/* Gün Filtreleme - Horizontal Scroll (Ekstre sayfası gibi) */}
+        {/* Gün Filtreleme - Horizontal Scroll */}
         {showFilters && (
-          <View className="bg-white pb-2">
+          <View className="bg-white pb-3 mb-2">
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -437,17 +445,21 @@ export default function BrokersPage() {
                   <TouchableOpacity
                     key={key}
                     onPress={() => setSelectedDay(key)}
-                    className="px-5 py-2.5 rounded-lg"
                     style={{
-                      backgroundColor: isSelected ? "#222222" : "#F4F7FB",
+                      backgroundColor: isSelected ? "#DC2626" : "#FFFFFF",
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 6,
+                      borderWidth: 1,
+                      borderColor: isSelected ? "#DC2626" : "#E5E7EB",
                     }}
-                    activeOpacity={1.0}
+                    activeOpacity={0.7}
                   >
                     <Typography
                       variant="body"
-                      weight={isSelected ? "semibold" : "medium"}
+                      weight="semibold"
                       style={{
-                        color: isSelected ? "#FFFEFF" : "#73767A",
+                        color: isSelected ? "#FFFFFF" : "#6B7280",
                         fontSize: 13,
                       }}
                     >
@@ -492,16 +504,27 @@ export default function BrokersPage() {
             <View key={dayOption.value} className="mb-6">
               {/* Gün Başlığı */}
               <View className="flex-row items-center mb-3">
-                <View className="flex-1 h-[1px] bg-gray-200" />
+                <View
+                  style={{
+                    flex: 1,
+                    height: 1,
+                    backgroundColor: "#F3F4F6",
+                  }}
+                />
                 <Typography
                   variant="body"
                   weight="semibold"
-                  className="text-stock-red mx-3"
-                  size="lg"
+                  style={{ color: "#111827", marginHorizontal: 12, fontSize: 16 }}
                 >
                   {dayOption.label}
                 </Typography>
-                <View className="flex-1 h-[1px] bg-gray-200" />
+                <View
+                  style={{
+                    flex: 1,
+                    height: 1,
+                    backgroundColor: "#F3F4F6",
+                  }}
+                />
               </View>
 
               {/* Aracı Grid Listesi */}
@@ -536,11 +559,27 @@ export default function BrokersPage() {
         {selectedDay === "ALL" && groupedBrokers.UNASSIGNED.length > 0 && (
           <View className="mb-6">
             <View className="flex-row items-center mb-3">
-              <View className="flex-1 h-[1px] bg-gray-200" />
-              <Typography variant="body" weight="semibold" className="text-gray-500 mx-3" size="lg">
+              <View
+                style={{
+                  flex: 1,
+                  height: 1,
+                  backgroundColor: "#F3F4F6",
+                }}
+              />
+              <Typography
+                variant="body"
+                weight="semibold"
+                style={{ color: "#6B7280", marginHorizontal: 12, fontSize: 16 }}
+              >
                 Rota Günü Belirlenmemiş
               </Typography>
-              <View className="flex-1 h-[1px] bg-gray-200" />
+              <View
+                style={{
+                  flex: 1,
+                  height: 1,
+                  backgroundColor: "#F3F4F6",
+                }}
+              />
             </View>
 
             <View className="flex-row flex-wrap justify-between" style={{ gap: 10 }}>
@@ -575,10 +614,10 @@ export default function BrokersPage() {
               family="MaterialCommunityIcons"
               name="account-group-outline"
               size={64}
-              color="#ECECEC"
+              color="#E5E7EB"
               containerClassName="mb-4"
             />
-            <Typography variant="body" className="text-stock-text text-center">
+            <Typography variant="body" className="text-gray-500 text-center">
               {searchText.trim()
                 ? "Arama kriterinize uygun aracı bulunamadı."
                 : "Henüz aracı eklenmemiş."}
