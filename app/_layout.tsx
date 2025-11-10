@@ -173,7 +173,7 @@ export default function RootLayout() {
 
           {/* Main Screens */}
           <Stack.Screen
-            name="dashboard"
+            name="dashboard/index"
             options={{
               title: "Envantra",
               headerShown: false,
