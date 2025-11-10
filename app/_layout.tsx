@@ -38,7 +38,7 @@ const CustomHeaderLeft = ({
     } else {
       router.push(targetRoute as any);
     }
-  }, [targetRoute, routeParams, onPress]);
+  }, [targetRoute, routeParams, onPress, isGoBack]);
 
   return (
     <TouchableOpacity onPress={handlePress} style={{ marginLeft: -5 }} activeOpacity={0.95}>
@@ -193,6 +193,15 @@ export default function RootLayout() {
             name="brokers"
             options={{
               title: "Aracılar",
+              headerShown: true,
+              headerLeft: homeHeaderLeft,
+            }}
+          />
+
+          <Stack.Screen
+            name="profile/index"
+            options={{
+              title: "Profil",
               headerShown: true,
               headerLeft: homeHeaderLeft,
             }}

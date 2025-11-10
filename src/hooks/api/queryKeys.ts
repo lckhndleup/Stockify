@@ -7,6 +7,12 @@ export const queryKeys = {
     profile: () => [...queryKeys.auth.all, "profile"] as const,
   },
 
+  // Profile related
+  profile: {
+    all: ["profile"] as const,
+    detail: () => [...queryKeys.profile.all, "detail"] as const,
+  },
+
   // Product related
   products: {
     all: ["products"] as const,

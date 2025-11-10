@@ -33,6 +33,14 @@ import type {
   SalesProductsResponse,
   SalesSummary,
 } from "@/src/types/sales";
+import type {
+  ProfileResponse,
+  ProfileUpdateRequest,
+  PasswordChangeRequest,
+  PasswordChangeResponse,
+  AccountDeleteRequest,
+  AccountDeleteResponse,
+} from "@/src/types/profile";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
 import Constants from "expo-constants";
@@ -978,6 +986,156 @@ class ApiService {
     }
   }
 
+  // -------------------- Profile (ProfileController) --------------------
+  /** GET /profile - Get current user profile */
+  async getProfile(): Promise<ProfileResponse> {
+    try {
+      logger.debug("👤 API: Fetching user profile...");
+
+      const result = await this.request<ProfileResponse>("/profile/detail", {
+        method: "GET",
+      });
+
+      logger.debug("✅ API: Profile fetched:", result ? Object.keys(result) : "null");
+      return result;
+    } catch (error) {
+      logger.error("👤 API: Profile fetch error:", error);
+      throw error;
+    }
+  }
+
+  /** PUT /profile/update - Update user profile */
+  async updateProfile(profileData: ProfileUpdateRequest): Promise<ProfileResponse> {
+    try {
+      logger.debug("👤 API: Updating profile:", profileData);
+
+      const result = await this.request<ProfileResponse>("/profile/update", {
+        method: "PUT",
+        body: JSON.stringify(profileData),
+      });
+
+      logger.debug("✅ API: Profile updated:", result ? Object.keys(result) : "null");
+      return result;
+    } catch (error) {
+      logger.error("👤 API: Profile update error:", error);
+      throw error;
+    }
+  }
+
+  /** PUT /profile/change-password - Change user password */
+  async changePassword(passwordData: PasswordChangeRequest): Promise<PasswordChangeResponse> {
+    try {
+      logger.debug("🔐 API: Changing password...");
+
+      const result = await this.request<PasswordChangeResponse>("/profile/change-password", {
+        method: "PUT",
+        body: JSON.stringify(passwordData),
+      });
+
+      logger.debug("✅ API: Password changed successfully");
+      return result;
+    } catch (error) {
+      logger.error("🔐 API: Password change error:", error);
+      throw error;
+    }
+  }
+
+  /** DELETE /profile/delete - Delete user account */
+  async deleteAccount(deleteData: AccountDeleteRequest): Promise<AccountDeleteResponse> {
+    try {
+      logger.debug("🗑️ API: Deleting account...");
+
+      const result = await this.request<AccountDeleteResponse>("/profile/delete", {
+        method: "DELETE",
+        body: JSON.stringify(deleteData),
+      });
+
+      logger.debug("✅ API: Account deleted successfully");
+      return result;
+    } catch (error) {
+      logger.error("🗑️ API: Account delete error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /profile/upload/profile-image - Upload profile image */
+  async uploadProfileImage(imageFile: any): Promise<ProfileResponse> {
+    try {
+      logger.debug("📸 API: Uploading profile image...");
+
+      const formData = new FormData();
+
+      // React Native FormData format
+      formData.append("file", {
+        uri: imageFile.uri,
+        type: imageFile.type || "image/jpeg",
+        name: imageFile.fileName || "profile.jpg",
+      } as any);
+
+      const response = await fetch(`${this.baseURL}/profile/upload/profile-image`, {
+        method: "POST",
+        headers: {
+          ...this.getAuthHeaders(),
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw {
+          message: "Profil fotoğrafı yüklenemedi",
+          status: response.status,
+        } as ApiError;
+      }
+
+      const result = await response.json();
+      logger.debug("✅ API: Profile image uploaded successfully");
+      return result;
+    } catch (error) {
+      logger.error("📸 API: Profile image upload error:", error);
+      throw error;
+    }
+  }
+
+  /** POST /profile/upload/company-logo - Upload company logo */
+  async uploadCompanyLogo(imageFile: any): Promise<ProfileResponse> {
+    try {
+      logger.debug("🏢 API: Uploading company logo...");
+
+      const formData = new FormData();
+
+      // React Native FormData format
+      formData.append("file", {
+        uri: imageFile.uri,
+        type: imageFile.type || "image/jpeg",
+        name: imageFile.fileName || "logo.jpg",
+      } as any);
+
+      const response = await fetch(`${this.baseURL}/profile/upload/company-logo`, {
+        method: "POST",
+        headers: {
+          ...this.getAuthHeaders(),
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw {
+          message: "Şirket logosu yüklenemedi",
+          status: response.status,
+        } as ApiError;
+      }
+
+      const result = await response.json();
+      logger.debug("✅ API: Company logo uploaded successfully");
+      return result;
+    } catch (error) {
+      logger.error("🏢 API: Company logo upload error:", error);
+      throw error;
+    }
+  }
+
   // Return headers that include Authorization if token exists
   getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {};
@@ -985,6 +1143,30 @@ class ApiService {
       headers.Authorization = `Bearer ${this.token}`;
     }
     return headers;
+  }
+
+  /**
+   * Download image with auth header
+   * Converts document URL to authenticated image URI
+   */
+  getAuthenticatedImageUri(imageUrl: string | null | undefined): string | null {
+    if (!imageUrl) return null;
+
+    // If it's already a full URL, return as is (for backward compatibility)
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+      return imageUrl;
+    }
+
+    // Convert relative path to full URL
+    return `${this.baseURL}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+  }
+
+  /**
+   * Get headers for Image component that needs auth
+   * Usage: <Image source={{ uri: url, headers: apiService.getImageHeaders() }} />
+   */
+  getImageHeaders(): Record<string, string> {
+    return this.getAuthHeaders();
   }
 }
 

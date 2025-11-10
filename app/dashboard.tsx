@@ -3,11 +3,10 @@ import React, { useMemo } from "react";
 import {
   ScrollView,
   View,
-  Alert,
   RefreshControl,
   Dimensions,
   TouchableOpacity,
-  Animated,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 
@@ -48,7 +47,7 @@ const AnimatedCard: React.FC<{
 };
 
 export default function DashboardPage() {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { toast, hideToast } = useToast();
 
   // API Queries
@@ -112,28 +111,8 @@ export default function DashboardPage() {
     };
   }, [brokers, products, inventory, criticalInventory, outOfStockInventory]);
 
-  const handleLogout = () => {
-    Alert.alert("Çıkış Yap", "Hesabınızdan çıkış yapmak istediğinizden emin misiniz?", [
-      { text: "İptal", style: "cancel" },
-      {
-        text: "Çıkış Yap",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            logger.debug("🔄 Starting logout process...");
-            await logout();
-            router.replace("/login");
-          } catch (error) {
-            logger.error("❌ Logout error:", error);
-            router.replace("/login");
-            Alert.alert(
-              "Uyarı",
-              "Çıkış yaparken bir sorun oluştu, ancak oturumunuz sonlandırıldı.",
-            );
-          }
-        },
-      },
-    ]);
+  const handleProfilePress = () => {
+    router.push("/profile");
   };
 
   const isLoading = brokersLoading || productsLoading || inventoryLoading;
@@ -176,11 +155,11 @@ export default function DashboardPage() {
               )}
             </View>
 
-            {/* Logout Button */}
+            {/* Profile Button */}
             <TouchableOpacity
-              onPress={handleLogout}
+              onPress={handleProfilePress}
               style={{
-                backgroundColor: "#F9FAFB",
+                backgroundColor: "#DC2626",
                 borderRadius: 8,
                 padding: 12,
                 borderWidth: 1,
@@ -188,7 +167,7 @@ export default function DashboardPage() {
               }}
               activeOpacity={0.7}
             >
-              <Icon family="MaterialIcons" name="logout" size={20} color="#6B7280" />
+              <Icon family="MaterialIcons" name="person" size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -252,7 +231,12 @@ export default function DashboardPage() {
                           padding: 10,
                         }}
                       >
-                        <Icon family="MaterialIcons" name="shopping-bag" size={20} color="#FFFFFF" />
+                        <Icon
+                          family="MaterialIcons"
+                          name="shopping-bag"
+                          size={20}
+                          color="#FFFFFF"
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Typography variant="body" weight="semibold" className="text-gray-900">
@@ -357,7 +341,12 @@ export default function DashboardPage() {
                           padding: 10,
                         }}
                       >
-                        <Icon family="MaterialIcons" name="shopping-cart" size={20} color="#FFFFFF" />
+                        <Icon
+                          family="MaterialIcons"
+                          name="shopping-cart"
+                          size={20}
+                          color="#FFFFFF"
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Typography variant="body" weight="semibold" className="text-gray-900">
@@ -390,7 +379,12 @@ export default function DashboardPage() {
                           padding: 10,
                         }}
                       >
-                        <Icon family="MaterialIcons" name="receipt-long" size={20} color="#FFFFFF" />
+                        <Icon
+                          family="MaterialIcons"
+                          name="receipt-long"
+                          size={20}
+                          color="#FFFFFF"
+                        />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Typography variant="body" weight="semibold" className="text-gray-900">
@@ -531,11 +525,16 @@ export default function DashboardPage() {
                               }}
                             /> */}
                             <View className="flex-1">
-                              <Typography variant="body" weight="semibold" className="text-gray-900">
+                              <Typography
+                                variant="body"
+                                weight="semibold"
+                                className="text-gray-900"
+                              >
                                 {item.productName || "Ürün"}
                               </Typography>
                               <Typography variant="caption" className="text-gray-500">
-                                Stok: {item.productCount || 0} • Min: {item.criticalProductCount || 0}
+                                Stok: {item.productCount || 0} • Min:{" "}
+                                {item.criticalProductCount || 0}
                               </Typography>
                             </View>
                           </View>
@@ -582,7 +581,11 @@ export default function DashboardPage() {
                               </View>
                             </View>
                             <View className="items-end">
-                              <Typography variant="caption" weight="medium" className="text-red-600">
+                              <Typography
+                                variant="caption"
+                                weight="medium"
+                                className="text-red-600"
+                              >
                                 Tükendi
                               </Typography>
                             </View>
@@ -612,7 +615,12 @@ export default function DashboardPage() {
                         <Typography variant="caption" className="text-red-600">
                           Tümünü Gör
                         </Typography>
-                        <Icon family="MaterialIcons" name="arrow-forward" size={14} color="#DC2626" />
+                        <Icon
+                          family="MaterialIcons"
+                          name="arrow-forward"
+                          size={14}
+                          color="#DC2626"
+                        />
                       </TouchableOpacity>
                     </>
                   )}
