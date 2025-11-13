@@ -527,29 +527,31 @@ export default function BrokersPage() {
                 />
               </View>
 
-              {/* Aracı Grid Listesi */}
+              {/* Aracı Grid Listesi - Sıraya göre sıralanmış */}
               <View className="flex-row flex-wrap justify-between" style={{ gap: 10 }}>
-                {dayBrokers.map((broker) => {
-                  const totalDebt = broker.balance || 0;
+                {dayBrokers
+                  .sort((a, b) => (a.orderNo || 999) - (b.orderNo || 999))
+                  .map((broker) => {
+                    const totalDebt = broker.balance || 0;
 
-                  return (
-                    <SquareCard
-                      key={broker.id}
-                      title={`${broker.name} ${broker.surname}`}
-                      subtitle="Mevcut Bakiye"
-                      amount={`₺${totalDebt.toLocaleString()}`}
-                      additionalInfo={`Rota günü: ${dayOption.label}`}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/broker/brokerDetail",
-                          params: { brokerId: broker.id },
-                        })
-                      }
-                      showDeleteIcon={false}
-                      className="mb-2"
-                    />
-                  );
-                })}
+                    return (
+                      <SquareCard
+                        key={broker.id}
+                        title={`${broker.orderNo ? `#${broker.orderNo} ` : ""}${broker.name} ${broker.surname}`}
+                        subtitle="Mevcut Bakiye"
+                        amount={`₺${totalDebt.toLocaleString()}`}
+                        additionalInfo={`Rota günü: ${dayOption.label}`}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/broker/brokerDetail",
+                            params: { brokerId: broker.id },
+                          })
+                        }
+                        showDeleteIcon={false}
+                        className="mb-2"
+                      />
+                    );
+                  })}
               </View>
             </View>
           );

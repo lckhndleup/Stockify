@@ -304,6 +304,25 @@ export default function RootLayout() {
             })}
           />
 
+          {/* Reports Screen */}
+          <Stack.Screen
+            name="reports/index"
+            options={{
+              title: "Günlük Rapor",
+              headerShown: true,
+              headerLeft: homeHeaderLeft,
+            }}
+          />
+
+          {/* Broker Visits Screen */}
+          <Stack.Screen
+            name="broker-visits/index"
+            options={{
+              title: "Bugünün Ziyaretleri",
+              headerShown: false,
+            }}
+          />
+
           <Stack.Screen
             name="broker/sections/confirmSales"
             options={{

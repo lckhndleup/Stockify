@@ -1,6 +1,7 @@
 // src/hooks/api/index.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ApiError, UseQueryOptions, UseMutationOptions } from "@/src/types/apiTypes";
+import type { UseQueryOptions, UseMutationOptions } from "@/src/types/apiTypes";
+import type { ApiError } from "@/src/services/api";
 import type { AuthStore } from "@/src/types/stores";
 import { router } from "expo-router";
 import { queryKeys } from "./queryKeys";
@@ -9,6 +10,8 @@ export * from "./usePayments";
 export * from "./useSales"; // NEW
 export * from "./useBasket"; // NEW
 export * from "./useTransactions"; // Transaction ekranı için
+export * from "./useReports";
+export * from "./useBrokerVisits";
 
 // Hook factory'ler için base type'lar
 export type QueryHook<TData, TParams = void> = TParams extends void

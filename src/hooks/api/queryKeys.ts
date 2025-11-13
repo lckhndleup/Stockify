@@ -47,6 +47,7 @@ export const queryKeys = {
     debt: (id: string) => [...queryKeys.brokers.detail(id), "debt"] as const,
     statements: (id: string) => [...queryKeys.brokers.detail(id), "statements"] as const,
     invoices: (id: string) => [...queryKeys.brokers.detail(id), "invoices"] as const,
+    visits: () => [...queryKeys.brokers.all, "visits"] as const,
   },
 
   // Stock related
@@ -129,6 +130,18 @@ export const queryKeys = {
     stats: () => [...queryKeys.dashboard.all, "stats"] as const,
     overview: () => [...queryKeys.dashboard.all, "overview"] as const,
     recentActivities: () => [...queryKeys.dashboard.all, "recent-activities"] as const,
+  },
+
+  // Reports
+  reports: {
+    all: ["reports"] as const,
+    daily: (params?: unknown) => [...queryKeys.reports.all, "daily", params] as const,
+  },
+
+  // Broker Visits
+  brokerVisits: {
+    all: ["broker-visits"] as const,
+    today: () => [...queryKeys.brokerVisits.all, "today"] as const,
   },
 } as const;
 

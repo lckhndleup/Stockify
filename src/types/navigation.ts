@@ -14,7 +14,13 @@ export interface CustomHeaderLeftProps {
   onPress?: () => void;
 }
 
-export type AppRoute = "/dashboard" | "/stock" | "/brokers" | "/products";
+export type AppRoute =
+  | "/dashboard"
+  | "/stock"
+  | "/brokers"
+  | "/products"
+  | "/broker-visits"
+  | "/reports";
 
 export interface NavigationItem {
   icon: {

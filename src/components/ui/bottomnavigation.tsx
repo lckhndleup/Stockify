@@ -19,6 +19,11 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
       path: "/stock",
     },
     {
+      icon: { family: "MaterialCommunityIcons", name: "clipboard-check" },
+      label: "Ziyaretler",
+      path: "/broker-visits",
+    },
+    {
       icon: { family: "MaterialCommunityIcons", name: "account-group" },
       label: "Aracılar",
       path: "/brokers",
@@ -55,14 +60,14 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
               <Link key={index} href={item.path as any} asChild>
                 <TouchableOpacity
                   style={{
-                    flex: isActive ? 1.7 : 1,
+                    flex: isActive ? 2 : 1,
                     height: 50,
                     justifyContent: "center",
                     alignItems: "center",
                     flexDirection: "row",
-                    minWidth: isActive ? 60 : 50,
+                    minWidth: isActive ? 80 : 50,
                     paddingVertical: 8,
-                    paddingHorizontal: isActive ? 24 : 12,
+                    paddingHorizontal: isActive ? 16 : 12,
                     backgroundColor: isActive ? "#FFFEFF" : "transparent",
                     borderRadius: 9999,
                   }}
@@ -77,11 +82,13 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
 
                   {isActive && (
                     <Text
-                      className="ml-2"
+                      numberOfLines={1}
                       style={{
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: "600",
                         color: "#222222",
+                        marginLeft: 8,
+                        flexShrink: 1,
                       }}
                     >
                       {item.label}

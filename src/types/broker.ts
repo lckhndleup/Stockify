@@ -15,6 +15,18 @@ export const BROKER_TARGET_DAY_VALUES = [
 
 export type BrokerTargetDay = (typeof BROKER_TARGET_DAY_VALUES)[number];
 
+// Broker Visit Status
+export type BrokerVisitStatus = "VISITED" | "NOT_VISITED" | "SKIPPED";
+
+// Broker Visit Info (Backend response)
+export interface BrokerVisitInfo {
+  creatorUserId: number;
+  brokerId: number;
+  visitDate: number; // epoch timestamp
+  status: BrokerVisitStatus;
+  note?: string;
+}
+
 export interface Broker {
   brokerId: number;
   brokerUserId: number;
@@ -30,6 +42,8 @@ export interface Broker {
   createdDate: number; // epoch (int64)
   lastModifiedDate: number; // epoch (int64)
   targetDayOfWeek: BrokerTargetDay;
+  orderNo?: number; // Broker visit order
+  visitInfo?: BrokerVisitInfo; // Visit information
 }
 
 // UI'da kullanılan broker verisi (mevcut UI uyumlu)
@@ -45,6 +59,8 @@ export interface BrokerDisplayItem {
   isActive: boolean;
   createdDate: string;
   targetDayOfWeek?: BrokerTargetDay;
+  orderNo?: number; // Visit order number
+  visitInfo?: BrokerVisitInfo; // Visit information
 }
 
 // Broker ekleme formu
@@ -76,6 +92,61 @@ export interface BrokerDiscountRateUpdateData {
   discountRate: number;
 }
 
+// Broker Order Update
+export interface BrokerOrderUpdateData {
+  brokerId: number;
+  orderNo: number;
+}
+
+// Today's Broker Visit Item (Backend response)
+export interface TodayBrokerVisitItem {
+  creatorUserId: number;
+  brokerId: number;
+  brokerUserId: number;
+  orderNo: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  currentBalance: number;
+  discountRate: number;
+  status: "ACTIVE" | "PASSIVE";
+  targetDayOfWeek: BrokerTargetDay;
+  visitInfo?: BrokerVisitInfo;
+  createdDate: number; // epoch timestamp
+  lastModifiedDate: number; // epoch timestamp
+}
+
+// UI'da kullanılan broker visit item
+export interface BrokerVisitDisplayItem {
+  brokerId: number;
+  brokerName: string;
+  targetDayOfWeek: BrokerTargetDay;
+  visitInfo?: BrokerVisitInfo;
+  orderNo: number;
+  email?: string;
+  currentBalance?: number;
+  discountRate?: number;
+}
+
+// Backend response'u UI format'ına çevir
+export const adaptBrokerVisitForUI = (item: TodayBrokerVisitItem): BrokerVisitDisplayItem => ({
+  brokerId: item.brokerId,
+  brokerName: `${item.firstName} ${item.lastName}`,
+  targetDayOfWeek: item.targetDayOfWeek,
+  visitInfo: item.visitInfo,
+  orderNo: item.orderNo,
+  email: item.email,
+  currentBalance: item.currentBalance,
+  discountRate: item.discountRate,
+});
+
+// Broker Visit Update Request
+export interface BrokerVisitUpdateRequest {
+  brokerId: number;
+  status: BrokerVisitStatus;
+  note?: string;
+}
+
 // Backend'den gelen veriyi UI format'ına çevir
 export const adaptBrokerForUI = (broker: Broker): BrokerDisplayItem => ({
   id: broker.brokerId.toString(),
@@ -89,6 +160,8 @@ export const adaptBrokerForUI = (broker: Broker): BrokerDisplayItem => ({
   isActive: broker.status === "ACTIVE",
   createdDate: new Date(broker.createdDate).toISOString(),
   targetDayOfWeek: broker.targetDayOfWeek,
+  orderNo: broker.orderNo,
+  visitInfo: broker.visitInfo,
 });
 
 // UI form'undan backend format'ına çevir

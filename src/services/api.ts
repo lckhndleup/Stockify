@@ -769,6 +769,25 @@ class ApiService {
     }
   }
 
+  // Broker order güncelle - PUT /broker/update/order
+  async updateBrokerOrder(orderData: { brokerId: number; orderNo: number }): Promise<any> {
+    try {
+      logger.debug("🔢 API: Updating broker order:", orderData);
+
+      const result = await this.request<any>("/broker/update/order", {
+        method: "PUT",
+        body: JSON.stringify(orderData),
+      });
+
+      logger.debug("✅ API: Broker order updated:", result ? Object.keys(result) : "null");
+
+      return result;
+    } catch (error) {
+      logger.error("🔢 API: Broker order update error:", error);
+      throw error;
+    }
+  }
+
   // -------------------- Payment --------------------
   async savePayment(payment: {
     brokerId: number;
@@ -1054,6 +1073,86 @@ class ApiService {
       return result;
     } catch (error) {
       logger.error("🗑️ API: Account delete error:", error);
+      throw error;
+    }
+  }
+
+  // -------------------- Reports --------------------
+  /** GET /report/daily - Get daily report */
+  async getDailyReport(params?: {
+    brokerId?: number;
+    startDate?: number;
+    endDate?: number;
+  }): Promise<any> {
+    try {
+      logger.debug("📊 API: Fetching daily report...", params);
+
+      const queryParams = new URLSearchParams();
+      if (params?.brokerId) {
+        queryParams.append("brokerId", params.brokerId.toString());
+      }
+      if (params?.startDate) {
+        queryParams.append("startDate", params.startDate.toString());
+      }
+      if (params?.endDate) {
+        queryParams.append("endDate", params.endDate.toString());
+      }
+
+      const queryString = queryParams.toString();
+      const url = `/report/daily${queryString ? `?${queryString}` : ""}`;
+
+      const result = await this.request<any>(url, {
+        method: "GET",
+      });
+
+      logger.debug("✅ API: Daily report fetched");
+      return result;
+    } catch (error) {
+      logger.error("📊 API: Daily report fetch error:", error);
+      throw error;
+    }
+  }
+
+  // -------------------- Broker Visits --------------------
+  /** GET /broker-visits/today - Get today's broker visits */
+  async getTodayBrokerVisits(): Promise<any[]> {
+    try {
+      logger.debug("📅 API: Fetching today's broker visits...");
+
+      const result = await this.request<any[]>("/broker/today", {
+        method: "GET",
+      });
+
+      logger.debug(
+        "✅ API: Today's broker visits fetched - Count:",
+        Array.isArray(result) ? result.length : "not array",
+      );
+
+      return result;
+    } catch (error) {
+      logger.error("📅 API: Today's broker visits fetch error:", error);
+      throw error;
+    }
+  }
+
+  /** PUT /broker-visits/update - Update broker visit status */
+  async updateBrokerVisit(visitData: {
+    brokerId: number;
+    status: "VISITED" | "NOT_VISITED" | "SKIPPED";
+    note?: string;
+  }): Promise<any> {
+    try {
+      logger.debug("📅 API: Updating broker visit:", visitData);
+
+      const result = await this.request<any>("/broker-visits/update", {
+        method: "PUT",
+        body: JSON.stringify(visitData),
+      });
+
+      logger.debug("✅ API: Broker visit updated");
+      return result;
+    } catch (error) {
+      logger.error("📅 API: Broker visit update error:", error);
       throw error;
     }
   }

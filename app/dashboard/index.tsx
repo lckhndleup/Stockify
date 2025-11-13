@@ -1,6 +1,6 @@
 // app/dashboard/index.tsx
 import React, { useMemo } from "react";
-import { ScrollView, View, RefreshControl, TouchableOpacity, Alert } from "react-native";
+import { ScrollView, View, RefreshControl, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 
 import { Container, Typography, Card, Icon } from "@/src/components/ui";
@@ -157,19 +157,19 @@ export default function DashboardPage() {
                 />
               </View>
 
-              {/* Row 4: Raporlar & Ayarlar */}
+              {/* Row 4: Ziyaretler & Raporlar */}
               <View className="flex-row gap-3">
                 <DashboardActionCard
-                  title="Raporlar"
-                  subtitle="Analiz"
-                  iconName="assessment"
-                  onPress={() => router.push("/stock")}
+                  title="Ziyaret Listesi"
+                  subtitle="Bugünkü plan"
+                  iconName="event-note"
+                  onPress={() => router.push("/broker-visits")}
                 />
                 <DashboardActionCard
-                  title="Ayarlar"
-                  subtitle="Yapılandır"
-                  iconName="settings"
-                  onPress={() => Alert.alert("Ayarlar", "Yakında eklenecek")}
+                  title="Günlük Rapor"
+                  subtitle="İstatistikler"
+                  iconName="assessment"
+                  onPress={() => router.push("/reports")}
                 />
               </View>
             </View>

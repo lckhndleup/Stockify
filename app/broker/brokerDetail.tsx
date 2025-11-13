@@ -477,6 +477,38 @@ export default function BrokerDetailPage() {
             </View>
           </Card>
 
+          {/* Günlük Rapor Kartı */}
+          <Card
+            variant="default"
+            padding="none"
+            pressable
+            onPress={() =>
+              router.push({
+                pathname: "/reports",
+                params: { brokerId: broker.id },
+              })
+            }
+            className="bg-stock-red border-0 px-4 py-4 mb-3"
+            radius="md"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="mr-3">
+                  <Icon family="MaterialIcons" name="assessment" size={22} color="#FFFEFF" />
+                </View>
+                <Typography
+                  variant="body"
+                  weight="semibold"
+                  size="lg"
+                  className="text-stock-white flex-1"
+                >
+                  GÜNLÜK RAPOR
+                </Typography>
+              </View>
+              <Icon family="MaterialIcons" name="arrow-forward-ios" size={16} color="#FFFEFF" />
+            </View>
+          </Card>
+
           {/* Aracıyı Düzenle Kartı */}
           <Card
             variant="default"
