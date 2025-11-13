@@ -153,134 +153,111 @@ export default function BrokerVisitsScreen() {
 
     return (
       <View
-        className="mx-4 mb-3 rounded-xl overflow-hidden"
+        className="mx-4 mb-2 rounded-lg overflow-hidden"
         style={{
           backgroundColor: "#FFF",
           borderWidth: 1,
           borderColor: "#E5E7EB",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.05,
-          shadowRadius: 2,
-          elevation: 2,
         }}
       >
-        <View className="p-4">
-          {/* Header Row */}
-          <View className="flex-row items-center justify-between mb-3">
-            <View className="flex-row items-center flex-1">
+        <View className="px-3 py-2">
+          {/* Compact Row */}
+          <View className="flex-row items-center justify-between">
+            {/* Left: Order + Broker Info */}
+            <View className="flex-row items-center flex-1 mr-2">
               {/* Order Badge */}
               {item.orderNo && (
                 <View
-                  className="mr-3 justify-center items-center"
+                  className="mr-2 justify-center items-center"
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
                     backgroundColor: "#DC2626",
                   }}
                 >
-                  <Typography className="text-white font-semibold text-sm">
+                  <Typography className="text-white font-semibold text-xs">
                     {item.orderNo}
                   </Typography>
                 </View>
               )}
 
-              {/* Broker Info */}
+              {/* Broker Name */}
               <View className="flex-1">
-                <Typography className="text-gray-900 font-semibold text-base">
+                <Typography className="text-gray-900 font-semibold text-sm" numberOfLines={1}>
                   {item.brokerName}
                 </Typography>
-                <Typography className="text-gray-500 text-xs mt-0.5">
-                  {item.targetDayOfWeek}
-                </Typography>
               </View>
             </View>
 
-            {/* Status Badge */}
-            <View
-              className="px-3 py-1.5 rounded-full"
-              style={{
-                backgroundColor:
-                  status === "VISITED" ? "#F0FDF4" : status === "SKIPPED" ? "#F3F4F6" : "#FFF7ED",
-              }}
-            >
-              <Typography
-                className="text-xs font-medium"
+            {/* Right: Status Badge + Actions */}
+            <View className="flex-row items-center" style={{ gap: 6 }}>
+              {/* Status Badge */}
+              <View
+                className="px-2 py-1 rounded-full"
                 style={{
-                  color:
-                    status === "VISITED" ? "#16A34A" : status === "SKIPPED" ? "#6B7280" : "#F97316",
+                  backgroundColor:
+                    status === "VISITED" ? "#F0FDF4" : status === "SKIPPED" ? "#F3F4F6" : "#FFF7ED",
                 }}
               >
-                {status === "VISITED"
-                  ? "Tamamlandı"
-                  : status === "SKIPPED"
-                    ? "Atlandı"
-                    : "Bekliyor"}
-              </Typography>
-            </View>
-          </View>
-
-          {/* Additional Info */}
-          {(item.email || item.currentBalance !== undefined) && (
-            <View className="mb-3" style={{ gap: 4 }}>
-              {item.email && (
-                <Typography className="text-gray-600 text-xs">{item.email}</Typography>
-              )}
-              {item.currentBalance !== undefined && (
-                <Typography className="text-gray-600 text-xs">
-                  Bakiye: ₺
-                  {item.currentBalance.toLocaleString("tr-TR", { minimumFractionDigits: 2 })}
-                </Typography>
-              )}
-            </View>
-          )}
-
-          {/* Note Display */}
-          {hasNote && (
-            <View
-              className="p-3 rounded-lg mb-3"
-              style={{ backgroundColor: "#F9FAFB", borderWidth: 1, borderColor: "#E5E7EB" }}
-            >
-              <View className="flex-row items-start">
-                <Icon name="note-alt" size={16} color="#6B7280" />
-                <Typography className="text-gray-700 text-xs ml-2 flex-1">
-                  {item.visitInfo?.note}
+                <Typography
+                  className="text-xs font-medium"
+                  style={{
+                    color:
+                      status === "VISITED"
+                        ? "#16A34A"
+                        : status === "SKIPPED"
+                          ? "#6B7280"
+                          : "#F97316",
+                  }}
+                >
+                  {status === "VISITED"
+                    ? "Tamamlandı"
+                    : status === "SKIPPED"
+                      ? "Atlandı"
+                      : "Bekliyor"}
                 </Typography>
               </View>
+
+              {/* Action Buttons - Inline */}
+              {status !== "VISITED" && (
+                <TouchableOpacity
+                  onPress={() => handleStatusChange(item.brokerId, "VISITED", item.visitInfo?.note)}
+                  className="px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: "#16A34A" }}
+                >
+                  <Typography className="text-white font-medium text-xs">Tamamla</Typography>
+                </TouchableOpacity>
+              )}
+
+              {status !== "SKIPPED" && status !== "VISITED" && (
+                <TouchableOpacity
+                  onPress={() => handleStatusChange(item.brokerId, "SKIPPED", item.visitInfo?.note)}
+                  className="px-3 py-1.5 rounded-lg"
+                  style={{ backgroundColor: "#6B7280" }}
+                >
+                  <Typography className="text-white font-medium text-xs">Atla</Typography>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                onPress={() => handleOpenNote(item)}
+                className="p-1.5 rounded-lg"
+                style={{ backgroundColor: "#F3F4F6" }}
+              >
+                <Icon name="note-alt" size={16} color="#374151" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Note Display - Compact */}
+          {hasNote && (
+            <View className="mt-1.5 pl-8">
+              <Typography className="text-gray-600 text-xs" numberOfLines={2}>
+                {item.visitInfo?.note}
+              </Typography>
             </View>
           )}
-
-          {/* Action Buttons */}
-          <View className="flex-row" style={{ gap: 8 }}>
-            {status !== "VISITED" && (
-              <TouchableOpacity
-                onPress={() => handleStatusChange(item.brokerId, "VISITED", item.visitInfo?.note)}
-                className="flex-1 py-2.5 rounded-lg items-center"
-                style={{ backgroundColor: "#16A34A" }}
-              >
-                <Typography className="text-white font-medium text-sm">Tamamla</Typography>
-              </TouchableOpacity>
-            )}
-
-            {status !== "SKIPPED" && (
-              <TouchableOpacity
-                onPress={() => handleStatusChange(item.brokerId, "SKIPPED", item.visitInfo?.note)}
-                className="flex-1 py-2.5 rounded-lg items-center"
-                style={{ backgroundColor: "#6B7280" }}
-              >
-                <Typography className="text-white font-medium text-sm">Atla</Typography>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              onPress={() => handleOpenNote(item)}
-              className="py-2.5 px-4 rounded-lg items-center justify-center"
-              style={{ backgroundColor: "#F3F4F6" }}
-            >
-              <Icon name="note-alt" size={20} color="#374151" />
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
     );
@@ -310,76 +287,75 @@ export default function BrokerVisitsScreen() {
             onChangeText={setSearchText}
             onSearch={() => {}}
             placeholder="Bayi ara..."
-            style={{ marginBottom: 12 }}
           />
+        </View>
 
-          {/* Status Filter Buttons */}
+        {/* Status Filter Buttons */}
+        <View className="px-4 pb-3">
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 16 }}
+            contentContainerStyle={{ gap: 8 }}
           >
-            <View className="flex-row" style={{ gap: 8 }}>
-              <TouchableOpacity
-                onPress={() => setStatusFilter("ALL")}
-                className="px-4 py-2 rounded-lg"
-                style={{
-                  backgroundColor: statusFilter === "ALL" ? "#DC2626" : "#F3F4F6",
-                }}
+            <TouchableOpacity
+              onPress={() => setStatusFilter("ALL")}
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: statusFilter === "ALL" ? "#DC2626" : "#F3F4F6",
+              }}
+            >
+              <Typography
+                className="font-medium text-sm"
+                style={{ color: statusFilter === "ALL" ? "#FFF" : "#6B7280" }}
               >
-                <Typography
-                  className="font-medium text-sm"
-                  style={{ color: statusFilter === "ALL" ? "#FFF" : "#6B7280" }}
-                >
-                  Tümü ({stats.total})
-                </Typography>
-              </TouchableOpacity>
+                Tümü ({stats.total})
+              </Typography>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setStatusFilter("NOT_VISITED")}
-                className="px-4 py-2 rounded-lg"
-                style={{
-                  backgroundColor: statusFilter === "NOT_VISITED" ? "#F97316" : "#F3F4F6",
-                }}
+            <TouchableOpacity
+              onPress={() => setStatusFilter("NOT_VISITED")}
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: statusFilter === "NOT_VISITED" ? "#F97316" : "#F3F4F6",
+              }}
+            >
+              <Typography
+                className="font-medium text-sm"
+                style={{ color: statusFilter === "NOT_VISITED" ? "#FFF" : "#6B7280" }}
               >
-                <Typography
-                  className="font-medium text-sm"
-                  style={{ color: statusFilter === "NOT_VISITED" ? "#FFF" : "#6B7280" }}
-                >
-                  Bekleyen ({stats.pending})
-                </Typography>
-              </TouchableOpacity>
+                Bekleyen ({stats.pending})
+              </Typography>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setStatusFilter("VISITED")}
-                className="px-4 py-2 rounded-lg"
-                style={{
-                  backgroundColor: statusFilter === "VISITED" ? "#16A34A" : "#F3F4F6",
-                }}
+            <TouchableOpacity
+              onPress={() => setStatusFilter("VISITED")}
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: statusFilter === "VISITED" ? "#16A34A" : "#F3F4F6",
+              }}
+            >
+              <Typography
+                className="font-medium text-sm"
+                style={{ color: statusFilter === "VISITED" ? "#FFF" : "#6B7280" }}
               >
-                <Typography
-                  className="font-medium text-sm"
-                  style={{ color: statusFilter === "VISITED" ? "#FFF" : "#6B7280" }}
-                >
-                  Tamamlandı ({stats.visited})
-                </Typography>
-              </TouchableOpacity>
+                Tamamlandı ({stats.visited})
+              </Typography>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setStatusFilter("SKIPPED")}
-                className="px-4 py-2 rounded-lg"
-                style={{
-                  backgroundColor: statusFilter === "SKIPPED" ? "#6B7280" : "#F3F4F6",
-                }}
+            <TouchableOpacity
+              onPress={() => setStatusFilter("SKIPPED")}
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: statusFilter === "SKIPPED" ? "#6B7280" : "#F3F4F6",
+              }}
+            >
+              <Typography
+                className="font-medium text-sm"
+                style={{ color: statusFilter === "SKIPPED" ? "#FFF" : "#6B7280" }}
               >
-                <Typography
-                  className="font-medium text-sm"
-                  style={{ color: statusFilter === "SKIPPED" ? "#FFF" : "#6B7280" }}
-                >
-                  Atlandı ({stats.skipped})
-                </Typography>
-              </TouchableOpacity>
-            </View>
+                Atlandı ({stats.skipped})
+              </Typography>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
