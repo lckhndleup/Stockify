@@ -96,8 +96,6 @@ export default function ReportsScreen() {
     });
   };
 
-  console.log("reportData", JSON.stringify(reportData, null, 2));
-
   // Filter broker reports by search
   const filteredBrokerReports = useMemo(() => {
     if (!reportData?.dailyBrokerReports) return [];

@@ -1,7 +1,6 @@
 // src/hooks/api/index.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { UseQueryOptions, UseMutationOptions } from "@/src/types/apiTypes";
-import type { ApiError } from "@/src/services/api";
+import type { UseQueryOptions, UseMutationOptions, ApiError } from "@/src/types/apiTypes";
 import type { AuthStore } from "@/src/types/stores";
 import { router } from "expo-router";
 import { queryKeys } from "./queryKeys";

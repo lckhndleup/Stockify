@@ -1,6 +1,6 @@
 // src/hooks/api/useBasket.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService } from "@/src/services/api";
+import { getBasket, addToBasket, removeFromBasket, updateBasket } from "@/src/services/sales";
 import { queryKeys } from "./queryKeys";
 import {
   adaptBasketResponseForUI,
@@ -16,7 +16,7 @@ export const useBasket = (brokerId: number | string, options?: { enabled?: boole
   useQuery<BasketItemDisplay[]>({
     queryKey: queryKeys.basket.byBroker(brokerId),
     queryFn: async () => {
-      const items = await apiService.getBasket(Number(brokerId));
+      const items = await getBasket(Number(brokerId));
       return adaptBasketResponseForUI(items);
     },
     staleTime: 60_000,
@@ -28,7 +28,7 @@ export const useBasket = (brokerId: number | string, options?: { enabled?: boole
 export const useAddToBasket = () => {
   const qc = useQueryClient();
   return useMutation<BasketMutationResponse, unknown, BasketAddRequest>({
-    mutationFn: (payload) => apiService.addToBasket(payload),
+    mutationFn: (payload) => addToBasket(payload),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: queryKeys.basket.byBroker(v.brokerId) });
     },
@@ -39,7 +39,7 @@ export const useAddToBasket = () => {
 export const useRemoveFromBasket = () => {
   const qc = useQueryClient();
   return useMutation<BasketMutationResponse, unknown, BasketRemoveRequest>({
-    mutationFn: (payload) => apiService.removeFromBasket(payload),
+    mutationFn: (payload) => removeFromBasket(payload),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: queryKeys.basket.byBroker(v.brokerId) });
     },
@@ -50,7 +50,7 @@ export const useRemoveFromBasket = () => {
 export const useUpdateBasket = () => {
   const qc = useQueryClient();
   return useMutation<BasketMutationResponse, unknown, BasketUpdateRequest>({
-    mutationFn: (payload) => apiService.updateBasket(payload),
+    mutationFn: (payload) => updateBasket(payload),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: queryKeys.basket.byBroker(v.brokerId) });
     },

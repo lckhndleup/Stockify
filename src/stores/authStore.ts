@@ -2,7 +2,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import apiService, { ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/types/apiTypes";
+import { setToken as setBaseToken, clearToken as clearBaseToken } from "@/src/services/base";
 import logger from "@/src/utils/logger";
 import type { User, AuthStore } from "@/src/types/stores";
 import { LoginRequest } from "../services/auth/type";
@@ -37,10 +38,7 @@ const middleware = persist<AuthStore>(
         if (response.token) {
           logger.debug("🎯 Token received (content hidden)");
 
-          // Token'ı hem API service'e hem base service'e set et
-          apiService.setToken(response.token);
-          // 👈 YENİ: base.ts axios instance için de token set et
-          const { setToken: setBaseToken } = await import("@/src/services/base");
+          // Token'ı base service'e set et
           setBaseToken(response.token);
 
           // User objesi oluştur (API'den user bilgisi gelmediği için username'den oluşturuyoruz)
@@ -124,9 +122,6 @@ const middleware = persist<AuthStore>(
         logger.warn("⚠️ Logout API error (proceeding with local logout):", error);
       } finally {
         // Her durumda local state'i ve token'ı temizle
-        apiService.clearToken();
-        // 👈 YENİ: base.ts axios instance için de token temizle
-        const { clearToken: clearBaseToken } = await import("@/src/services/base");
         clearBaseToken();
 
         set({
@@ -158,16 +153,8 @@ const middleware = persist<AuthStore>(
     },
 
     refreshToken: async () => {
-      logger.debug("🔄 Refreshing token");
-      try {
-        // Token refresh logic would be implemented here
-        // const newToken = await apiService.refreshToken();
-        // set({ token: newToken });
-      } catch (error) {
-        logger.error("❌ Token refresh failed:", error);
-        // Force logout on refresh failure
-        get().logout();
-      }
+      logger.debug("🔄 Refreshing token (not implemented)");
+      // Token refresh logic would be implemented here in the future
     },
 
     initializeAuth: async () => {
@@ -181,12 +168,9 @@ const middleware = persist<AuthStore>(
       });
 
       if (state.token && state.isAuthenticated) {
-        // Uygulama başlarken token'ı hem API service'e hem base service'e set et
-        apiService.setToken(state.token);
-        // 👈 YENİ: base.ts axios instance için de token set et
-        const { setToken: setBaseToken } = await import("@/src/services/base");
+        // Uygulama başlarken token'ı base service'e set et
         setBaseToken(state.token);
-        logger.debug("🔑 Token restored to both API services");
+        logger.debug("🔑 Token restored to base service");
       } else {
         logger.debug("ℹ️ No token to restore");
       }
@@ -240,17 +224,9 @@ const middleware = persist<AuthStore>(
       try {
         const token = state?.token;
         if (token) {
-          apiService.setToken(token);
-          // 👈 YENİ: base.ts axios instance için de token set et
-          import("@/src/services/base").then(({ setToken: setBaseToken }) => {
-            setBaseToken(token);
-          });
+          setBaseToken(token);
         } else {
-          apiService.clearToken();
-          // 👈 YENİ: base.ts axios instance için de token temizle
-          import("@/src/services/base").then(({ clearToken: clearBaseToken }) => {
-            clearBaseToken();
-          });
+          clearBaseToken();
         }
       } catch {
         // noop

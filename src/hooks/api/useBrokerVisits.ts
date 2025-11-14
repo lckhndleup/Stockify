@@ -1,6 +1,8 @@
 // src/hooks/api/useBrokerVisits.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService, ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/types/apiTypes";
+import { getTodayBrokerVisits, updateBrokerVisit } from "@/src/services/visits";
+import { updateBrokerOrder } from "@/src/services/broker";
 import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import {
@@ -17,7 +19,7 @@ export const useTodayBrokerVisits = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.brokerVisits.today(),
     queryFn: async () => {
       logger.debug("📅 Fetching today's broker visits...");
-      const result = await apiService.getTodayBrokerVisits();
+      const result = await getTodayBrokerVisits();
       logger.debug("✅ Today's broker visits fetched:", result);
       return result as TodayBrokerVisitItem[];
     },
@@ -32,7 +34,7 @@ export const useTodayBrokerVisitsForUI = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.brokerVisits.today(),
     queryFn: async () => {
       logger.debug("📅 Fetching today's broker visits for UI...");
-      const result = await apiService.getTodayBrokerVisits();
+      const result = await getTodayBrokerVisits();
       logger.debug("✅ Today's broker visits fetched:", result);
       // Backend response'u UI format'ına çevir
       const adapted = result.map((item: TodayBrokerVisitItem) => adaptBrokerVisitForUI(item));
@@ -52,7 +54,7 @@ export const useUpdateBrokerVisit = () => {
       logger.debug("📅 Updating broker visit:", visitData);
 
       try {
-        const result = await apiService.updateBrokerVisit(visitData);
+        const result = await updateBrokerVisit(visitData);
         logger.debug("✅ Broker visit updated - RAW RESPONSE:", result);
         return result;
       } catch (error) {
@@ -82,7 +84,7 @@ export const useUpdateBrokerOrder = () => {
       logger.debug("🔢 Updating broker order:", orderData);
 
       try {
-        const result = await apiService.updateBrokerOrder(orderData);
+        const result = await updateBrokerOrder(orderData);
         logger.debug("✅ Broker order updated - RAW RESPONSE:", result);
         return result;
       } catch (error) {

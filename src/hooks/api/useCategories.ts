@@ -1,6 +1,12 @@
 // src/hooks/api/useCategories.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService, ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/types/apiTypes";
+import {
+  getCategories,
+  saveCategory,
+  updateCategory,
+  deleteCategory,
+} from "@/src/services/category";
 import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import {
@@ -25,7 +31,7 @@ export const useCategories = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.categories.all,
     queryFn: async () => {
       logger.debug("🏷️ Fetching categories from API...");
-      const categories = await apiService.getCategories();
+      const categories = await getCategories();
       const normalized = normalizeCategories(categories);
       logger.debug("✅ Categories fetched:", normalized);
       return normalized;
@@ -40,7 +46,7 @@ export const useActiveCategories = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.categories.active(),
     queryFn: async () => {
       logger.debug("🏷️ Fetching active categories...");
-      const categories = await apiService.getCategories();
+      const categories = await getCategories();
       const normalized = normalizeCategories(categories);
       const activeCategories = normalized.filter((category) => category.status === "ACTIVE");
       return adaptCategoriesForUI(activeCategories);
@@ -58,7 +64,7 @@ export const useCreateCategory = () => {
       logger.debug("➕ Creating category:", categoryData);
 
       try {
-        const result = await apiService.saveCategory(categoryData);
+        const result = await saveCategory(categoryData);
         logger.debug("✅ Category created - RAW RESPONSE:", result);
         logger.debug("✅ Response type:", typeof result);
         logger.debug("✅ Response keys:", result ? Object.keys(result) : "null");
@@ -110,7 +116,7 @@ export const useCreateCategory = () => {
         // Hemen yeniden fetch yap
         queryClient.prefetchQuery({
           queryKey: queryKeys.categories.all,
-          queryFn: () => apiService.getCategories(),
+          queryFn: () => getCategories(),
         });
       }
     },
@@ -124,7 +130,7 @@ export const useUpdateCategory = () => {
   return useMutation({
     mutationFn: async (categoryData: CategoryUpdateData) => {
       logger.debug("✏️ Updating category:", categoryData);
-      const result = await apiService.updateCategory(categoryData);
+      const result = await updateCategory(categoryData);
       logger.debug("✅ Category updated:", result);
       return result;
     },
@@ -154,7 +160,7 @@ export const useCategoryById = (categoryId: string, options?: { enabled?: boolea
   return useQuery<CategoryDisplayItem | null>({
     queryKey: queryKeys.categories.detail(categoryId),
     queryFn: async () => {
-      const categories = await apiService.getCategories();
+      const categories = await getCategories();
       const normalized = normalizeCategories(categories);
       const category = normalized.find((c) => c.categoryId.toString() === categoryId);
       return category ? adaptCategoryForUI(category) : null;
@@ -170,7 +176,7 @@ export const useDeleteCategory = () => {
   return useMutation({
     mutationFn: async (categoryId: string | number) => {
       logger.debug("🗑️ Deleting category:", categoryId);
-      const result = await apiService.deleteCategory(categoryId);
+      const result = await deleteCategory(categoryId);
       logger.debug("✅ Category deleted:", result);
       return result;
     },

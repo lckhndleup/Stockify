@@ -1,7 +1,15 @@
 // src/hooks/api/useProducts.ts
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService, ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/types/apiTypes";
+import {
+  getProducts,
+  getProductsPaginated,
+  getProductDetail,
+  saveProduct,
+  updateProduct,
+  deleteProduct,
+} from "@/src/services/product";
 import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import {
@@ -51,7 +59,7 @@ export const useProducts = (params?: ProductSearchParams, options?: { enabled?: 
     queryKey: queryKeys.products.list(params),
     queryFn: async () => {
       logger.debug("🛍️ Fetching products from API...");
-      const products = await apiService.getProducts(params);
+      const products = await getProducts(params);
       logger.debug("✅ Products fetched:", products);
       return adaptProductsResponse(products);
     },
@@ -69,7 +77,7 @@ export const useProductsPaginated = (
       const { refreshKey: _refreshKey, ...apiParams } = params;
       logger.debug("🛍️ Fetching paginated products with params:", apiParams);
 
-      const response: ProductPageResponse = await apiService.getProductsPaginated(apiParams);
+      const response: ProductPageResponse = await getProductsPaginated(apiParams);
       const normalized = adaptProductsResponse(response.content);
       const content = adaptProductsForUI(normalized);
 
@@ -95,7 +103,7 @@ export const useActiveProducts = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.products.active(),
     queryFn: async () => {
       logger.debug("🛍️ Fetching active products...");
-      const products = await apiService.getProducts({ status: "ACTIVE" });
+      const products = await getProducts({ status: "ACTIVE" });
       const normalized = adaptProductsResponse(products);
       return adaptProductsForUI(normalized);
     },
@@ -109,7 +117,7 @@ export const usePassiveProducts = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.products.list({ status: "PASSIVE" }),
     queryFn: async () => {
       logger.debug("🛍️ Fetching passive products...");
-      const products = await apiService.getProducts({ status: "PASSIVE" });
+      const products = await getProducts({ status: "PASSIVE" });
       logger.debug("✅ Passive products fetched:", products);
       const normalized = adaptProductsResponse(products);
       return adaptProductsForUI(normalized);
@@ -124,7 +132,7 @@ export const useProductDetail = (productId: string, options?: { enabled?: boolea
     queryKey: queryKeys.products.detail(productId),
     queryFn: async () => {
       logger.debug("🛍️ Fetching product detail for ID:", productId);
-      const product = await apiService.getProductDetail(productId);
+      const product = await getProductDetail(productId);
       return product ? adaptProductForUI(adaptProductResponse(product)) : null;
     },
     enabled: !!productId && (options?.enabled ?? true),
@@ -141,7 +149,7 @@ export const useSearchProducts = (
     queryKey: queryKeys.products.search(`${searchText}-${status}`),
     queryFn: async () => {
       logger.debug("🛍️ Searching products", { searchText, status });
-      const products = await apiService.getProducts({
+      const products = await getProducts({
         productText: searchText,
         status: status,
       });
@@ -162,7 +170,7 @@ export const useCreateProduct = () => {
 
       try {
         const payload = adaptProduct(productData);
-        const result = await apiService.saveProduct(payload);
+        const result = await saveProduct(payload);
         logger.debug("✅ Product created - RAW RESPONSE:", result);
         logger.debug("✅ Response type:", typeof result);
         logger.debug("✅ Response keys:", result ? Object.keys(result) : "null");
@@ -229,11 +237,7 @@ export const useCreateProduct = () => {
         // Hemen yeniden fetch yap
         queryClient.prefetchQuery({
           queryKey: queryKeys.products.all,
-          queryFn: () => apiService.getProducts(),
-        });
-        queryClient.prefetchQuery({
-          queryKey: queryKeys.inventory.all,
-          queryFn: () => apiService.getInventoryAll(),
+          queryFn: () => getProducts(),
         });
       }
     },
@@ -248,7 +252,7 @@ export const useUpdateProduct = () => {
     mutationFn: async (productData: ProductUpdateData) => {
       logger.debug("✏️ Updating product:", productData);
       const payload = adaptProductUpdate(productData);
-      const result = await apiService.updateProduct(payload);
+      const result = await updateProduct(payload);
       logger.debug("✅ Product updated:", result);
       return result;
     },
@@ -276,7 +280,7 @@ export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: async (productId: string | number) => {
       logger.debug("🗑️ Deleting product:", productId);
-      const result = await apiService.deleteProduct(productId);
+      const result = await deleteProduct(productId);
       logger.debug("✅ Product deleted (status set to PASSIVE):", result);
       return result;
     },

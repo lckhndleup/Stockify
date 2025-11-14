@@ -15,7 +15,7 @@ import {
 import SuccessAnimation from "@/src/components/svg/successAnimation";
 import { useBrokerDetail } from "@/src/hooks/api/useBrokers";
 import { PAYMENT_TYPE_LABELS } from "@/src/types/payment";
-import apiService from "@/src/services/api";
+import { getAuthHeaders } from "@/src/services/base";
 import logger from "@/src/utils/logger";
 
 export default function CollectionResult() {
@@ -316,7 +316,7 @@ export default function CollectionResult() {
         onClose={handleCloseModal}
         documentUrl={receiptUrl}
         title="Tahsilat Makbuzu"
-        headers={apiService.getAuthHeaders()}
+        headers={getAuthHeaders()}
       />
     </Container>
   );

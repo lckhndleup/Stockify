@@ -1,6 +1,14 @@
 // src/hooks/api/useBrokers.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService, ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/types/apiTypes";
+import {
+  getBrokers,
+  getBrokerDetail,
+  saveBroker,
+  updateBroker,
+  deleteBroker,
+  updateBrokerDiscountRate,
+} from "@/src/services/broker";
 import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import {
@@ -37,7 +45,7 @@ export const useBrokers = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.brokers.all,
     queryFn: async () => {
       logger.debug("👥 Fetching brokers from API...");
-      const brokers = await apiService.getBrokers();
+      const brokers = await getBrokers();
       logger.debug("✅ Brokers fetched:", brokers);
       return brokers as Broker[];
     },
@@ -51,7 +59,7 @@ export const useActiveBrokers = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.brokers.lists(),
     queryFn: async () => {
       logger.debug("👥 Fetching active brokers...");
-      const brokers = await apiService.getBrokers();
+      const brokers = await getBrokers();
       // Backend'den gelen tüm broker'ları aktif kabul ediyoruz (status: "ACTIVE" olanlar)
       const activeBrokers = brokers.filter((broker: Broker) => broker.status === "ACTIVE");
       return adaptBrokersForUI(activeBrokers);
@@ -66,7 +74,7 @@ export const useBrokerDetail = (brokerId: string, options?: { enabled?: boolean 
     queryKey: queryKeys.brokers.detail(brokerId),
     queryFn: async () => {
       logger.debug("👥 Fetching broker detail for ID:", brokerId);
-      const broker = await apiService.getBrokerDetail(brokerId);
+      const broker = await getBrokerDetail(brokerId);
       return broker ? adaptBrokerForUI(broker) : null;
     },
     enabled: !!brokerId && (options?.enabled ?? true),
@@ -83,7 +91,7 @@ export const useCreateBroker = () => {
 
       try {
         const data = adaptBroker(brokerData);
-        const result = await apiService.saveBroker(data);
+        const result = await saveBroker(data);
         logger.debug("✅ Broker created - RAW RESPONSE:", result);
         logger.debug("✅ Response type:", typeof result);
         logger.debug("✅ Response keys:", result ? Object.keys(result) : "null");
@@ -129,7 +137,7 @@ export const useUpdateBroker = () => {
       try {
         const brokerId = parseInt(params.brokerId);
         const data = adaptBrokerUpdate(brokerId, params.brokerData);
-        const result = await apiService.updateBroker(data);
+        const result = await updateBroker(data);
         logger.debug("✅ Broker updated - RAW RESPONSE:", result);
 
         return result;
@@ -163,7 +171,7 @@ export const useDeleteBroker = () => {
       logger.debug("🗑️ Deleting broker ID:", brokerId);
 
       try {
-        const result = await apiService.deleteBroker(brokerId);
+        const result = await deleteBroker(brokerId);
         logger.debug("✅ Broker deleted - RAW RESPONSE:", result);
 
         return result;
@@ -202,7 +210,7 @@ export const useUpdateBrokerDiscountRate = () => {
           brokerId: parseInt(params.brokerId),
           discountRate: params.discountRate,
         };
-        const result = await apiService.updateBrokerDiscountRate(discountData);
+        const result = await updateBrokerDiscountRate(discountData);
         logger.debug("✅ Broker discount rate updated - RAW RESPONSE:", result);
 
         return result;

@@ -19,7 +19,7 @@ import type { SalesSummaryResult } from "@/src/types/salesUI";
 import SuccessAnimation from "@/src/components/svg/successAnimation";
 import type { SuccessAnimationRef } from "@/src/types/svg";
 import logger from "@/src/utils/logger";
-import apiService from "@/src/services/api";
+import { getAuthHeaders } from "@/src/services/base";
 
 export default function ResultSales() {
   const params = useLocalSearchParams();
@@ -422,7 +422,7 @@ export default function ResultSales() {
         onClose={() => setDocumentModalVisible(false)}
         documentUrl={currentDocumentUrl}
         title={currentDocumentTitle}
-        headers={apiService.getAuthHeaders()}
+        headers={getAuthHeaders()}
       />
     </Container>
   );

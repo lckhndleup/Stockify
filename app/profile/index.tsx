@@ -15,7 +15,8 @@ import { useAuthStore } from "@/src/stores/authStore";
 import { useToast } from "@/src/hooks/useToast";
 import Toast from "@/src/components/ui/toast";
 import logger from "@/src/utils/logger";
-import { apiService } from "@/src/services/api";
+import { getAuthenticatedImageUri } from "@/src/services/document";
+import { getAuthHeaders } from "@/src/services/base";
 
 export default function ProfilePage() {
   const { data: profile, isLoading, refetch } = useProfile();
@@ -336,8 +337,8 @@ export default function ProfilePage() {
               {profile?.images?.companyLogoDownloadUrl ? (
                 <Image
                   source={{
-                    uri: apiService.getAuthenticatedImageUri(profile.images.companyLogoDownloadUrl)!,
-                    headers: apiService.getImageHeaders(),
+                    uri: getAuthenticatedImageUri(profile.images.companyLogoDownloadUrl)!,
+                    headers: getAuthHeaders(),
                   }}
                   style={{ width: 48, height: 48, borderRadius: 8 }}
                   resizeMode="cover"
@@ -392,10 +393,8 @@ export default function ProfilePage() {
               {profile?.images?.profileImageDownloadUr ? (
                 <Image
                   source={{
-                    uri: apiService.getAuthenticatedImageUri(
-                      profile.images.profileImageDownloadUr,
-                    )!,
-                    headers: apiService.getImageHeaders(),
+                    uri: getAuthenticatedImageUri(profile.images.profileImageDownloadUr)!,
+                    headers: getAuthHeaders(),
                   }}
                   style={{ width: 64, height: 64, borderRadius: 32 }}
                   resizeMode="cover"
@@ -546,9 +545,7 @@ export default function ProfilePage() {
                   onChangeText={(text) => setProfileForm({ ...profileForm, tkn: text })}
                   keyboardType="numeric"
                   editable={isEditingProfile}
-                  leftIcon={
-                    <Icon family="MaterialIcons" name="badge" size={20} color="#9CA3AF" />
-                  }
+                  leftIcon={<Icon family="MaterialIcons" name="badge" size={20} color="#9CA3AF" />}
                 />
 
                 <Input
@@ -685,9 +682,7 @@ export default function ProfilePage() {
                 <Input
                   label="Fatura Kullanıcı Adı"
                   value={companyForm.invoiceUsername}
-                  onChangeText={(text) =>
-                    setCompanyForm({ ...companyForm, invoiceUsername: text })
-                  }
+                  onChangeText={(text) => setCompanyForm({ ...companyForm, invoiceUsername: text })}
                   editable={isEditingCompany}
                   leftIcon={
                     <Icon family="MaterialIcons" name="receipt" size={20} color="#9CA3AF" />

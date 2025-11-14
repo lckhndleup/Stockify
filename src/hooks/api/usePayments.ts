@@ -1,6 +1,7 @@
 // src/hooks/api/usePayments.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService, ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/types/apiTypes";
+import { savePayment } from "@/src/services/payment";
 import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import { PaymentResponse, PaymentSaveRequest, PaymentFormData } from "@/src/types/payment";
@@ -20,7 +21,7 @@ export const useCreatePayment = () => {
           paymentType: params.paymentData.paymentType,
         };
 
-        const result = await apiService.savePayment(data);
+        const result = await savePayment(data);
         logger.debug("✅ Payment created - RAW RESPONSE:", result);
 
         return result as PaymentResponse;

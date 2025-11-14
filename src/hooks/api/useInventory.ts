@@ -1,6 +1,14 @@
 // src/hooks/api/useInventory.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService, ApiError } from "@/src/services/api";
+import type { ApiError } from "@/src/types/apiTypes";
+import {
+  getInventoryAll,
+  getInventoryCritical,
+  getInventoryOutOf,
+  getInventoryAvailable,
+  getInventoryDetail,
+  updateInventory,
+} from "@/src/services/inventory";
 import { queryKeys } from "./queryKeys";
 import logger from "@/src/utils/logger";
 import { adaptInventoryListForUI, adaptInventoryForUI } from "@/src/types/inventory";
@@ -22,7 +30,7 @@ export const useInventoryAll = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.inventory.all,
     queryFn: async () => {
       logger.debug("📦 Fetching all inventory from API...");
-      const inventory = await apiService.getInventoryAll();
+      const inventory = await getInventoryAll();
       logger.debug("✅ All inventory fetched:", inventory);
       return adaptInventoryListForUI(inventory);
     },
@@ -37,7 +45,7 @@ export const useInventoryCritical = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.inventory.critical(),
     queryFn: async () => {
       logger.debug("📦 Fetching critical inventory from API...");
-      const inventory = await apiService.getInventoryCritical();
+      const inventory = await getInventoryCritical();
       logger.debug("✅ Critical inventory fetched:", inventory);
       return adaptInventoryListForUI(inventory);
     },
@@ -52,7 +60,7 @@ export const useInventoryOutOfStock = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.inventory.outOfStock(),
     queryFn: async () => {
       logger.debug("📦 Fetching out of stock inventory from API...");
-      const inventory = await apiService.getInventoryOutOf();
+      const inventory = await getInventoryOutOf();
       logger.debug("✅ Out of stock inventory fetched:", inventory);
       return adaptInventoryListForUI(inventory);
     },
@@ -67,7 +75,7 @@ export const useInventoryAvailable = (options?: { enabled?: boolean }) => {
     queryKey: queryKeys.inventory.available(),
     queryFn: async () => {
       logger.debug("📦 Fetching available inventory from API...");
-      const inventory = await apiService.getInventoryAvailable();
+      const inventory = await getInventoryAvailable();
       logger.debug("✅ Available inventory fetched:", inventory);
       return adaptInventoryListForUI(inventory);
     },
@@ -85,7 +93,7 @@ export const useInventoryDetail = (
     queryKey: queryKeys.inventory.detail(inventoryId),
     queryFn: async () => {
       logger.debug("📦 Fetching inventory detail for ID:", inventoryId);
-      const inventory = await apiService.getInventoryDetail(inventoryId);
+      const inventory = await getInventoryDetail(inventoryId);
       return inventory ? adaptInventoryForUI(inventory) : null;
     },
     enabled: !!inventoryId && (options?.enabled ?? true),
@@ -100,7 +108,7 @@ export const useUpdateInventory = () => {
   return useMutation({
     mutationFn: async (inventoryData: InventoryUpdateRequest) => {
       logger.debug("✏️ Updating inventory:", inventoryData);
-      const result = await apiService.updateInventory(inventoryData);
+      const result = await updateInventory(inventoryData);
       logger.debug("✅ Inventory updated:", result);
       return result;
     },

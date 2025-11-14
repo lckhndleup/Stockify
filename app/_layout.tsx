@@ -78,7 +78,7 @@ export default function RootLayout() {
       if (isDevMode) logger.debug("🔧 Setting up global auth error handler...");
 
       initializeErrorHandler(authStore);
-      // Bridge auth store to services layer (401 handler in apiService)
+      // Bridge auth store to services layer (401 handler in base service)
       try {
         setAuthStoreRef(authStore as any);
       } catch {

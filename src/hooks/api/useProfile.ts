@@ -1,6 +1,13 @@
 // src/hooks/api/useProfile.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import apiService from "@/src/services/api";
+import {
+  getProfile,
+  updateProfile,
+  changePassword,
+  deleteAccount,
+  uploadProfileImage,
+  uploadCompanyLogo,
+} from "@/src/services/profile";
 import { queryKeys } from "./queryKeys";
 import type { ApiError } from "@/src/types/apiTypes";
 import type {
@@ -22,7 +29,7 @@ export const useProfile = () => {
     queryKey: queryKeys.profile.detail(),
     queryFn: async () => {
       logger.debug("🔍 Fetching user profile...");
-      const result = await apiService.getProfile();
+      const result = await getProfile();
       logger.debug("✅ Profile fetched successfully");
       return result;
     },
@@ -41,7 +48,7 @@ export const useUpdateProfile = () => {
   return useMutation<ProfileResponse, ApiError, ProfileUpdateRequest>({
     mutationFn: async (profileData: ProfileUpdateRequest) => {
       logger.debug("📝 Updating profile...", profileData);
-      const result = await apiService.updateProfile(profileData);
+      const result = await updateProfile(profileData);
       logger.debug("✅ Profile updated successfully");
       return result;
     },
@@ -64,7 +71,7 @@ export const useChangePassword = () => {
   return useMutation<PasswordChangeResponse, ApiError, PasswordChangeRequest>({
     mutationFn: async (passwordData: PasswordChangeRequest) => {
       logger.debug("🔐 Changing password...");
-      const result = await apiService.changePassword(passwordData);
+      const result = await changePassword(passwordData);
       logger.debug("✅ Password changed successfully");
       return result;
     },
@@ -87,7 +94,7 @@ export const useDeleteAccount = () => {
   return useMutation<AccountDeleteResponse, ApiError, AccountDeleteRequest>({
     mutationFn: async (deleteData: AccountDeleteRequest) => {
       logger.debug("🗑️ Deleting account...");
-      const result = await apiService.deleteAccount(deleteData);
+      const result = await deleteAccount(deleteData);
       logger.debug("✅ Account deleted successfully");
       return result;
     },
@@ -112,7 +119,7 @@ export const useUploadProfileImage = () => {
   return useMutation<ProfileResponse, ApiError, any>({
     mutationFn: async (imageFile: any) => {
       logger.debug("📸 Uploading profile image...");
-      const result = await apiService.uploadProfileImage(imageFile);
+      const result = await uploadProfileImage(imageFile);
       logger.debug("✅ Profile image uploaded successfully");
       return result;
     },
@@ -137,7 +144,7 @@ export const useUploadCompanyLogo = () => {
   return useMutation<ProfileResponse, ApiError, any>({
     mutationFn: async (imageFile: any) => {
       logger.debug("🏢 Uploading company logo...");
-      const result = await apiService.uploadCompanyLogo(imageFile);
+      const result = await uploadCompanyLogo(imageFile);
       logger.debug("✅ Company logo uploaded successfully");
       return result;
     },

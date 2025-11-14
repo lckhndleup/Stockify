@@ -1,6 +1,6 @@
 // src/hooks/api/useReports.ts
 import { useQuery } from "@tanstack/react-query";
-import { apiService } from "@/src/services/api";
+import { getDailyReport } from "@/src/services/report";
 import logger from "@/src/utils/logger";
 import { queryKeys } from "./queryKeys";
 import type { DailyReportResponse } from "@/src/types/report";
@@ -18,7 +18,7 @@ export const useDailyReport = (
     queryKey: queryKeys.reports.daily(params),
     queryFn: async () => {
       logger.debug("📊 Fetching daily report...", params);
-      const result = await apiService.getDailyReport(params);
+      const result = await getDailyReport(params);
       logger.debug("✅ Daily report fetched:", result);
       return result as DailyReportResponse;
     },

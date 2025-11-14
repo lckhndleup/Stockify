@@ -16,7 +16,7 @@ import { useToast } from "@/src/hooks/useToast";
 import { useTransactions } from "@/src/hooks/api/useTransactions";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import type { TransactionItem } from "@/src/services/transaction/type";
-import apiService from "@/src/services/api";
+import { getAuthHeaders } from "@/src/services/base";
 
 // Tab types
 type TabType = "bilgiler" | "hareketler" | "ozet";
@@ -907,7 +907,7 @@ export default function StatementSection() {
         onClose={() => setDocumentModalVisible(false)}
         documentUrl={currentDocumentUrl}
         title={currentDocumentTitle}
-        headers={apiService.getAuthHeaders()}
+        headers={getAuthHeaders()}
       />
     </Container>
   );

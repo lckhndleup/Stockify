@@ -1,6 +1,6 @@
 // src/hooks/api/useSales.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiService } from "@/src/services/api";
+import { getSalesProducts, calculateSale, confirmSale, cancelSale } from "@/src/services/sales";
 import { queryKeys } from "./queryKeys";
 import {
   adaptSalesProductsForUI,
@@ -19,7 +19,7 @@ export const useSalesProducts = (options?: { enabled?: boolean }) =>
   useQuery<SalesProductDisplayItem[]>({
     queryKey: queryKeys.sales.products(),
     queryFn: async () => {
-      const products = await apiService.getSalesProducts();
+      const products = await getSalesProducts();
       return adaptSalesProductsForUI(products);
     },
     staleTime: 5 * 60 * 1000,
@@ -34,7 +34,7 @@ export const useSalesProducts = (options?: { enabled?: boolean }) =>
 export const useSalesCalculate = () => {
   const qc = useQueryClient();
   return useMutation<SalesSummary, unknown, SalesCalculateRequest>({
-    mutationFn: (payload) => apiService.calculateSale(payload),
+    mutationFn: (payload) => calculateSale(payload),
     onSuccess: (data, vars) => {
       qc.setQueryData(queryKeys.sales.calculate(vars.brokerId), data);
     },
@@ -45,7 +45,7 @@ export const useSalesCalculate = () => {
 export const useSalesConfirm = () => {
   const qc = useQueryClient();
   return useMutation<SalesSummary, unknown, SalesConfirmRequest>({
-    mutationFn: (payload) => apiService.confirmSale(payload),
+    mutationFn: (payload) => confirmSale(payload),
     onSuccess: (data, vars) => {
       // Sepet ve etkilenebilecek listeler invalidate
       qc.invalidateQueries({
@@ -62,7 +62,7 @@ export const useSalesConfirm = () => {
 export const useSalesCancel = () => {
   const qc = useQueryClient();
   return useMutation<SalesCancelResponse, unknown, SalesCancelRequest>({
-    mutationFn: (payload) => apiService.cancelSale(payload),
+    mutationFn: (payload) => cancelSale(payload),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({
         queryKey: queryKeys.basket.byBroker(vars.brokerId),

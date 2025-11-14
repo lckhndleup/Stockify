@@ -527,10 +527,7 @@ export default function StockPage() {
                     >
                       {item.productName}
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      style={{ fontSize: 12, color: "#9CA3AF" }}
-                    >
+                    <Typography variant="caption" style={{ fontSize: 12, color: "#9CA3AF" }}>
                       {item.categoryName}
                     </Typography>
                   </View>
@@ -545,10 +542,7 @@ export default function StockPage() {
                       ₺{item.price?.toFixed(2) || "0.00"}
                     </Typography>
                     <View style={{ width: 1, height: 12, backgroundColor: "#E5E7EB" }} />
-                    <Typography
-                      variant="body"
-                      style={{ fontSize: 14, color: "#6B7280" }}
-                    >
+                    <Typography variant="body" style={{ fontSize: 14, color: "#6B7280" }}>
                       Stok: {item.productCount}
                     </Typography>
                     {(item.isOutOfStock || item.isCritical) && (

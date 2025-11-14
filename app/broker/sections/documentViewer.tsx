@@ -12,7 +12,7 @@
  *   onClose={() => setVisible(false)}
  *   documentUrl={url}
  *   title="Belge Başlığı"
- *   headers={apiService.getAuthHeaders()}
+ *   headers={getAuthHeaders()}
  * />
  */
 
@@ -21,7 +21,7 @@ import { ActivityIndicator, Alert, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import WebView from "react-native-webview";
 import { Container, Button, Icon, Typography, Divider } from "@/src/components/ui";
-import apiService from "@/src/services/api";
+import { getAuthHeaders } from "@/src/services/base";
 
 export default function DocumentViewer() {
   const params = useLocalSearchParams();
@@ -32,7 +32,7 @@ export default function DocumentViewer() {
   const headers = useMemo(
     () => ({
       Accept: "application/pdf",
-      ...apiService.getAuthHeaders(),
+      ...getAuthHeaders(),
     }),
     [],
   );
