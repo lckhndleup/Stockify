@@ -30,6 +30,7 @@ import {
 import { validateBrokerForm } from "@/src/validations/brokerValidation";
 import { BrokerTargetDay } from "@/src/types/broker";
 import { useAppStore } from "@/src/stores/appStore";
+import BrokerHeader from "@/src/components/broker/BrokerHeader";
 
 const TARGET_DAY_OPTIONS: SelectBoxOption[] = [
   { label: "Pazartesi", value: "MONDAY" },
@@ -260,11 +261,10 @@ export default function BrokerDetailPage() {
                     targetDayOfWeek: brokerTargetDay as BrokerTargetDay,
                   },
                 });
-                logger.debug("✅ Broker updated via backend");
               }
-
-              handleCloseEditBrokerModal();
-              showSuccess("Aracı başarıyla güncellendi!");
+              logger.debug("✅ Broker updated successfully");
+              showSuccess("Aracı başarıyla güncellendi.");
+              setIsEditBrokerModalVisible(false);
             } catch (error: any) {
               logger.error("❌ Update broker error:", error);
 

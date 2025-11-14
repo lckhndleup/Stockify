@@ -2,22 +2,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import {
-  Container,
-  Typography,
-  Card,
-  Button,
-  Icon,
-  Divider,
-  Toast,
-  Loading,
-} from "@/src/components/ui";
+import { Container, Typography, Card, Button, Icon, Divider, Toast, Loading } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
 import { useSalesCalculate, useSalesConfirm, useSalesCancel } from "@/src/hooks/api/useSales";
 import type { SalesSummary } from "@/src/types/sales";
 import type { SalesItemParam } from "@/src/types/salesUI";
 import { parseApiError } from "@/src/utils/apiError";
+import BrokerHeader from "@/src/components/broker/BrokerHeader";
 
 export default function ConfirmSales() {
   // --- Params & state (LOGIC AYNI) ---
@@ -224,26 +216,7 @@ export default function ConfirmSales() {
     <Container className="bg-white" padding="sm" safeTop={false}>
       <Toast visible={toast.visible} message={toast.message} type={toast.type} />
       <ScrollView showsVerticalScrollIndicator={false} className="mt-4">
-        {/* 1) ARACI İSMİ */}
-        <View className="items-center mb-4">
-          <Typography
-            variant="h1"
-            size="3xl"
-            weight="bold"
-            className="text-stock-black text-center"
-          >
-            {`${broker.name} ${broker.surname}`}
-          </Typography>
-          <Typography
-            variant="body"
-            weight="semibold"
-            className={`${
-              brokerBalance >= 0 ? "text-stock-red" : "text-stock-green"
-            } text-center mt-0`}
-          >
-            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺{Math.abs(brokerBalance).toLocaleString()}
-          </Typography>
-        </View>
+        <BrokerHeader name={broker.name} surname={broker.surname} balance={brokerBalance} />
         {/* 2) BAKİYE SATIRI (| ile iki sütun) */}
         {/* <View className="border border-stock-border rounded-lg bg-white mb-4 overflow-hidden">
           <View className="flex-row">

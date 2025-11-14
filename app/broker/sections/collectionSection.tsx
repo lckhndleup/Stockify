@@ -2,18 +2,10 @@
 import React, { useState } from "react";
 import { View, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import {
-  Container,
-  Typography,
-  Card,
-  SelectBox,
-  Input,
-  Button,
-  Toast,
-  Loading,
-} from "@/src/components/ui";
+import { Container, Typography, Card, SelectBox, Input, Button, Toast, Loading } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
 import logger from "@/src/utils/logger";
+import BrokerHeader from "@/src/components/broker/BrokerHeader";
 
 // Backend hooks
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
@@ -201,24 +193,7 @@ export default function CollectionSection() {
       )}
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3">
-        {/* Header - İsim ve Bakiye kısmı */}
-        <View className="mb-6 items-center">
-          <Typography
-            variant="h1"
-            weight="bold"
-            size="3xl"
-            className="text-stock-black text-center mb-0"
-          >
-            {`${broker.name} ${broker.surname}`}
-          </Typography>
-          <Typography
-            variant="body"
-            weight="semibold"
-            className={`${brokerBalance >= 0 ? "text-stock-red" : "text-stock-green"} text-center mt-0`}
-          >
-            Bakiye: {brokerBalance >= 0 ? "" : "-"}₺{Math.abs(brokerBalance).toLocaleString()}
-          </Typography>
-        </View>
+        <BrokerHeader name={broker.name} surname={broker.surname} balance={brokerBalance} />
 
         {/* Tahsilat Formu */}
         <Card
