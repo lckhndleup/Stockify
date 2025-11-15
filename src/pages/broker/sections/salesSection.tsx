@@ -10,10 +10,10 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
-import { useRoute, useNavigation } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/src/navigation/RootNavigator';
+import { useRoute, useNavigation } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/src/navigation/RootNavigator";
 import {
   Container,
   Typography,
@@ -46,7 +46,7 @@ import type { SalesSummary } from "@/src/types/sales";
 import type { AddedProduct } from "@/src/types/salesUI";
 
 export default function SalesSection() {
-  const route = useRoute<RouteProp<RootStackParamList, 'SalesSection'>>();
+  const route = useRoute<RouteProp<RootStackParamList, "SalesSection">>();
   const { brokerId } = route.params;
   const brokerIdNum = Number(brokerId);
 
@@ -143,13 +143,13 @@ export default function SalesSection() {
                         handleRemoveProduct(product.id, true);
                       });
 
-                      navigation.navigate('BrokerDetail', { brokerId });
+                      navigation.goBack();
                     },
                   },
                 ],
               );
             } else {
-              navigation.navigate('BrokerDetail', { brokerId });
+              navigation.goBack();
             }
           }}
           style={{ paddingLeft: 16 }}
@@ -377,13 +377,13 @@ export default function SalesSection() {
                         handleRemoveProduct(product.id, true);
                       });
 
-                      navigation.navigate('BrokerDetail', { brokerId });
+                      navigation.goBack();
                     },
                   },
                 ],
               );
             } else {
-              navigation.navigate('BrokerDetail', { brokerId });
+              navigation.goBack();
             }
           }}
           style={{ paddingLeft: 16 }}
@@ -520,7 +520,7 @@ export default function SalesSection() {
       return;
     }
 
-    navigation.navigate('BrokerDetail', {
+    navigation.navigate("BrokerDetail", {
       brokerId,
       salesData: JSON.stringify(
         addedProducts.map((p) => ({
@@ -701,7 +701,7 @@ export default function SalesSection() {
               size="md"
               fullWidth
               className="bg-stock-red"
-              onPress={() => navigation.navigate('Stock')}
+              onPress={() => navigation.navigate("Stock")}
             >
               <View className="flex-row items-center justify-center">
                 <Icon
