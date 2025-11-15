@@ -367,7 +367,7 @@ export default function StockPage() {
                       { text: "İptal", style: "cancel" },
                       {
                         text: "Kategori Yönetimi",
-                        onPress: () => router.push("/categories"),
+                        onPress: () => navigation.navigate('Categories'),
                       },
                     ],
                   );
@@ -630,7 +630,7 @@ export default function StockPage() {
               {/* Yeni Kategori Ekle */}
               <TouchableOpacity
                 onPress={() => {
-                  router.push("/categories");
+                  navigation.navigate('Categories');
                   setIsAddProductModalOpen(false);
                   Keyboard.dismiss();
                 }}

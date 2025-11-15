@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { ScrollView, View, Alert, Dimensions } from "react-native";
-import { useRoute, useNavigation } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/src/navigation/RootNavigator';
+import { useRoute, useNavigation } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/src/navigation/RootNavigator";
 import logger from "@/src/utils/logger";
 
 import {
@@ -52,7 +52,7 @@ export default function BrokerDetailPage() {
   logger.debug("🔍 BrokerDetailPage render started");
 
   // ✅ HOOKS - DOĞRU SIRADA ÇAĞRILMALI
-  const route = useRoute<RouteProp<RootStackParamList, 'BrokerDetail'>>();
+  const route = useRoute<RouteProp<RootStackParamList, "BrokerDetail">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { brokerId } = route.params;
   const { toast, showSuccess, showError, hideToast } = useToast();
@@ -90,7 +90,7 @@ export default function BrokerDetailPage() {
   const brokers = allBrokers;
 
   // Broker bilgilerini al
-  const broker = brokers.find((b) => b.id === brokerId);
+  const broker = brokers.find((b) => String(b.id) === String(brokerId));
 
   // Balance hesaplama - Backend'den gelen balance kullan
   const totalDebt = broker ? broker.balance : 0;
@@ -114,9 +114,9 @@ export default function BrokerDetailPage() {
 
     if (!broker && brokerId && !brokersLoading) {
       logger.debug("🚀 Navigation triggered - broker not found");
-      navigation.navigate('Brokers');
+      navigation.replace("Brokers");
     }
-  }, [broker, brokerId, brokersLoading]);
+  }, [broker, brokerId, brokersLoading, navigation]);
 
   useEffect(() => {
     logger.debug("🔄 useEffect - Broker state update:", {
@@ -308,12 +308,12 @@ export default function BrokerDetailPage() {
             try {
               const brokerName = `${broker.name} ${broker.surname}`;
 
-              logger.debug("🚗️ Delete broker via backend");
+              logger.debug("🗑️ Delete broker via backend");
               await deleteBrokerMutation.mutateAsync(broker.id);
               logger.debug("✅ Broker deleted via backend");
 
               logger.debug("🚀 Navigate to brokers");
-              navigation.navigate('Brokers');
+              navigation.navigate("Brokers");
 
               logger.debug("🎉 Show success message");
               showGlobalToast(`${brokerName} başarıyla silindi!`, "success");
@@ -329,15 +329,15 @@ export default function BrokerDetailPage() {
 
   // Navigation handlers
   const handleSalesPress = () => {
-    navigation.navigate('BrokerDetail', { brokerId: broker.id } as any);
+    navigation.navigate("SalesSection", { brokerId: String(broker.id) });
   };
 
   const handleCollectionPress = () => {
-    navigation.navigate('BrokerDetail', { brokerId: broker.id } as any);
+    navigation.navigate("CollectionSection", { brokerId: String(broker.id) });
   };
 
   const handleStatementPress = () => {
-    navigation.navigate('BrokerDetail', { brokerId: broker.id } as any);
+    navigation.navigate("StatementSection", { brokerId: String(broker.id) });
   };
 
   logger.debug("🎨 Rendering BrokerDetailPage with broker:", broker.name);
@@ -478,9 +478,7 @@ export default function BrokerDetailPage() {
             variant="default"
             padding="none"
             pressable
-            onPress={() =>
-              navigation.navigate('Reports', undefined)
-            }
+            onPress={() => navigation.navigate("Reports")}
             className="bg-stock-red border-0 px-4 py-4 mb-3"
             radius="md"
           >

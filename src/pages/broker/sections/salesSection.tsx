@@ -28,7 +28,6 @@ import {
   SearchBar,
 } from "@/src/components/ui";
 import { useToast } from "@/src/hooks/useToast";
-import { useNavigation } from "@react-navigation/native";
 
 // BACKEND HOOKS
 import { useActiveBrokers, useUpdateBrokerDiscountRate } from "@/src/hooks/api/useBrokers";
@@ -47,7 +46,7 @@ import type { SalesSummary } from "@/src/types/sales";
 import type { AddedProduct } from "@/src/types/salesUI";
 
 export default function SalesSection() {
-  const route = useRoute<RouteProp<RootStackParamList, 'BrokerDetail'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'SalesSection'>>();
   const { brokerId } = route.params;
   const brokerIdNum = Number(brokerId);
 

@@ -272,7 +272,10 @@ export default function BrokerVisitsScreen() {
         <View className="px-4 pt-14 pb-4">
           <View className="flex-row items-center justify-between mb-4">
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => {
+                const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+                navigation.goBack();
+              }}
               className="mr-3 p-2"
               style={{ marginLeft: -8 }}
             >

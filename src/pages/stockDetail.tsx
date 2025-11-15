@@ -20,7 +20,7 @@ import { ZodError } from "zod";
 
 export default function StockDetailPage() {
   const route = useRoute<RouteProp<RootStackParamList, 'StockDetail'>>();
-  const { productId: id } = route.params;
+  const { id } = route.params;
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     price: "",

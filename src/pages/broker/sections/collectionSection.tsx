@@ -24,7 +24,7 @@ import {
 
 export default function CollectionSection() {
   // Hooks
-  const route = useRoute<RouteProp<RootStackParamList, 'BrokerDetail'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'CollectionSection'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const brokerIdParam = route.params.brokerId;
   const { toast, showSuccess, showError, hideToast } = useToast();

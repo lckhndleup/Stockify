@@ -16,6 +16,14 @@ import BrokersPage from "../pages/brokers";
 import ProductsPage from "../pages/products";
 import ProfilePage from "../pages/profile";
 import BrokerDetailPage from "../pages/broker/brokerDetail";
+import CategoriesPage from "../pages/categories";
+import StockPage from "../pages/stock";
+import StockDetailPage from "../pages/stockDetail";
+import ReportsPage from "../pages/reports";
+import BrokerVisitsPage from "../pages/broker-visits";
+import SalesSection from "../pages/broker/sections/salesSection";
+import CollectionSection from "../pages/broker/sections/collectionSection";
+import StatementSection from "../pages/broker/sections/statementSection";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -26,13 +34,16 @@ export type RootStackParamList = {
   Profile: undefined;
   Stock: undefined;
   Categories: undefined;
-  StockDetail: { productId: string };
+  StockDetail: { id: string; action?: string; amount?: number };
   BrokerDetail: { 
     brokerId: string;
     [key: string]: any; // Allow additional params for sections
   };
   BrokerVisits: undefined;
   Reports: undefined;
+  SalesSection: { brokerId: string };
+  CollectionSection: { brokerId: string };
+  StatementSection: { brokerId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -104,9 +115,49 @@ export default function RootNavigator() {
             options={{ title: "Profil", headerShown: true }}
           />
           <Stack.Screen
+            name="Categories"
+            component={CategoriesPage}
+            options={{ title: "Kategoriler", headerShown: true }}
+          />
+          <Stack.Screen
+            name="Stock"
+            component={StockPage}
+            options={{ title: "Stok", headerShown: true }}
+          />
+          <Stack.Screen
+            name="StockDetail"
+            component={StockDetailPage}
+            options={{ title: "Stok Detayı", headerShown: true }}
+          />
+          <Stack.Screen
+            name="Reports"
+            component={ReportsPage}
+            options={{ title: "Raporlar", headerShown: true }}
+          />
+          <Stack.Screen
+            name="BrokerVisits"
+            component={BrokerVisitsPage}
+            options={{ title: "Ziyaretler", headerShown: true }}
+          />
+          <Stack.Screen
             name="BrokerDetail"
             component={BrokerDetailPage}
             options={{ title: "Aracı Detay", headerShown: true }}
+          />
+          <Stack.Screen
+            name="SalesSection"
+            component={SalesSection}
+            options={{ title: "Satış", headerShown: true }}
+          />
+          <Stack.Screen
+            name="CollectionSection"
+            component={CollectionSection}
+            options={{ title: "Tahsilat", headerShown: true }}
+          />
+          <Stack.Screen
+            name="StatementSection"
+            component={StatementSection}
+            options={{ title: "Ekstreler", headerShown: true }}
           />
         </Stack.Navigator>
       </NavigationContainer>

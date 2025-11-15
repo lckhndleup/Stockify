@@ -409,7 +409,7 @@ export default function ProductsPage() {
           { text: "İptal", style: "cancel" },
           {
             text: "Kategori Yönetimi",
-            onPress: () => router.push("/categories"),
+            onPress: () => navigation.navigate('Categories'),
           },
         ],
       );
@@ -425,7 +425,7 @@ export default function ProductsPage() {
           { text: "İptal", style: "cancel" },
           {
             text: "Kategori Yönetimi",
-            onPress: () => router.push("/categories"),
+            onPress: () => navigation.navigate('Categories'),
           },
         ],
       );

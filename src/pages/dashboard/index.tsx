@@ -150,13 +150,13 @@ export default function DashboardPage() {
                   title="Satış Yap"
                   subtitle="Yeni satış"
                   iconName="shopping-cart"
-                  onPress={() => router.push("/broker/[id]" as any)}
+                  onPress={() => navigation.navigate('Brokers')}
                 />
                 <DashboardActionCard
                   title="Tahsilat"
                   subtitle="Ödeme al"
                   iconName="receipt-long"
-                  onPress={() => router.push("/broker/[id]" as any)}
+                  onPress={() => navigation.navigate('Brokers')}
                 />
               </View>
 

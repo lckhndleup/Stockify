@@ -86,10 +86,8 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit }) => {
   };
 
   const handleBrokerPress = () => {
-    router.push({
-      pathname: "/broker/brokerDetail",
-      params: { brokerId: visit.brokerId.toString() },
-    });
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    navigation.navigate('BrokerDetail', { brokerId: String(visit.brokerId) } as any);
   };
 
   return (

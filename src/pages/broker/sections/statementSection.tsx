@@ -41,7 +41,7 @@ const DATE_RANGE_LABELS = {
 } as const;
 
 export default function StatementSection() {
-  const route = useRoute<RouteProp<RootStackParamList, 'BrokerDetail'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'StatementSection'>>();
   const { brokerId } = route.params;
   const { toast, showSuccess, showError, hideToast } = useToast();
 

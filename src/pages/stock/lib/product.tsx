@@ -64,8 +64,13 @@ const ProductItem = ({
     }
   };
 
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const _handleDecreaseStock = (inventoryItem: InventoryDisplayItem) => {
-    router.push(`/stockDetail?id=${inventoryItem.inventoryId}&action=remove&amount=${1}`);
+    navigation.navigate('StockDetail', {
+      id: String(inventoryItem.inventoryId),
+      action: 'remove',
+      amount: 1,
+    } as any);
   };
 
   return (
