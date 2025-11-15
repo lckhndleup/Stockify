@@ -1,15 +1,10 @@
 /* eslint-disable no-console */
 // src/utils/logger.ts
 // Lightweight logger gated by __DEV__ and configurable log level
-import Constants from "expo-constants";
 
 export type LogLevel = "silent" | "error" | "warn" | "info" | "debug";
 
 function getInitialLevel(): LogLevel {
-  const extra = (Constants?.expoConfig?.extra ?? {}) as { logLevel?: LogLevel };
-  const candidate = extra.logLevel;
-  const allowed: LogLevel[] = ["silent", "error", "warn", "info", "debug"];
-  if (candidate && allowed.includes(candidate)) return candidate;
   return __DEV__ ? "debug" : "error";
 }
 

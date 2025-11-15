@@ -1,11 +1,8 @@
 import type { ApiError } from "@/src/types/apiTypes";
 import logger from "@/src/utils/logger";
-import Constants from "expo-constants";
+import Config from "@/src/config";
 
-const API_BASE_URL =
-  (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-  ((Constants.expoConfig?.extra as any)?.apiUrl as string | undefined) ||
-  "http://50.114.185.206:8080";
+const API_BASE_URL = Config.API_URL;
 
 export function getAuthenticatedImageUri(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;

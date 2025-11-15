@@ -1,23 +1,12 @@
-const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require("nativewind/metro");
+const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const { withNativeWind } = require('nativewind/metro');
 
+/**
+ * Metro configuration
+ * https://reactnative.dev/docs/metro
+ *
+ * @type {import('@react-native/metro-config').MetroConfig}
+ */
 const config = getDefaultConfig(__dirname);
 
-// JSON dosyalarını asset olarak ele al (Lottie vb.) ve sourceExts'den çıkar
-config.resolver.assetExts = [...config.resolver.assetExts, "json"];
-config.resolver.sourceExts = config.resolver.sourceExts.filter(
-  (ext) => ext !== "json"
-);
-
-// CSS dosyaları için (NativeWind)
-config.resolver.sourceExts = [
-  ...new Set([...config.resolver.sourceExts, "css"]),
-];
-
-// Src klasörü için watchFolders
-config.watchFolders = [__dirname];
-
-module.exports = withNativeWind(config, {
-  input: "./global.css",
-  inlineRem: 16,
-});
+module.exports = withNativeWind(config, { input: './global.css' });

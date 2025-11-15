@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Modal as RNModal, View, TouchableOpacity, Platform, Alert } from "react-native";
 import WebView from "react-native-webview";
 import LottieView from "lottie-react-native";
-import { File, Paths } from "expo-file-system";
-import * as Sharing from "expo-sharing";
-import * as Print from "expo-print";
+import RNFS from "react-native-fs";
+import Share from "react-native-share";
+import RNPrint from "react-native-print";
 import Typography from "./typography";
 import Icon from "./icon";
 import logger from "@/src/utils/logger";
@@ -38,66 +38,44 @@ export default function DocumentModal({
       logger.debug("📥 Starting download:", documentUrl);
 
       const filename = `belge_${Date.now()}.pdf`;
-      const file = new File(Paths.document, filename);
+      const filePath = `${RNFS.DocumentDirectoryPath}/${filename}`;
 
-      // Use XMLHttpRequest to get binary data as ArrayBuffer
-      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", documentUrl, true);
-        xhr.responseType = "arraybuffer";
+      // Download file using react-native-fs
+      const downloadResult = await RNFS.downloadFile({
+        fromUrl: documentUrl,
+        toFile: filePath,
+        headers: headers,
+      }).promise;
 
-        // Set headers
-        Object.entries(headers).forEach(([key, value]) => {
-          xhr.setRequestHeader(key, value);
-        });
+      if (downloadResult.statusCode !== 200) {
+        throw new Error(`HTTP error! status: ${downloadResult.statusCode}`);
+      }
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(xhr.response as ArrayBuffer);
-          } else {
-            reject(new Error(`HTTP error! status: ${xhr.status}`));
-          }
-        };
+      logger.debug("✅ Download successful:", filePath);
 
-        xhr.onerror = () => reject(new Error("Network request failed"));
-        xhr.send();
-      });
-
-      // Convert ArrayBuffer to Uint8Array
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      // Write as TypedArray
-      await file.write(uint8Array);
-
-      logger.debug("✅ Download successful:", file.uri);
-
-      // Check if sharing is available
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (isAvailable) {
-        // Show alert with share option
-        Alert.alert("Başarılı", "Belge hazır! Kaydetmek veya paylaşmak ister misiniz?", [
-          {
-            text: "Paylaş/Kaydet",
-            onPress: async () => {
-              try {
-                await Sharing.shareAsync(file.uri, {
-                  mimeType: "application/pdf",
-                  dialogTitle: title,
-                  UTI: "com.adobe.pdf",
-                });
-              } catch (shareError) {
+      // Show alert with share option
+      Alert.alert("Başarılı", "Belge hazır! Kaydetmek veya paylaşmak ister misiniz?", [
+        {
+          text: "Paylaş/Kaydet",
+          onPress: async () => {
+            try {
+              await Share.open({
+                url: Platform.OS === 'ios' ? filePath : `file://${filePath}`,
+                type: "application/pdf",
+                title: title,
+              });
+            } catch (shareError: any) {
+              if (shareError.message !== 'User did not share') {
                 logger.error("❌ Share after download error:", shareError);
               }
-            },
+            }
           },
-          {
-            text: "Tamam",
-            style: "cancel",
-          },
-        ]);
-      } else {
-        Alert.alert("Başarılı", "Belge başarıyla hazırlandı!");
-      }
+        },
+        {
+          text: "Tamam",
+          style: "cancel",
+        },
+      ]);
     } catch (error) {
       logger.error("❌ Download error:", error);
       Alert.alert("Hata", "Belge indirilemedi. Lütfen tekrar deneyin.");
@@ -109,52 +87,34 @@ export default function DocumentModal({
     try {
       logger.debug("📤 Starting share:", documentUrl);
 
-      // Check if sharing is available
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (!isAvailable) {
-        Alert.alert("Uyarı", "Bu cihazda paylaşım özelliği kullanılamıyor.");
-        return;
+      const filename = `belge_${Date.now()}.pdf`;
+      const filePath = `${RNFS.DocumentDirectoryPath}/${filename}`;
+
+      // Download file first
+      const downloadResult = await RNFS.downloadFile({
+        fromUrl: documentUrl,
+        toFile: filePath,
+        headers: headers,
+      }).promise;
+
+      if (downloadResult.statusCode !== 200) {
+        throw new Error(`HTTP error! status: ${downloadResult.statusCode}`);
       }
 
-      const filename = `belge_${Date.now()}.pdf`;
-      const file = new File(Paths.document, filename);
-
-      // Use XMLHttpRequest to get binary data
-      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", documentUrl, true);
-        xhr.responseType = "arraybuffer";
-
-        Object.entries(headers).forEach(([key, value]) => {
-          xhr.setRequestHeader(key, value);
-        });
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(xhr.response as ArrayBuffer);
-          } else {
-            reject(new Error(`HTTP error! status: ${xhr.status}`));
-          }
-        };
-
-        xhr.onerror = () => reject(new Error("Network request failed"));
-        xhr.send();
-      });
-
-      const uint8Array = new Uint8Array(arrayBuffer);
-      await file.write(uint8Array);
-
-      logger.debug("✅ File ready for sharing:", file.uri);
+      logger.debug("✅ File ready for sharing:", filePath);
 
       // Share the file - This will show native share sheet with all available apps
-      await Sharing.shareAsync(file.uri, {
-        mimeType: "application/pdf",
-        dialogTitle: title,
-        UTI: "com.adobe.pdf",
+      await Share.open({
+        url: Platform.OS === 'ios' ? filePath : `file://${filePath}`,
+        type: "application/pdf",
+        title: title,
       });
-    } catch (error) {
-      logger.error("❌ Share error:", error);
-      Alert.alert("Hata", "Belge paylaşılamadı. Lütfen tekrar deneyin.");
+    } catch (error: any) {
+      // Don't show error if user just canceled the share dialog
+      if (error.message !== 'User did not share') {
+        logger.error("❌ Share error:", error);
+        Alert.alert("Hata", "Belge paylaşılamadı. Lütfen tekrar deneyin.");
+      }
     }
   };
 
@@ -164,42 +124,27 @@ export default function DocumentModal({
       logger.debug("🖨️ Starting print:", documentUrl);
 
       const filename = `belge_${Date.now()}.pdf`;
-      const file = new File(Paths.document, filename);
+      const filePath = `${RNFS.DocumentDirectoryPath}/${filename}`;
 
-      // Use XMLHttpRequest to get binary data
-      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", documentUrl, true);
-        xhr.responseType = "arraybuffer";
+      // Download file first
+      const downloadResult = await RNFS.downloadFile({
+        fromUrl: documentUrl,
+        toFile: filePath,
+        headers: headers,
+      }).promise;
 
-        Object.entries(headers).forEach(([key, value]) => {
-          xhr.setRequestHeader(key, value);
-        });
+      if (downloadResult.statusCode !== 200) {
+        throw new Error(`HTTP error! status: ${downloadResult.statusCode}`);
+      }
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(xhr.response as ArrayBuffer);
-          } else {
-            reject(new Error(`HTTP error! status: ${xhr.status}`));
-          }
-        };
-
-        xhr.onerror = () => reject(new Error("Network request failed"));
-        xhr.send();
-      });
-
-      const uint8Array = new Uint8Array(arrayBuffer);
-      await file.write(uint8Array);
-
-      logger.debug("✅ File ready for printing:", file.uri);
+      logger.debug("✅ File ready for printing:", filePath);
 
       // Open native print dialog
-      const result = await Print.printAsync({
-        uri: file.uri,
+      await RNPrint.print({
+        filePath: Platform.OS === 'ios' ? filePath : `file://${filePath}`,
       });
 
-      // Log result silently
-      logger.debug("🖨️ Print result:", result);
+      logger.debug("🖨️ Print dialog opened successfully");
     } catch (error: any) {
       // Just log errors, don't show any alerts to user
       logger.error("❌ Print error:", error);

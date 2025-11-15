@@ -1,32 +1,39 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
-import { Link, usePathname } from "expo-router";
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/src/navigation/RootNavigator';
 import Icon from "./icon";
 import type { BottomNavigationProps, NavigationItem } from "@/src/types/navigation";
 
 export default function BottomNavigation({ className = "" }: BottomNavigationProps) {
-  const pathname = usePathname();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute();
 
   const navigationItems: NavigationItem[] = [
     {
       icon: { family: "MaterialCommunityIcons", name: "home" },
       label: "Ana Sayfa",
       path: "/dashboard",
+      routeName: "Dashboard" as keyof RootStackParamList,
     },
     {
       icon: { family: "MaterialCommunityIcons", name: "chart-line" },
       label: "Stok",
       path: "/stock",
+      routeName: "Stock" as keyof RootStackParamList,
     },
     {
       icon: { family: "MaterialCommunityIcons", name: "clipboard-check" },
       label: "Ziyaretler",
       path: "/broker-visits",
+      routeName: "BrokerVisits" as keyof RootStackParamList,
     },
     {
       icon: { family: "MaterialCommunityIcons", name: "account-group" },
       label: "Aracılar",
       path: "/brokers",
+      routeName: "Brokers" as keyof RootStackParamList,
     },
   ];
 
@@ -54,11 +61,12 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
           }}
         >
           {navigationItems.map((item, index) => {
-            const isActive = pathname === item.path;
+            const isActive = route.name === item.routeName;
 
             return (
-              <Link key={index} href={item.path as any} asChild>
                 <TouchableOpacity
+                  key={index}
+                  onPress={() => navigation.navigate(item.routeName)}
                   style={{
                     flex: isActive ? 2 : 1,
                     height: 50,
@@ -95,14 +103,13 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
                     </Text>
                   )}
                 </TouchableOpacity>
-              </Link>
             );
           })}
         </View>
 
         {/* Sağdaki artı butonu */}
-        <Link href="/products" asChild>
           <TouchableOpacity
+            onPress={() => navigation.navigate('Products')}
             className="bg-stock-red rounded-full items-center justify-center"
             style={{
               height: 58,
@@ -118,7 +125,6 @@ export default function BottomNavigation({ className = "" }: BottomNavigationPro
           >
             <Icon family="MaterialIcons" name="add" size={28} color="#FFFEFF" />
           </TouchableOpacity>
-        </Link>
       </View>
     </View>
   );

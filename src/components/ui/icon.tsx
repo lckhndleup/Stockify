@@ -1,12 +1,10 @@
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import {
-  MaterialIcons,
-  MaterialCommunityIcons,
-  Feather,
-  AntDesign,
-  Ionicons,
-} from "@expo/vector-icons";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import Feather from "react-native-vector-icons/Feather";
+import AntDesign from "react-native-vector-icons/AntDesign";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import type { IconProps } from "@/src/types/ui";
 
 export default function Icon({

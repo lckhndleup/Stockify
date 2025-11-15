@@ -29,6 +29,7 @@ export interface NavigationItem {
   };
   label: string;
   path: AppRoute;
+  routeName: string;
 }
 
 export interface BottomNavigationProps {

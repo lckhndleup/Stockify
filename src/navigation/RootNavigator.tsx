@@ -1,0 +1,108 @@
+import React, { useEffect, useRef } from "react";
+import { NavigationContainer, NavigationContainerRef } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useAuthStore } from "@/src/stores/authStore";
+import { setNavigationRef } from "@/src/services/authBridge";
+import { useAuthErrorHandler } from "@/src/hooks/api";
+import Providers from "@/src/components/common/Providers";
+import GlobalToast from "@/src/components/common/GlobalToast";
+import "@/src/utils/i18n";
+
+// Pages
+import HomePage from "../pages/index";
+import LoginPage from "../pages/login";
+import DashboardPage from "../pages/dashboard";
+import BrokersPage from "../pages/brokers";
+import ProductsPage from "../pages/products";
+import ProfilePage from "../pages/profile";
+// Diğer sayfalar gerektiğinde eklenecek
+
+export type RootStackParamList = {
+  Home: undefined;
+  Login: undefined;
+  Dashboard: undefined;
+  Brokers: undefined;
+  Products: undefined;
+  Profile: undefined;
+  Stock: undefined;
+  Categories: undefined;
+  StockDetail: { productId: string };
+  BrokerDetail: { brokerId: string };
+  BrokerVisits: undefined;
+  Reports: undefined;
+  // Diğer route'lar eklenecek
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export default function RootNavigator() {
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  const authStore = useAuthStore();
+  const { initializeAuth } = authStore;
+  const { initializeErrorHandler } = useAuthErrorHandler();
+  const authInitialized = useRef(false);
+
+  // Set navigation ref for authBridge
+  useEffect(() => {
+    if (navigationRef.current) {
+      setNavigationRef(navigationRef.current);
+    }
+  }, []);
+
+  // Initialize error handler
+  useEffect(() => {
+    initializeErrorHandler(authStore);
+  }, [authStore, initializeErrorHandler]);
+
+  // Initialize auth once
+  useEffect(() => {
+    if (!authInitialized.current) {
+      initializeAuth();
+      authInitialized.current = true;
+    }
+  }, [initializeAuth]);
+
+  return (
+    <Providers>
+      <GlobalToast />
+      <NavigationContainer ref={navigationRef}>
+        <Stack.Navigator
+          initialRouteName="Home"
+          screenOptions={{
+            headerShown: false,
+            headerStyle: {
+              backgroundColor: "#fff",
+            },
+            headerTintColor: "#000",
+            headerTitleStyle: {
+              fontWeight: "bold",
+            },
+          }}
+        >
+          <Stack.Screen name="Home" component={HomePage} />
+          <Stack.Screen name="Login" component={LoginPage} />
+          <Stack.Screen
+            name="Dashboard"
+            component={DashboardPage}
+            options={{ title: "Dashboard" }}
+          />
+          <Stack.Screen
+            name="Brokers"
+            component={BrokersPage}
+            options={{ title: "Aracılar", headerShown: true }}
+          />
+          <Stack.Screen
+            name="Products"
+            component={ProductsPage}
+            options={{ title: "Ürünler", headerShown: true }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={ProfilePage}
+            options={{ title: "Profil", headerShown: true }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </Providers>
+  );
+}

@@ -2,7 +2,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseQueryOptions, UseMutationOptions, ApiError } from "@/src/types/apiTypes";
 import type { AuthStore } from "@/src/types/stores";
-import { router } from "expo-router";
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/src/navigation/RootNavigator';
 import { queryKeys } from "./queryKeys";
 import logger from "@/src/utils/logger";
 export * from "./usePayments";
@@ -41,7 +42,7 @@ export const setAuthStore = (store: Pick<AuthStore, "logout">) => {
   authStore = store;
 };
 // Common error handler
-export const handleApiError = async (error: ApiError) => {
+export const handleApiError = async (error: ApiError, navigation?: NativeStackNavigationProp<RootStackParamList>) => {
   logger.error("🚨 Global API Error Handler:", error);
 
   // 401 Unauthorized - Token expired veya invalid
@@ -56,14 +57,24 @@ export const handleApiError = async (error: ApiError) => {
       }
 
       // Login sayfasına yönlendir
-      router.replace("/login");
+      if (navigation) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }
 
       // Kullanıcıya bilgi ver (opsiyonel - toast olarak gösterilebilir)
       logger.info("📱 Redirected to login due to auth error");
     } catch (logoutError) {
       logger.error("❌ Error during forced logout:", logoutError);
       // Yine de login sayfasına git
-      router.replace("/login");
+      if (navigation) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }
     }
   }
 
@@ -132,8 +143,6 @@ export const createMutationHook = <TData, TVariables = void>(
   mutationFn: (variables: TVariables) => Promise<TData>,
 ): MutationHook<TData, TVariables> => {
   return (options?: UseMutationOptions<TData, ApiError, TVariables>) => {
-    const _queryClient = useQueryClient();
-
     return useMutation({
       mutationFn,
       onError: async (error, variables) => {

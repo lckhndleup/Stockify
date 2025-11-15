@@ -3,20 +3,12 @@ import axios, { type AxiosInstance } from "axios";
 import type { ApiError } from "@/src/types/apiTypes";
 import logger from "@/src/utils/logger";
 import { forceLogoutAndRedirect } from "./authBridge";
-import Constants from "expo-constants";
+import Config from "@/src/config";
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  Constants.expoConfig?.extra?.apiUrl ||
-  "http://50.114.185.206:8080";
+const API_BASE_URL = Config.API_URL;
 
 const DEFAULT_TIMEOUT_MS = () => {
-  const envValue = process.env.EXPO_PUBLIC_API_TIMEOUT_MS;
-  if (envValue && !Number.isNaN(Number(envValue))) return Number(envValue);
-  const extra = Constants.expoConfig?.extra || {};
-  const confValue = extra.apiTimeoutMs;
-  if (confValue && !Number.isNaN(Number(confValue))) return Number(confValue);
-  return 60000; // Increased from 15000 to 60000 for slow server responses
+  return Config.API_TIMEOUT_MS;
 };
 
 let token: string | null = null;

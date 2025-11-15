@@ -1,46 +1,31 @@
 // src/components/common/FontProvider.tsx
 import { useEffect, useState } from "react";
 import { Text as RNText } from "react-native";
-import {
-  Montserrat_400Regular,
-  Montserrat_500Medium,
-  Montserrat_600SemiBold,
-  Montserrat_700Bold,
-  useFonts,
-} from "@expo-google-fonts/montserrat";
-import * as SplashScreen from "expo-splash-screen";
+import RNBootSplash from "react-native-bootsplash";
 import type { FontProviderProps } from "@/src/types/providers";
 
 // Tüm Text componentleri için default font ayarla
+// Fontlar react-native.config.js ile assets klasöründen otomatik yüklenecek
 const TextAny = RNText as any;
 TextAny.defaultProps = TextAny.defaultProps ?? {};
-TextAny.defaultProps.style = { fontFamily: "Montserrat_400Regular" };
-
-SplashScreen.preventAutoHideAsync();
+TextAny.defaultProps.style = { fontFamily: "Montserrat-Regular" };
 
 export default function FontProvider({ children }: FontProviderProps) {
-  const [fontsLoaded] = useFonts({
-    Montserrat_400Regular,
-    Montserrat_500Medium,
-    Montserrat_600SemiBold,
-    Montserrat_700Bold,
-  });
-
   const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded) {
-      const timer = setTimeout(async () => {
-        await SplashScreen.hideAsync();
-        setAppReady(true);
-      }, 1500); // 1.5 saniye splash screen
+    // Fonts are automatically loaded via react-native.config.js
+    // Just hide splash screen after a delay
+    const timer = setTimeout(async () => {
+      await RNBootSplash.hide({ fade: true });
+      setAppReady(true);
+    }, 1500); // 1.5 saniye splash screen
 
-      return () => clearTimeout(timer);
-    }
-  }, [fontsLoaded]);
+    return () => clearTimeout(timer);
+  }, []);
 
-  if (!fontsLoaded || !appReady) {
-    return null; // Expo'nun default splash screen'ini göster
+  if (!appReady) {
+    return null; // Show native splash screen
   }
 
   return <>{children}</>;
