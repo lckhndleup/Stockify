@@ -15,7 +15,7 @@ import DashboardPage from "../pages/dashboard";
 import BrokersPage from "../pages/brokers";
 import ProductsPage from "../pages/products";
 import ProfilePage from "../pages/profile";
-// Diğer sayfalar gerektiğinde eklenecek
+import BrokerDetailPage from "../pages/broker/brokerDetail";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -27,10 +27,12 @@ export type RootStackParamList = {
   Stock: undefined;
   Categories: undefined;
   StockDetail: { productId: string };
-  BrokerDetail: { brokerId: string };
+  BrokerDetail: { 
+    brokerId: string;
+    [key: string]: any; // Allow additional params for sections
+  };
   BrokerVisits: undefined;
   Reports: undefined;
-  // Diğer route'lar eklenecek
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -100,6 +102,11 @@ export default function RootNavigator() {
             name="Profile"
             component={ProfilePage}
             options={{ title: "Profil", headerShown: true }}
+          />
+          <Stack.Screen
+            name="BrokerDetail"
+            component={BrokerDetailPage}
+            options={{ title: "Aracı Detay", headerShown: true }}
           />
         </Stack.Navigator>
       </NavigationContainer>

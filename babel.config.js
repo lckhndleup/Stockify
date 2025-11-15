@@ -1,22 +1,37 @@
 module.exports = {
-  presets: ['module:@react-native/babel-preset','nativewind/babel'],
+  presets: ['module:@react-native/babel-preset', 'nativewind/babel'],
   plugins: [
-    'nativewind/babel',
     '@babel/plugin-transform-export-namespace-from',
-    ['module-resolver', {
-      root: ['./'],
-      alias: {
-        '@': './',
-        '@/src': './src'
+    [
+      'module-resolver',
+      {
+        root: ['./'],
+        alias: {
+          '@': './',
+          '@/src': './src',
+        },
+        extensions: [
+          '.ios.ts',
+          '.android.ts',
+          '.ts',
+          '.ios.tsx',
+          '.android.tsx',
+          '.tsx',
+          '.jsx',
+          '.js',
+          '.json',
+        ],
       },
-      extensions: ['.ios.ts', '.android.ts', '.ts', '.ios.tsx', '.android.tsx', '.tsx', '.jsx', '.js', '.json']
-    }],
-    ['module:react-native-dotenv', {
-      moduleName: '@env',
-      path: '.env',
-      safe: false,
-      allowUndefined: true
-    }],
-    'react-native-reanimated/plugin'
-  ]
+    ],
+    [
+      'module:react-native-dotenv',
+      {
+        moduleName: '@env',
+        path: '.env',
+        safe: false,
+        allowUndefined: true,
+      },
+    ],
+    'react-native-reanimated/plugin',
+  ],
 };
