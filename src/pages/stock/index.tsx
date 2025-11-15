@@ -11,8 +11,6 @@ import {
   Keyboard,
 } from "react-native";
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/src/navigation/RootNavigator';
 
 import {
   Container,
@@ -43,6 +41,7 @@ import { useActiveCategories } from "@/src/hooks/api/useCategories";
 type StatusFilter = "all" | "out" | "critical" | "ok";
 
 export default function StockPage() {
+  const navigation = useNavigation<any>();
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // src/utils/logger.ts
 // Lightweight logger gated by __DEV__ and configurable log level
 

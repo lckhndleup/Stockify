@@ -1,9 +1,9 @@
 // app/reports/index.tsx
 import React, { useState, useMemo } from "react";
 import { View, FlatList, RefreshControl, TouchableOpacity } from "react-native";
-import { useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
-import type { RootStackParamList } from '@/src/navigation/RootNavigator';
+// import { useRoute } from '@react-navigation/native';
+// import type { RouteProp } from '@react-navigation/native';
+// import type { RootStackParamList } from '@/src/navigation/RootNavigator';
 import { Container, Typography, Icon, SelectBox, Loading, SearchBar } from "@/src/components/ui";
 import { useDailyReport } from "@/src/hooks/api";
 import { useActiveBrokers } from "@/src/hooks/api/useBrokers";
@@ -12,7 +12,6 @@ import { formatCurrency, formatShortDate } from "@/src/types/report";
 type DateFilter = "today" | "week" | "month" | "all";
 
 export default function ReportsScreen() {
-  const route = useRoute<RouteProp<RootStackParamList, 'Reports'>>();
   const brokerIdFromParams = undefined; // Reports route doesn't have brokerId param
 
   const [selectedBrokerId, setSelectedBrokerId] = useState<number | undefined>(brokerIdFromParams);

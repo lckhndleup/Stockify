@@ -30,7 +30,7 @@ export type AuthenticationRequest = LoginRequest;
 export type AuthenticationResponse = LoginResponse;
 
 // Hook Options Types
-export interface UseQueryOptions<_T = unknown> {
+export interface UseQueryOptions {
   enabled?: boolean;
   staleTime?: number;
   gcTime?: number;

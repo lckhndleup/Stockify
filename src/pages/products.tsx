@@ -2,8 +2,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Alert, TouchableOpacity, FlatList, ScrollView } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/src/navigation/RootNavigator';
 
 import {
   Container,
@@ -637,7 +635,7 @@ export default function ProductsPage() {
     setTimeout(() => {
       navigation.navigate('Categories');
     }, 100);
-  }, []);
+  }, [navigation]);
 
   // const handleAddCategory = () => {
   //   setIsCategoryModalVisible(true);
