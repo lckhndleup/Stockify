@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // app/broker/sections/confirmSales.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, View, Alert } from "react-native";
@@ -16,7 +17,8 @@ import BrokerHeader from "@/src/components/broker/BrokerHeader";
 
 export default function ConfirmSales() {
   // --- Params & state (LOGIC AYNI) ---
-  const route = useRoute<RouteProp<RootStackParamList, 'BrokerDetail'>>();
+  // Use the correct route name for this screen
+  const route = useRoute<RouteProp<RootStackParamList, 'ConfirmSales'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const params = route.params as any;
   const brokerId = params.brokerId as string;

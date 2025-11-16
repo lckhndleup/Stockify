@@ -24,6 +24,7 @@ import BrokerVisitsPage from "../pages/broker-visits";
 import SalesSection from "../pages/broker/sections/salesSection";
 import CollectionSection from "../pages/broker/sections/collectionSection";
 import StatementSection from "../pages/broker/sections/statementSection";
+import ConfirmSales from "../pages/broker/sections/confirmSales";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -44,6 +45,12 @@ export type RootStackParamList = {
   SalesSection: { brokerId: string };
   CollectionSection: { brokerId: string };
   StatementSection: { brokerId: string };
+  ConfirmSales: {
+    brokerId: string;
+    salesData?: string; // JSON stringified sales items
+    createInvoice?: string; // "true" | "false"
+    [key: string]: any; // Allow future extension
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -158,6 +165,11 @@ export default function RootNavigator() {
             name="StatementSection"
             component={StatementSection}
             options={{ title: "Ekstreler", headerShown: true }}
+          />
+          <Stack.Screen
+            name="ConfirmSales"
+            component={ConfirmSales}
+            options={{ title: "Satış Onayı", headerShown: true }}
           />
         </Stack.Navigator>
       </NavigationContainer>

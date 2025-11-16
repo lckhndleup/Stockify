@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // app/broker/sections/salesSection.tsx
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
@@ -52,7 +53,6 @@ export default function SalesSection() {
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { toast, showSuccess, showError } = useToast();
-  const _discountRef = useRef(null);
   // BACKEND: brokers
   const { data: brokers = [], isLoading: brokersLoading, error: brokersError } = useActiveBrokers();
 
@@ -126,6 +126,7 @@ export default function SalesSection() {
   // Header cancel (UI aynı)
   useEffect(() => {
     navigation.setOptions({
+      // eslint-disable-next-line react/no-unstable-nested-components
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => {
@@ -360,6 +361,7 @@ export default function SalesSection() {
   // Header cancel (UI aynı)
   useEffect(() => {
     navigation.setOptions({
+      // eslint-disable-next-line react/no-unstable-nested-components
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => {
@@ -520,7 +522,7 @@ export default function SalesSection() {
       return;
     }
 
-    navigation.navigate("BrokerDetail", {
+    navigation.navigate("ConfirmSales", {
       brokerId,
       salesData: JSON.stringify(
         addedProducts.map((p) => ({
