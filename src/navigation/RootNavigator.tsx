@@ -25,6 +25,7 @@ import SalesSection from "../pages/broker/sections/salesSection";
 import CollectionSection from "../pages/broker/sections/collectionSection";
 import StatementSection from "../pages/broker/sections/statementSection";
 import ConfirmSales from "../pages/broker/sections/confirmSales";
+import ResultSales from "../pages/broker/sections/resultSales";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -50,6 +51,17 @@ export type RootStackParamList = {
     salesData?: string; // JSON stringified sales items
     createInvoice?: string; // "true" | "false"
     [key: string]: any; // Allow future extension
+  };
+  ResultSales: {
+    brokerId: string;
+    success?: string; // "true" | "false"
+    totalAmount?: string;
+    discountAmount?: string;
+    createInvoice?: string; // "true" | "false"
+    documentNumber?: string;
+    downloadUrl?: string;
+    summaryJSON?: string;
+    [key: string]: any;
   };
 };
 
@@ -170,6 +182,11 @@ export default function RootNavigator() {
             name="ConfirmSales"
             component={ConfirmSales}
             options={{ title: "Satış Onayı", headerShown: true }}
+          />
+          <Stack.Screen
+            name="ResultSales"
+            component={ResultSales}
+            options={{ title: "Satış Sonucu", headerShown: true }}
           />
         </Stack.Navigator>
       </NavigationContainer>

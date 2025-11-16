@@ -115,7 +115,7 @@ export default function ConfirmSales() {
   const handleEdit = () => navigation.goBack();
 
   const navigateToResult = (res: SalesSummary, invoiceFlag: boolean) => {
-    navigation.navigate('BrokerDetail', { 
+    navigation.navigate('ResultSales', { 
       brokerId,
       success: "true",
       totalAmount: String(res?.totalPriceWithTax ?? 0),

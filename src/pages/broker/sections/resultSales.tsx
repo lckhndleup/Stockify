@@ -25,7 +25,7 @@ import logger from "@/src/utils/logger";
 import { getAuthHeaders } from "@/src/services/base";
 
 export default function ResultSales() {
-  const route = useRoute<RouteProp<RootStackParamList, 'BrokerDetail'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'ResultSales'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const params = route.params as any;
   const {
