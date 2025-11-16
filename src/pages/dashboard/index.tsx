@@ -115,7 +115,7 @@ export default function DashboardPage() {
               {/* Row 1: Broker & Ürünler */}
               <View className="flex-row gap-3">
                 <DashboardActionCard
-                  title="Broker'lar"
+                  title="Aracılar"
                   subtitle={`${stats.totalBrokers} aktif`}
                   iconName="people"
                   onPress={() => navigation.navigate('Brokers')}

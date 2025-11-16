@@ -156,7 +156,7 @@ export default function RootNavigator() {
           <Stack.Screen
             name="BrokerVisits"
             component={BrokerVisitsPage}
-            options={{ title: "Ziyaretler", headerShown: true }}
+            options={{ title: "Ziyaretler", headerShown: false }}
           />
           <Stack.Screen
             name="BrokerDetail"

@@ -11,9 +11,9 @@ import {
   Pressable,
   ScrollView,
 } from "react-native";
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '@/src/navigation/RootNavigator';
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/src/navigation/RootNavigator";
 import Typography from "@/src/components/ui/typography";
 import Icon from "@/src/components/ui/icon";
 import SearchBar from "@/src/components/ui/searchbar";
@@ -23,6 +23,7 @@ import logger from "@/src/utils/logger";
 import { useToast } from "@/src/hooks/useToast";
 
 export default function BrokerVisitsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | BrokerVisitStatus>("ALL");
   const [noteModalVisible, setNoteModalVisible] = useState(false);
@@ -273,7 +274,6 @@ export default function BrokerVisitsScreen() {
           <View className="flex-row items-center justify-between mb-4">
             <TouchableOpacity
               onPress={() => {
-                const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
                 navigation.goBack();
               }}
               className="mr-3 p-2"
